@@ -43,11 +43,13 @@ SET(PRC_SOURCE_FILES
     Application/main.cpp
     
     Drivers/STM32HAL/stm32sim_spi.cpp
-    Drivers/STM32HAL/stm32sim_gpio.cpp)
+    Drivers/STM32HAL/stm32sim_gpio.cpp
+    Drivers/KULITE_CTL190/Impl/KULITE_CTL190.cpp)
 
 add_library(propulsion_computer STATIC ${PRC_SOURCE_FILES})
 target_link_libraries(propulsion_computer PRIVATE gcov)
 target_include_directories(propulsion_computer PUBLIC .)
+target_include_directories(propulsion_computer PUBLIC Drivers/KULITE_CTL190)
 
 # Add includes here
 # For example target_include_directories(propulsion_computer PUBLIC Drivers/X)
@@ -78,3 +80,4 @@ function(create_test test_name test_file)
 endfunction()
 
 add_subdirectory(Drivers/STM32HAL/Tests)
+
