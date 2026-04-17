@@ -42,8 +42,8 @@ endif()
 SET(PRC_SOURCE_FILES
     Application/main.cpp
     
-    Drivers/STM32HAL/stm32sim_spi.cpp
-    Drivers/STM32HAL/stm32sim_gpio.cpp
+    Drivers/STM32HAL/Simulations/stm32sim_spi.cpp
+    Drivers/STM32HAL/Simulations/stm32sim_gpio.cpp
     Drivers/KULITE_CTL190/Impl/KULITE_CTL190.cpp)
 
 add_library(propulsion_computer STATIC ${PRC_SOURCE_FILES})
@@ -80,4 +80,3 @@ function(create_test test_name test_file)
 endfunction()
 
 add_subdirectory(Drivers/STM32HAL/Tests)
-
