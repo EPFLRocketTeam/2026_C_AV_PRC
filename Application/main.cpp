@@ -27,7 +27,7 @@ extern const CallRecord __stop_calls;
 
 #define StringToIndex(data) ([] { \
         static uint64_t val = _InternalStringToIndex(data); \
-        printf("String \"%s\" has index %lld\n", data, (unsigned long) val); \
+        printf("String \"%s\" has index %lld\n", data, (unsigned long long) val); \
         return val; \
     })();
 
