@@ -1,0 +1,17 @@
+../USB_DEVICE/App/usbd_desc.c:337:11:USBD_HS_DeviceDescriptor	16	static
+../USB_DEVICE/App/usbd_desc.c:350:11:USBD_HS_LangIDStrDescriptor	16	static
+../USB_DEVICE/App/usbd_desc.c:363:11:USBD_HS_ProductStrDescriptor	16	static
+../USB_DEVICE/App/usbd_desc.c:382:11:USBD_HS_ManufacturerStrDescriptor	16	static
+../USB_DEVICE/App/usbd_desc.c:395:11:USBD_HS_SerialStrDescriptor	16	static
+../USB_DEVICE/App/usbd_desc.c:416:11:USBD_HS_ConfigStrDescriptor	16	static
+../USB_DEVICE/App/usbd_desc.c:435:11:USBD_HS_InterfaceStrDescriptor	16	static
+../USB_DEVICE/App/usbd_desc.c:455:11:USBD_HS_USR_BOSDescriptor	16	static
+../USB_DEVICE/App/usbd_desc.c:469:11:USBD_FS_DeviceDescriptor	16	static
+../USB_DEVICE/App/usbd_desc.c:482:11:USBD_FS_LangIDStrDescriptor	16	static
+../USB_DEVICE/App/usbd_desc.c:495:11:USBD_FS_ProductStrDescriptor	16	static
+../USB_DEVICE/App/usbd_desc.c:514:11:USBD_FS_ManufacturerStrDescriptor	16	static
+../USB_DEVICE/App/usbd_desc.c:527:11:USBD_FS_SerialStrDescriptor	16	static
+../USB_DEVICE/App/usbd_desc.c:547:11:USBD_FS_ConfigStrDescriptor	16	static
+../USB_DEVICE/App/usbd_desc.c:566:11:USBD_FS_InterfaceStrDescriptor	16	static
+../USB_DEVICE/App/usbd_desc.c:584:13:Get_SerialNum	24	static
+../USB_DEVICE/App/usbd_desc.c:610:13:IntToUnicode	32	static

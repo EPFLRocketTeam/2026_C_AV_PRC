@@ -1,0 +1,16 @@
+../Drivers/FDC1004/Impl/FDC1004.cpp:15:1:FDC1004::FDC1004(I2C_HandleTypeDef*, uint8_t, uint8_t)	1
+../Drivers/FDC1004/Impl/FDC1004.cpp:24:6:bool FDC1004::begin()	1
+../Drivers/FDC1004/Impl/FDC1004.cpp:30:6:bool FDC1004::isConnected()	1
+../Drivers/FDC1004/Impl/FDC1004.cpp:36:9:uint8_t FDC1004::getAddress()	1
+../Drivers/FDC1004/Impl/FDC1004.cpp:46:7:float FDC1004::getCapacitance(uint8_t)	9
+../Drivers/FDC1004/Impl/FDC1004.cpp:87:6:bool FDC1004::setRate(uint8_t)	4
+../Drivers/FDC1004/Impl/FDC1004.cpp:98:9:uint8_t FDC1004::getRate()	1
+../Drivers/FDC1004/Impl/FDC1004.cpp:104:6:bool FDC1004::setCapdac(uint8_t, uint8_t)	3
+../Drivers/FDC1004/Impl/FDC1004.cpp:112:9:uint8_t FDC1004::getCapdac(uint8_t)	2
+../Drivers/FDC1004/Impl/FDC1004.cpp:123:5:int FDC1004::getLastError()	1
+../Drivers/FDC1004/Impl/FDC1004.cpp:135:6:bool FDC1004::_configureMeasurement(uint8_t, uint8_t, uint8_t)	2
+../Drivers/FDC1004/Impl/FDC1004.cpp:158:6:bool FDC1004::_triggerMeasurement(uint8_t, uint8_t)	1
+../Drivers/FDC1004/Impl/FDC1004.cpp:168:6:bool FDC1004::_readMeasurement(uint8_t, int16_t*)	4
+../Drivers/FDC1004/Impl/FDC1004.cpp:191:9:uint8_t FDC1004::_measurementDelay()	3
+../Drivers/FDC1004/Impl/FDC1004.cpp:203:6:bool FDC1004::_readRegister(uint8_t, uint16_t*)	3
+../Drivers/FDC1004/Impl/FDC1004.cpp:224:6:bool FDC1004::_writeRegister(uint8_t, uint16_t)	2

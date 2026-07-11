@@ -1,0 +1,5 @@
+../Drivers/PT1000/Impl/PT1000.cpp:6:1:Drivers::PT1000::PT1000Driver::PT1000Driver(Drivers::PT1000::Config, uint8_t)	16	static
+../Drivers/PT1000/Impl/PT1000.cpp:9:6:bool Drivers::PT1000::PT1000Driver::init()	16	static
+../Drivers/PT1000/Impl/PT1000.cpp:19:6:bool Drivers::PT1000::PT1000Driver::read(Drivers::PT1000::PT1000Data&)	16	static
+../Drivers/PT1000/Impl/PT1000.cpp:49:7:float Drivers::PT1000::PT1000Driver::calculate_resistance(uint32_t) const	24	static
+../Drivers/PT1000/Impl/PT1000.cpp:62:7:float Drivers::PT1000::PT1000Driver::calculate_temperature(float) const	16	static
