@@ -42,22 +42,22 @@ int manual_test_pt1000() {
     Config configs[NUM_SENSORS] = {
         // PT1000-1 (PC0, ADC3 channel 10)
         { .hadc = &hadc3,
-          .adc_channel = 10,
+          .adc_channel = ADC_CHANNEL_10,
           .r_ref = 1100.0f,
           .adc_max = 65535 },  // 16-bit ADC on STM32H7
         // PT1000-2 (PC1, ADC3 channel 11)
         { .hadc = &hadc3,
-          .adc_channel = 11,
+          .adc_channel = ADC_CHANNEL_11,
           .r_ref = 1100.0f,
           .adc_max = 65535 },
         // PT1000-3 (PC2_C, ADC3 channel 0)
         { .hadc = &hadc3,
-          .adc_channel = 0,
+          .adc_channel = ADC_CHANNEL_0,
           .r_ref = 1100.0f,
           .adc_max = 65535 },
         // PT1000-4 (PC3_C, ADC3 channel 1)
         { .hadc = &hadc3,
-          .adc_channel = 1,
+          .adc_channel = ADC_CHANNEL_1,
           .r_ref = 1100.0f,
           .adc_max = 65535 },
     };

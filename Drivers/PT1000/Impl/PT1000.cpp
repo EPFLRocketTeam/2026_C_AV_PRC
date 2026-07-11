@@ -25,6 +25,23 @@ bool PT1000Driver::read(PT1000Data& out) {
         return false;
     }
 
+    // Point the ADC's regular rank-1 channel at this sensor before
+    // converting. Without this, HAL_ADC_Start() just re-converts whatever
+    // channel was last configured (e.g. by MX_ADCx_Init), so every sensor
+    // would read the same physical channel.
+    ADC_ChannelConfTypeDef sConfig = {0};
+    sConfig.Channel                = config_.adc_channel;
+    sConfig.Rank                   = ADC_REGULAR_RANK_1;
+    sConfig.SamplingTime           = ADC_SAMPLETIME_1CYCLE_5;
+    sConfig.SingleDiff             = ADC_SINGLE_ENDED;
+    sConfig.OffsetNumber           = ADC_OFFSET_NONE;
+    sConfig.Offset                 = 0;
+    sConfig.OffsetSignedSaturation = DISABLE;
+
+    if (HAL_ADC_ConfigChannel(config_.hadc, &sConfig) != HAL_OK) {
+        return false;
+    }
+
     // Start ADC conversion (blocking, single channel)
     if (HAL_ADC_Start(config_.hadc) != HAL_OK) {
         return false;

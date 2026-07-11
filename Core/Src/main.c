@@ -25,6 +25,7 @@
 
 #include "../../Drivers/FDC1004/FDC1004_manual_test.h"
 #include "../../Drivers/PT1000/main_test_pt1000.h"
+#include "../../Drivers/SensataPte7300/SensataPte7300HardwareTest.hpp"
 #include "usbd_cdc_if.h"
 
 /* USER CODE END Includes */
@@ -124,8 +125,10 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   //FDC1004_ManualTest(&hi2c1);
-  manual_test_pt1000();
-
+  //manual_test_pt1000();
+  //run_pte7300_hardware_test();
+  //run_pte7300_i2c_scanner();
+  run_pte7300_channel0_scope_probe();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -474,6 +477,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOD, LEDCTRL_Pin|ETH_ON_Pin|LOX_ON_Pin|ENGONE_ON_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(BV_CTRL_GPIO_Port, BV_CTRL_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : Buzzer_Pin Sol1_ctrl_Pin Sol2_ctrl_Pin Sol3_ctrl_Pin
@@ -522,8 +528,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(PWRGD_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LEDCTRL_Pin ETH_ON_Pin LOX_ON_Pin ENGONE_ON_Pin */
-  GPIO_InitStruct.Pin = LEDCTRL_Pin|ETH_ON_Pin|LOX_ON_Pin|ENGONE_ON_Pin;
+  /*Configure GPIO pins : LEDCTRL_Pin ETH_ON_Pin LOX_ON_Pin ENGONE_ON_Pin
+                           PD6 */
+  GPIO_InitStruct.Pin = LEDCTRL_Pin|ETH_ON_Pin|LOX_ON_Pin|ENGONE_ON_Pin
+                          |GPIO_PIN_6;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
