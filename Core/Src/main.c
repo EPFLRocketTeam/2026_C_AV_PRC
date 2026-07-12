@@ -26,6 +26,8 @@
 #include "../../Drivers/FDC1004/FDC1004_manual_test.h"
 #include "../../Drivers/PT1000/main_test_pt1000.h"
 #include "../../Drivers/SensataPte7300/SensataPte7300HardwareTest.hpp"
+#include "../../Drivers/KULITE_CTL190/kulite_manual_test.hpp"
+#include "../../Drivers/Valve/valve_manual_test.hpp"
 #include "usbd_cdc_if.h"
 
 /* USER CODE END Includes */
@@ -129,6 +131,8 @@ int main(void)
   //run_pte7300_hardware_test();
   //run_pte7300_i2c_scanner();
   run_pte7300_channel0_scope_probe();
+  //manual_test_ctl190();  /* one-shot ~32s test, then returns */
+  //Valve_ManualTest();    /* TODO: verify Sol1-4/LOX_ON/ETH_ON/BV_CTRL wiring & NC/NO assumptions before running, see Drivers/Valve/Impl/ValveList.cpp */
   /* USER CODE END 2 */
 
   /* Infinite loop */
