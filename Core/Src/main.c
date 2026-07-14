@@ -40,6 +40,10 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
+/*  CAN bus test between 2026_C_AV_PRC and 2026_C_AV_FC (PD0=RX, PD1=TX on both boards).  */
+#define CANBUS_TEST_TX_ID   0x100u   /*  PRC -> FC  */
+#define CANBUS_TEST_RX_ID   0x101u   /*  FC -> PRC  */
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -79,8 +83,15 @@ static void MX_ADC3_Init(void);
 /* USER CODE BEGIN 0 */
 
 int _write(int file, char *ptr, int len) {
-    // Wait until USB is ready
-    while (CDC_Transmit_HS((uint8_t*)ptr, len) == USBD_BUSY);
+    // Wait until USB is ready, but never wedge: if the CDC endpoint stays
+    // busy (host not draining, missed completion), drop the output instead
+    // of spinning forever.
+    uint32_t start = HAL_GetTick();
+    while (CDC_Transmit_HS((uint8_t*)ptr, len) == USBD_BUSY) {
+        if (HAL_GetTick() - start > 100) {
+            break;
+        }
+    }
     return len;
 }
 
@@ -130,9 +141,8 @@ int main(void)
   //manual_test_pt1000();
   //run_pte7300_hardware_test();
   //run_pte7300_i2c_scanner();
-  run_pte7300_channel0_scope_probe();
+  //run_pte7300_channel0_scope_probe();
   //manual_test_ctl190();  /* one-shot ~32s test, then returns */
-  //Valve_ManualTest();    /* TODO: verify Sol1-4/LOX_ON/ETH_ON/BV_CTRL wiring & NC/NO assumptions before running, see Drivers/Valve/Impl/ValveList.cpp */
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -144,8 +154,77 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
 	  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
-	  HAL_Delay(500);
-	  printf("Hello World from loop!\r\n");
+	  HAL_Delay(1000);
+	  //FDC1004_ManualTest(&hi2c1);
+
+	  //Valve_ManualTest();    /* TODO: verify Sol1-4/BV_CTRL wiring & NC/NO assumptions before running, see Drivers/Valve/Impl/ValveList.cpp */
+
+	  {
+	    static uint8_t canTestCounter = 0x50;  /* nonzero start: makes stale/zeroed reads obvious */
+
+	    FDCAN_TxHeaderTypeDef txHeader;
+	    txHeader.Identifier          = CANBUS_TEST_TX_ID;
+	    txHeader.IdType              = FDCAN_STANDARD_ID;
+	    txHeader.TxFrameType         = FDCAN_DATA_FRAME;
+	    txHeader.DataLength          = FDCAN_DLC_BYTES_1;
+	    txHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+	    txHeader.BitRateSwitch       = FDCAN_BRS_OFF;
+	    txHeader.FDFormat            = FDCAN_CLASSIC_CAN;
+	    txHeader.TxEventFifoControl  = FDCAN_NO_TX_EVENTS;
+	    txHeader.MessageMarker       = 0;
+
+	    /*  HAL_FDCAN_AddMessageToTxFifoQ always word-copies 4 bytes regardless
+	     *  of DataLength, so the buffer must be padded to a 4-byte boundary
+	     *  even though only 1 byte is actually put on the wire (per DLC). */
+	    uint8_t txData[4] = { canTestCounter, 0, 0, 0 };
+	    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &txHeader, txData) == HAL_OK)
+	    {
+	      printf("[CAN] TX id=0x%03lX data=0x%02X\r\n", (unsigned long)CANBUS_TEST_TX_ID, canTestCounter);
+	      canTestCounter++;
+	    }
+	    else
+	    {
+	      printf("[CAN] TX failed\r\n");
+	    }
+
+	    /*  Drain the whole FIFO each iteration -- popping only one message
+	     *  per loop let the queue back up (self-reception + peer traffic
+	     *  arriving faster than we drained it), so we kept reading stale
+	     *  entries instead of the newest one. */
+	    uint32_t rxFillLevel;
+	    while ((rxFillLevel = HAL_FDCAN_GetRxFifoFillLevel(&hfdcan1, FDCAN_RX_FIFO0)) > 0)
+	    {
+	      FDCAN_RxHeaderTypeDef rxHeader;
+	      uint8_t rxData[8] = {0};
+	      if (HAL_FDCAN_GetRxMessage(&hfdcan1, FDCAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
+	      {
+	        printf("[CAN] RX id=0x%03lX data=0x%02X fill=%lu dlc=%lu ts=%lu\r\n",
+	               (unsigned long)rxHeader.Identifier, rxData[0], (unsigned long)rxFillLevel,
+	               (unsigned long)rxHeader.DataLength, (unsigned long)rxHeader.RxTimestamp);
+	      }
+	      else
+	      {
+		      printf("[CAN] TX failed\r\n");
+
+	      }
+	    }
+
+	    {
+	      FDCAN_ProtocolStatusTypeDef protoStatus;
+	      FDCAN_ErrorCountersTypeDef  errCounters;
+	      HAL_FDCAN_GetProtocolStatus(&hfdcan1, &protoStatus);
+	      HAL_FDCAN_GetErrorCounters(&hfdcan1, &errCounters);
+	      printf("[CAN] status busoff=%lu errpass=%lu warn=%lu lastErr=%lu tec=%lu rec=%lu\r\n",
+	             protoStatus.BusOff, protoStatus.ErrorPassive, protoStatus.Warning,
+	             protoStatus.LastErrorCode, errCounters.TxErrorCnt, errCounters.RxErrorCnt);
+	      printf("[CAN] msgRam StdFilterSA=0x%08lX RxFIFO0SA=0x%08lX TxFIFOQSA=0x%08lX\r\n",
+	             (unsigned long)hfdcan1.msgRam.StandardFilterSA,
+	             (unsigned long)hfdcan1.msgRam.RxFIFO0SA,
+	             (unsigned long)hfdcan1.msgRam.TxFIFOQSA);
+	    }
+	  }
+
+
 
   }
   /* USER CODE END 3 */
@@ -299,17 +378,17 @@ static void MX_FDCAN1_Init(void)
   hfdcan1.Init.DataTimeSeg1 = 1;
   hfdcan1.Init.DataTimeSeg2 = 1;
   hfdcan1.Init.MessageRAMOffset = 0;
-  hfdcan1.Init.StdFiltersNbr = 0;
+  hfdcan1.Init.StdFiltersNbr = 1;
   hfdcan1.Init.ExtFiltersNbr = 0;
-  hfdcan1.Init.RxFifo0ElmtsNbr = 0;
+  hfdcan1.Init.RxFifo0ElmtsNbr = 4;
   hfdcan1.Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_8;
   hfdcan1.Init.RxFifo1ElmtsNbr = 0;
   hfdcan1.Init.RxFifo1ElmtSize = FDCAN_DATA_BYTES_8;
   hfdcan1.Init.RxBuffersNbr = 0;
   hfdcan1.Init.RxBufferSize = FDCAN_DATA_BYTES_8;
   hfdcan1.Init.TxEventsNbr = 0;
-  hfdcan1.Init.TxBuffersNbr = 32;
-  hfdcan1.Init.TxFifoQueueElmtsNbr = 0;
+  hfdcan1.Init.TxBuffersNbr = 0;
+  hfdcan1.Init.TxFifoQueueElmtsNbr = 32;
   hfdcan1.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
   hfdcan1.Init.TxElmtSize = FDCAN_DATA_BYTES_8;
   if (HAL_FDCAN_Init(&hfdcan1) != HAL_OK)
@@ -317,6 +396,30 @@ static void MX_FDCAN1_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN FDCAN1_Init 2 */
+
+  FDCAN_FilterTypeDef canFilter;
+  canFilter.IdType       = FDCAN_STANDARD_ID;
+  canFilter.FilterIndex  = 0;
+  canFilter.FilterType   = FDCAN_FILTER_MASK;
+  canFilter.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
+  canFilter.FilterID1    = CANBUS_TEST_RX_ID;
+  canFilter.FilterID2    = 0x7FF;  /* exact-match mask: only CANBUS_TEST_RX_ID accepted */
+  if (HAL_FDCAN_ConfigFilter(&hfdcan1, &canFilter) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_FDCAN_ConfigRxFifoOverwrite(&hfdcan1, FDCAN_RX_FIFO0, FDCAN_RX_FIFO_OVERWRITE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
   /* USER CODE END FDCAN1_Init 2 */
 
@@ -420,9 +523,9 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 0;
+  htim4.Init.Prescaler = 239; // TIM4 clock is 240 MHz (APB1 timer clock) -> 1 MHz (1 us) tick
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 65535;
+  htim4.Init.Period = 19999; // 20 ms frame (50 Hz) for standard RC servo PWM
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)

@@ -55,6 +55,10 @@ ServoBallValve::ServoBallValve(const ServoBallValveConfig& config)
     if (config_.enable_port != nullptr) {
         HAL_GPIO_WritePin(config_.enable_port, config_.enable_pin, GPIO_PIN_SET);
     }
+    // HAL_TIM_PWM_ConfigChannel() (in MX_TIM4_Init) only loads the channel's
+    // config registers — it doesn't enable the output. Without this call the
+    // compare register updates in write_pulse_us() never reach the pin.
+    HAL_TIM_PWM_Start(config_.htim, config_.channel);
 }
 
 void ServoBallValve::write_pulse_us(uint32_t pulse_us)

@@ -15,11 +15,11 @@ static void exercise(ValveId id)
 
     printf("[Valve] %s: open\r\n", valve->name());
     valve->open();
-    HAL_Delay(500);
+    HAL_Delay(5000);
 
     printf("[Valve] %s: close\r\n", valve->name());
     valve->close();
-    HAL_Delay(500);
+    HAL_Delay(5000);
 }
 
 // Sweeps the ball valve through intermediate positions, not just the two
@@ -48,9 +48,9 @@ void Valve_ManualTest(void)
 
     Valve_InitAll();
 
-    for (uint8_t i = 0; i < static_cast<uint8_t>(ValveId::Count); ++i) {
+    /*for (uint8_t i = 0; i < static_cast<uint8_t>(ValveId::Count); ++i) {
         exercise(static_cast<ValveId>(i));
-    }
+    }*/
 
     exercise_ball_valve_positions();
 

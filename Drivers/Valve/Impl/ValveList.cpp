@@ -12,7 +12,7 @@ extern TIM_HandleTypeDef htim4;
 // Storage for the concrete valve objects. Solenoids and servo are kept in
 // separate arrays purely to avoid needing a variant/union; Valve_Get()
 // returns them all through the common IValve* interface.
-static SolenoidValve*  s_solenoids[6] = { nullptr };
+static SolenoidValve*  s_solenoids[4] = { nullptr };
 static ServoBallValve* s_servo        = nullptr;
 static bool            s_initialized  = false;
 
@@ -44,33 +44,17 @@ void Valve_InitAll()
         .fail_safe = FailSafeState::NormallyClosed,
         .name      = "Sol4_ctrl",
     });
-    static SolenoidValve lox_on({
-        .port      = LOX_ON_GPIO_Port,
-        .pin       = LOX_ON_Pin,
-        .fail_safe = FailSafeState::NormallyClosed,
-        .name      = "LOX_ON",
-    });
-    static SolenoidValve eth_on({
-        .port      = ETH_ON_GPIO_Port,
-        .pin       = ETH_ON_Pin,
-        .fail_safe = FailSafeState::NormallyClosed,
-        .name      = "ETH_ON",
-    });
-
     s_solenoids[0] = &sol1;
     s_solenoids[1] = &sol2;
     s_solenoids[2] = &sol3;
     s_solenoids[3] = &sol4;
-    s_solenoids[4] = &lox_on;
-    s_solenoids[5] = &eth_on;
 
-    // BV_CTRL is ASSUMED to be a servo power-enable line, separate from the
-    // PWM_BV signal itself — see ValveList.hpp TODO.
+    // No separate enable/power line on this board — the servo is driven
+    // solely by the PWM_BV signal (PB8/TIM4_CH3), so enable_port/enable_pin
+    // are left at their nullptr/0 defaults.
     static ServoBallValve ball_valve({
         .htim        = &htim4,
         .channel     = TIM_CHANNEL_3,
-        .enable_port = BV_CTRL_GPIO_Port,
-        .enable_pin  = BV_CTRL_Pin,
         .name        = "PWM_BV",
     });
     s_servo = &ball_valve;
@@ -89,8 +73,6 @@ IValve* Valve_Get(ValveId id)
         case ValveId::Sol2:      return s_solenoids[1];
         case ValveId::Sol3:      return s_solenoids[2];
         case ValveId::Sol4:      return s_solenoids[3];
-        case ValveId::LoxOn:     return s_solenoids[4];
-        case ValveId::EthOn:     return s_solenoids[5];
         case ValveId::BallValve: return s_servo;
         default:                 return nullptr;
     }

@@ -6,11 +6,21 @@
 
 #include "stm32h7xx_hal.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern volatile int   fdc_connected;
 extern volatile float fdc_cap_ch0_pf;
+extern volatile float fdc_cap_ch1_pf;
+extern volatile float fdc_cap_ch2_pf;
+extern volatile float fdc_cap_ch3_pf;
 extern volatile int   fdc_last_error;
 
 void FDC1004_ManualTest(I2C_HandleTypeDef *hi2c);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  //  FDC1004_MANUAL_TEST_H

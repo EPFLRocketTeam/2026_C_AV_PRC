@@ -1,0 +1,6 @@
+../Drivers/KULITE_CTL190/Impl/kulite_manual_test.cpp:18:13:bool ctl190_adc_read(uint32_t*)	4
+../Drivers/KULITE_CTL190/Impl/kulite_manual_test.cpp:46:20:const char* status_to_string(Ctl190::Status)	5
+../Drivers/KULITE_CTL190/Impl/kulite_manual_test.cpp:64:13:void print_configuration()	2
+../Drivers/KULITE_CTL190/Impl/kulite_manual_test.cpp:77:5:int manual_test_ctl190()	20
+../Drivers/KULITE_CTL190/Impl/kulite_manual_test.cpp:233:5:int ctl190_test_reset()	1
+../Drivers/KULITE_CTL190/Impl/kulite_manual_test.cpp:243:5:int ctl190_test_get_status()	4
