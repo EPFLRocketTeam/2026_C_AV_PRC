@@ -65,9 +65,19 @@ static constexpr uint8_t k_pca9547_max_channel          = 7;
 
 // ch0=0x08, ch1=0x09, ch2=0x0A, ch3=0x0B,
 // ch4=0x0C, ch5=0x0D, ch6=0x0E, ch7=0x0F
+//
+// EXPERIMENT (temporary): two different physical PCA9547PW-marked chips
+// have both shown "digitally selected, switch never conducts" with VCC,
+// GND, and the channel's local pull-up all confirmed healthy. Testing
+// whether the populated part actually uses PCA9548A/TCA9548A-style
+// bitmask semantics (one bit per channel, no separate enable bit) instead
+// of genuine PCA9547 enable+select. If this is right, our old "channel 0"
+// byte (0x08) was silently enabling channel 3 instead. Revert to the
+// commented-out line below once this is confirmed either way.
 static constexpr uint8_t pca9547_channel_control_byte(uint8_t channel)
 {
-    return static_cast<uint8_t>(k_pca9547_enable_bit | (channel & 0x07));
+    return static_cast<uint8_t>(1u << (channel & 0x07));
+    // return static_cast<uint8_t>(k_pca9547_enable_bit | (channel & 0x07));
 }
 
 // ---------------------------------------------------------------------------

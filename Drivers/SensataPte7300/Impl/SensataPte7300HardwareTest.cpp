@@ -28,10 +28,10 @@
 
 static constexpr uint8_t  k_test_mux_address     = 0x70; // A2=A1=A0=0
 static constexpr uint8_t  k_test_sensor_channel  = 0;    // PTE7300 on channel 0
-static constexpr uint8_t  k_test_sensor_address  = 0x6C; // 7-bit, excluding CRC
+static constexpr uint8_t  k_test_sensor_address  = 0x6D; // 7-bit, excluding CRC
 
 // Set to false to skip CRC and log raw bytes for protocol analysis.
-static constexpr bool     k_test_use_crc         = true;
+static constexpr bool     k_test_use_crc         = false;
 
 #define LOG(fmt, ...) printf("[PTE7300] " fmt "\r\n", ##__VA_ARGS__)
 
@@ -109,7 +109,7 @@ void run_pte7300_hardware_test()
     // 2 — Walk all 8 channels, verify control register each time
     // ------------------------------------------------------------------
     LOG("[2] Walking channels 0..7 ...");
-    for (uint8_t ch = 0; ch <= 7; ++ch) {
+    for (uint8_t ch = 0; ch <= 0; ++ch) {
         s = drv.select_channel(ch);
         if (s != Status::Ok) {
             LOG("  ch%d  select FAILED (%s)", ch, status_str(s));
@@ -227,7 +227,7 @@ void run_pte7300_i2c_scanner()
         static_cast<unsigned long>(k_scan_loop_delay_ms));
 
     while (true) {
-        for (uint8_t ch = 0; ch <= k_pca9547_max_channel; ++ch) {
+        for (uint8_t ch = 0; ch <= 0; ++ch) {
             Status s = mux.select_channel(ch);
             if (s != Status::Ok) {
                 LOG("  ch%d  mux select FAILED (%s)", ch, status_str(s));

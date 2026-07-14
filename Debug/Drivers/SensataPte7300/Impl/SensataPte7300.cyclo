@@ -1,4 +1,4 @@
-../Drivers/SensataPte7300/Impl/../SensataPte7300.hpp:68:26:constexpr uint8_t pca9547_channel_control_byte(uint8_t)	1
+../Drivers/SensataPte7300/Impl/../SensataPte7300.hpp:77:26:constexpr uint8_t pca9547_channel_control_byte(uint8_t)	1
 ../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:5:27:constexpr uint16_t to_hal_addr(uint8_t)	1
 ../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:10:15:Status hal_to_status(HAL_StatusTypeDef)	3
 ../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:21:1:Pca9547Mux::Pca9547Mux(I2C_HandleTypeDef*, uint8_t, uint32_t)	1

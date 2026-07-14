@@ -95,6 +95,68 @@ int _write(int file, char *ptr, int len) {
     return len;
 }
 
+/* Drains FDCAN1 RX_FIFO0 and prints every received message: ID, DLC, and
+ * the full data payload (not just the first byte). Call every loop
+ * iteration -- draining fully each time avoids reading stale entries when
+ * traffic arrives faster than the loop period. */
+static void print_fdcan_rx_messages(void)
+{
+    uint32_t rxFillLevel;
+    printf("Trying RX\r\n");
+    while ((rxFillLevel = HAL_FDCAN_GetRxFifoFillLevel(&hfdcan1, FDCAN_RX_FIFO0)) > 0)
+    {
+        FDCAN_RxHeaderTypeDef rxHeader;
+        uint8_t rxData[8] = {0};
+        printf("In loop \r\n");
+        if (HAL_FDCAN_GetRxMessage(&hfdcan1, FDCAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
+        {
+            printf("[CAN] RX id=0x%03lX dlc=%lu ts=%lu data=",
+                   (unsigned long)rxHeader.Identifier,
+                   (unsigned long)rxHeader.DataLength,
+                   (unsigned long)rxHeader.RxTimestamp);
+            for (uint32_t i = 0; i < rxHeader.DataLength; i++)
+            {
+                printf("%02X ", rxData[i]);
+            }
+            printf("(fill=%lu)\r\n", (unsigned long)rxFillLevel);
+        }
+        else
+        {
+            printf("[CAN] RX read failed\r\n");
+        }
+    }
+}
+
+/* Plain I2C bus scanner, independent of any mux/channel selection -- just
+ * sweeps every 7-bit address on the given bus and prints whatever ACKs.
+ * Standard scan range 0x03-0x77 (0x00-0x07 and 0x78-0x7F are reserved).
+ * Runs forever, one full sweep per iteration, 500 ms between sweeps. */
+static void i2c_bus_scan(I2C_HandleTypeDef *hi2c)
+{
+    printf("=== I2C bus scan START (addr range 0x03-0x77) ===\r\n");
+    while (1)
+    {
+        uint8_t foundCount = 0;
+        for (uint8_t addr = 0x03; addr <= 0x77; addr++)
+        {
+            if (HAL_I2C_IsDeviceReady(hi2c, (uint16_t)(addr << 1), 3, 10) == HAL_OK)
+            {
+                printf("[I2C] found device at 0x%02X\r\n", addr);
+                foundCount++;
+            }
+        }
+        if (foundCount == 0)
+        {
+            printf("[I2C] no devices found\r\n");
+        }
+        else
+        {
+            printf("[I2C] scan done, %u device(s) found\r\n", foundCount);
+        }
+        HAL_Delay(500);
+    }
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -139,14 +201,18 @@ int main(void)
 
   //FDC1004_ManualTest(&hi2c1);
   //manual_test_pt1000();
-  //run_pte7300_hardware_test();
+
   //run_pte7300_i2c_scanner();
+  //i2c_bus_scan(&hi2c1);
   //run_pte7300_channel0_scope_probe();
   //manual_test_ctl190();  /* one-shot ~32s test, then returns */
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+  HAL_Delay(5000);
+
   while (1)
   {
     /* USER CODE END WHILE */
@@ -155,12 +221,14 @@ int main(void)
 
 	  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
 	  HAL_Delay(1000);
+	  //run_pte7300_hardware_test();
 	  //FDC1004_ManualTest(&hi2c1);
 
 	  //Valve_ManualTest();    /* TODO: verify Sol1-4/BV_CTRL wiring & NC/NO assumptions before running, see Drivers/Valve/Impl/ValveList.cpp */
 
 	  {
-	    static uint8_t canTestCounter = 0x50;  /* nonzero start: makes stale/zeroed reads obvious */
+
+	    static uint8_t canTestCounter = 0x01;  // nonzero start: makes stale/zeroed reads obvious
 
 	    FDCAN_TxHeaderTypeDef txHeader;
 	    txHeader.Identifier          = CANBUS_TEST_TX_ID;
@@ -173,6 +241,7 @@ int main(void)
 	    txHeader.TxEventFifoControl  = FDCAN_NO_TX_EVENTS;
 	    txHeader.MessageMarker       = 0;
 
+
 	    /*  HAL_FDCAN_AddMessageToTxFifoQ always word-copies 4 bytes regardless
 	     *  of DataLength, so the buffer must be padded to a 4-byte boundary
 	     *  even though only 1 byte is actually put on the wire (per DLC). */
@@ -184,31 +253,23 @@ int main(void)
 	    }
 	    else
 	    {
-	      printf("[CAN] TX failed\r\n");
+	      /* Decode ErrorCode so we know exactly which of the 3 possible
+	       * HAL_FDCAN_AddMessageToTxFifoQ failure paths this is:
+	       *   NOT_STARTED (0x08) -> hfdcan1.State != HAL_FDCAN_STATE_BUSY
+	       *   PARAM       (0x20) -> TXBC.TFQS == 0 (Tx FIFO/Queue never
+	       *                          got allocated in message RAM)
+	       *   FIFO_FULL   (0x200)-> queue genuinely full (32 pending,
+	       *                          nothing ever actually transmitted) */
+	      printf("[CAN] TX failed, ErrorCode=0x%08lX state=%d\r\n",
+	             (unsigned long)hfdcan1.ErrorCode, (int)hfdcan1.State);
 	    }
 
 	    /*  Drain the whole FIFO each iteration -- popping only one message
 	     *  per loop let the queue back up (self-reception + peer traffic
 	     *  arriving faster than we drained it), so we kept reading stale
 	     *  entries instead of the newest one. */
-	    uint32_t rxFillLevel;
-	    while ((rxFillLevel = HAL_FDCAN_GetRxFifoFillLevel(&hfdcan1, FDCAN_RX_FIFO0)) > 0)
-	    {
-	      FDCAN_RxHeaderTypeDef rxHeader;
-	      uint8_t rxData[8] = {0};
-	      if (HAL_FDCAN_GetRxMessage(&hfdcan1, FDCAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
-	      {
-	        printf("[CAN] RX id=0x%03lX data=0x%02X fill=%lu dlc=%lu ts=%lu\r\n",
-	               (unsigned long)rxHeader.Identifier, rxData[0], (unsigned long)rxFillLevel,
-	               (unsigned long)rxHeader.DataLength, (unsigned long)rxHeader.RxTimestamp);
-	      }
-	      else
-	      {
-		      printf("[CAN] TX failed\r\n");
-
-	      }
-	    }
-
+	    print_fdcan_rx_messages();
+	    /*
 	    {
 	      FDCAN_ProtocolStatusTypeDef protoStatus;
 	      FDCAN_ErrorCountersTypeDef  errCounters;
@@ -221,7 +282,7 @@ int main(void)
 	             (unsigned long)hfdcan1.msgRam.StandardFilterSA,
 	             (unsigned long)hfdcan1.msgRam.RxFIFO0SA,
 	             (unsigned long)hfdcan1.msgRam.TxFIFOQSA);
-	    }
+	    }*/
 	  }
 
 
@@ -369,10 +430,10 @@ static void MX_FDCAN1_Init(void)
   hfdcan1.Init.AutoRetransmission = DISABLE;
   hfdcan1.Init.TransmitPause = DISABLE;
   hfdcan1.Init.ProtocolException = DISABLE;
-  hfdcan1.Init.NominalPrescaler = 16;
+  hfdcan1.Init.NominalPrescaler = 1;
   hfdcan1.Init.NominalSyncJumpWidth = 1;
-  hfdcan1.Init.NominalTimeSeg1 = 1;
-  hfdcan1.Init.NominalTimeSeg2 = 1;
+  hfdcan1.Init.NominalTimeSeg1 = 23;
+  hfdcan1.Init.NominalTimeSeg2 = 8;
   hfdcan1.Init.DataPrescaler = 1;
   hfdcan1.Init.DataSyncJumpWidth = 1;
   hfdcan1.Init.DataTimeSeg1 = 1;
@@ -523,9 +584,9 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 239; // TIM4 clock is 240 MHz (APB1 timer clock) -> 1 MHz (1 us) tick
+  htim4.Init.Prescaler = 0;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 19999; // 20 ms frame (50 Hz) for standard RC servo PWM
+  htim4.Init.Period = 65535;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)
