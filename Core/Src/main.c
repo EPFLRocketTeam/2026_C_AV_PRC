@@ -199,7 +199,7 @@ int main(void)
   MX_ADC3_Init();
   /* USER CODE BEGIN 2 */
 
-  //FDC1004_ManualTest(&hi2c1);
+
   //manual_test_pt1000();
 
   //run_pte7300_i2c_scanner();
@@ -211,7 +211,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  HAL_Delay(5000);
+  HAL_Delay(1000);
 
   while (1)
   {
@@ -220,13 +220,13 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
 	  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
-	  HAL_Delay(1000);
+	  HAL_Delay(100);
 	  //run_pte7300_hardware_test();
-	  //FDC1004_ManualTest(&hi2c1);
+	  FDC1004_ManualTest(&hi2c1);
 
 	  //Valve_ManualTest();    /* TODO: verify Sol1-4/BV_CTRL wiring & NC/NO assumptions before running, see Drivers/Valve/Impl/ValveList.cpp */
 
-	  {
+	  /*{
 
 	    static uint8_t canTestCounter = 0x01;  // nonzero start: makes stale/zeroed reads obvious
 
@@ -240,11 +240,12 @@ int main(void)
 	    txHeader.FDFormat            = FDCAN_CLASSIC_CAN;
 	    txHeader.TxEventFifoControl  = FDCAN_NO_TX_EVENTS;
 	    txHeader.MessageMarker       = 0;
-
+*/
 
 	    /*  HAL_FDCAN_AddMessageToTxFifoQ always word-copies 4 bytes regardless
 	     *  of DataLength, so the buffer must be padded to a 4-byte boundary
 	     *  even though only 1 byte is actually put on the wire (per DLC). */
+	  /*
 	    uint8_t txData[4] = { canTestCounter, 0, 0, 0 };
 	    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &txHeader, txData) == HAL_OK)
 	    {
@@ -252,7 +253,7 @@ int main(void)
 	      canTestCounter++;
 	    }
 	    else
-	    {
+	    {*/
 	      /* Decode ErrorCode so we know exactly which of the 3 possible
 	       * HAL_FDCAN_AddMessageToTxFifoQ failure paths this is:
 	       *   NOT_STARTED (0x08) -> hfdcan1.State != HAL_FDCAN_STATE_BUSY
@@ -260,16 +261,16 @@ int main(void)
 	       *                          got allocated in message RAM)
 	       *   FIFO_FULL   (0x200)-> queue genuinely full (32 pending,
 	       *                          nothing ever actually transmitted) */
-	      printf("[CAN] TX failed, ErrorCode=0x%08lX state=%d\r\n",
+	      /*printf("[CAN] TX failed, ErrorCode=0x%08lX state=%d\r\n",
 	             (unsigned long)hfdcan1.ErrorCode, (int)hfdcan1.State);
-	    }
+	    }*/
 
 	    /*  Drain the whole FIFO each iteration -- popping only one message
 	     *  per loop let the queue back up (self-reception + peer traffic
 	     *  arriving faster than we drained it), so we kept reading stale
 	     *  entries instead of the newest one. */
-	    print_fdcan_rx_messages();
-	    /*
+	    /*print_fdcan_rx_messages();
+
 	    {
 	      FDCAN_ProtocolStatusTypeDef protoStatus;
 	      FDCAN_ErrorCountersTypeDef  errCounters;
@@ -282,8 +283,8 @@ int main(void)
 	             (unsigned long)hfdcan1.msgRam.StandardFilterSA,
 	             (unsigned long)hfdcan1.msgRam.RxFIFO0SA,
 	             (unsigned long)hfdcan1.msgRam.TxFIFOQSA);
-	    }*/
-	  }
+	    }
+	  }*/
 
 
 

@@ -135,92 +135,101 @@ Status SensataPte7300::ensure_mux_channel_selected()
     return mux_.select_channel_verified(config_.mux_channel);
 }
 
-// ASSUMED PROTOCOL — see header for debug guidance.
-//
-// Sequence:
-//   1. Write trigger_cmd to sensor address (START a new on-demand cycle).
-//   2. Wait k_pte7300_trigger_delay_ms (< 1 ms per datasheet; 1 ms = safe margin).
-//   3. Read frame_len bytes from sensor address.
-//
-// If the sensor NACKs step 1, try removing the trigger write and going straight
-// to step 3 — some sensors start a conversion on any I2C address match.
-Status SensataPte7300::trigger_and_read(uint8_t trigger_cmd, uint8_t* buf, size_t frame_len)
+// CONFIRMED register protocol — see header. Two separate I2C transactions:
+// write the register address, then a fresh read of byte_len bytes.
+Status SensataPte7300::read_register(uint8_t reg_addr, uint8_t* buf, size_t byte_len)
 {
     const uint16_t addr = to_hal_addr(config_.sensor_address_7bit);
 
-    // Step 1: trigger
-    auto s = HAL_I2C_Master_Transmit(
-        hi2c_, addr, &trigger_cmd, 1, config_.i2c_timeout_ms);
+    auto s = HAL_I2C_Master_Transmit(hi2c_, addr, &reg_addr, 1, config_.i2c_timeout_ms);
     if (s != HAL_OK) return hal_to_status(s);
 
-    // Step 2: wait for conversion
-    HAL_Delay(k_pte7300_trigger_delay_ms);
-
-    // Step 3: read
-    s = HAL_I2C_Master_Receive(
-        hi2c_, addr, buf, static_cast<uint16_t>(frame_len), config_.i2c_timeout_ms);
+    s = HAL_I2C_Master_Receive(hi2c_, addr, buf, static_cast<uint16_t>(byte_len), config_.i2c_timeout_ms);
     return hal_to_status(s);
 }
 
-// CRC-8 — ASSUMED parameters (see header).
-// Covers data[0 .. frame_len-2]; data[frame_len-1] is the received CRC byte.
-bool SensataPte7300::verify_crc(const uint8_t* data, size_t frame_len)
+// [reg_addr, cmd_lo, cmd_hi] written as a single transaction.
+Status SensataPte7300::write_command(uint16_t cmd)
 {
-    if (frame_len < 2) return false;
-
-    uint8_t crc = k_crc8_init;
-    for (size_t i = 0; i < frame_len - 1; i++) {
-        crc ^= data[i];
-        for (int bit = 0; bit < 8; bit++) {
-            crc = (crc & 0x80u)
-                ? static_cast<uint8_t>((crc << 1) ^ k_crc8_polynomial)
-                : static_cast<uint8_t>(crc << 1);
-        }
-    }
-    return crc == data[frame_len - 1];
+    const uint16_t addr = to_hal_addr(config_.sensor_address_7bit);
+    uint8_t frame[3] = {
+        k_pte7300_reg_cmd,
+        static_cast<uint8_t>(cmd & 0x00FFu),        // low byte first
+        static_cast<uint8_t>((cmd >> 8) & 0x00FFu)  // high byte second
+    };
+    return hal_to_status(HAL_I2C_Master_Transmit(hi2c_, addr, frame, sizeof(frame), config_.i2c_timeout_ms));
 }
 
 // ---------------------------------------------------------------------------
 // Sensor reads
 //
-// ASSUMED frame layout for read_measurement_raw:
-//   buf[0] = pressure_H       buf[1] = pressure_L
-//   buf[2] = bridge_temp_H    buf[3] = bridge_temp_L
-//   buf[4] = status_H         buf[5] = status_L
-//   buf[6] = CRC-8  (only when use_crc = true)
-//
-// All int16 values are big-endian, signed (direct 2's complement).
-// 15-bit resolution: the MSB of each int16 is the sign bit.
-//
-// ASSUMED frame layout for read_device_serial:
-//   buf[0..3] = serial (int32, big-endian)
-//   buf[4]    = CRC-8  (only when use_crc = true)
+// CONFIRMED sequence for read_measurement_raw (ported from the reference
+// driver): write START to the CMD register, wait for the conversion, then
+// read DSP_T (temperature), DSP_S (pressure) and STATUS as separate 16-bit
+// little-endian register reads.
 // ---------------------------------------------------------------------------
 
 Result<Pte7300Measurement> SensataPte7300::read_measurement_raw()
 {
+    last_step_ = Pte7300Step::MuxSelect;
     Status s = ensure_mux_channel_selected();
     if (s != Status::Ok) return {s, {}};
 
-    const size_t frame_len = config_.use_crc
-        ? k_measurement_with_crc
-        : k_measurement_data_bytes;
-
-    uint8_t buf[k_measurement_with_crc] = {};
-    s = trigger_and_read(k_cmd_trigger_measurement, buf, frame_len);
-    if (s != Status::Ok) return {s, {}};
-
-    if (config_.use_crc && !verify_crc(buf, frame_len)) {
-        return {Status::CrcError, {}};
+    if (config_.use_crc) {
+        // CRC-mode framing (address|1, CRC4 header + CRC8 payload) is not
+        // yet ported -- see SensorConfig::use_crc.
+        return {Status::ProtocolNotDefined, {}};
     }
 
+    // EXPERIMENT: the CMD/START write NACKs even though a bare register
+    // read (read_device_serial(), same mechanism) succeeds. Rather than
+    // guess why, test the simplest explanation first: the sensor free-runs
+    // continuously and result registers can just be read directly, exactly
+    // like SERIAL already does -- no explicit trigger needed. If DSP_T/
+    // DSP_S/STATUS read cleanly without ever writing START, this confirms
+    // it and write_command()/k_pte7300_cmd_start can stay unused (or be
+    // reserved for explicit sleep/idle/reset control instead).
+    // last_step_ = Pte7300Step::WriteStart;
+    // s = write_command(k_pte7300_cmd_start);
+    // if (s != Status::Ok) return {s, {}};
+    // HAL_Delay(k_pte7300_start_delay_ms);
+
+    last_step_ = Pte7300Step::ReadDspT;
+    uint8_t tBuf[2] = {};
+    s = read_register(k_pte7300_reg_dsp_t, tBuf, sizeof(tBuf));
+    if (s != Status::Ok) return {s, {}};
+
+    last_step_ = Pte7300Step::ReadDspS;
+    uint8_t pBuf[2] = {};
+    s = read_register(k_pte7300_reg_dsp_s, pBuf, sizeof(pBuf));
+    if (s != Status::Ok) return {s, {}};
+
+    last_step_ = Pte7300Step::ReadStatus;
+    uint8_t stBuf[2] = {};
+    s = read_register(k_pte7300_reg_status, stBuf, sizeof(stBuf));
+    if (s != Status::Ok) return {s, {}};
+
+    last_step_ = Pte7300Step::None; // full success
+
+    // Little-endian: low byte first, high byte second.
     Pte7300Measurement m;
-    m.pressure_raw          = static_cast<int16_t>(
-        (static_cast<uint16_t>(buf[0]) << 8) | buf[1]);
     m.bridge_temperature_raw = static_cast<int16_t>(
-        (static_cast<uint16_t>(buf[2]) << 8) | buf[3]);
-    m.status_raw            = static_cast<int16_t>(
-        (static_cast<uint16_t>(buf[4]) << 8) | buf[5]);
+        (static_cast<uint16_t>(tBuf[1]) << 8) | tBuf[0]);
+    m.pressure_raw = static_cast<int16_t>(
+        (static_cast<uint16_t>(pBuf[1]) << 8) | pBuf[0]);
+    m.status_raw = static_cast<int16_t>(
+        (static_cast<uint16_t>(stBuf[1]) << 8) | stBuf[0]);
+
+    m.pressure_bar = (static_cast<float>(m.pressure_raw) - k_pte7300_pressure_counts_min)
+        * config_.pressure_full_scale_bar
+        / (k_pte7300_pressure_counts_max - k_pte7300_pressure_counts_min);
+    m.temperature_c = static_cast<float>(m.bridge_temperature_raw) * k_pte7300_temp_scale
+        + k_pte7300_temp_offset;
+
+    m.raw_len = 6;
+    m.raw_bytes[0] = tBuf[0];  m.raw_bytes[1] = tBuf[1];
+    m.raw_bytes[2] = pBuf[0];  m.raw_bytes[3] = pBuf[1];
+    m.raw_bytes[4] = stBuf[0]; m.raw_bytes[5] = stBuf[1];
 
     return {Status::Ok, m};
 }
@@ -244,28 +253,28 @@ Result<int16_t> SensataPte7300::read_status_raw()
     return {r.status, r.value.status_raw};
 }
 
+// CONFIRMED: SERIAL register is 2 little-endian 16-bit words (4 bytes).
+// serial = (word1 << 16) | word0.
 Result<uint32_t> SensataPte7300::read_device_serial()
 {
+    last_step_ = Pte7300Step::MuxSelect;
     Status s = ensure_mux_channel_selected();
     if (s != Status::Ok) return {s, 0};
 
-    const size_t frame_len = config_.use_crc
-        ? k_serial_with_crc
-        : k_serial_data_bytes;
-
-    uint8_t buf[k_serial_with_crc] = {};
-    s = trigger_and_read(k_cmd_trigger_serial, buf, frame_len);
-    if (s != Status::Ok) return {s, 0};
-
-    if (config_.use_crc && !verify_crc(buf, frame_len)) {
-        return {Status::CrcError, 0};
+    if (config_.use_crc) {
+        return {Status::ProtocolNotDefined, 0};
     }
 
-    uint32_t serial =
-        (static_cast<uint32_t>(buf[0]) << 24) |
-        (static_cast<uint32_t>(buf[1]) << 16) |
-        (static_cast<uint32_t>(buf[2]) <<  8) |
-         static_cast<uint32_t>(buf[3]);
+    last_step_ = Pte7300Step::ReadSerial;
+    uint8_t buf[4] = {};
+    s = read_register(k_pte7300_reg_serial, buf, sizeof(buf));
+    if (s != Status::Ok) return {s, 0};
+
+    last_step_ = Pte7300Step::None; // full success
+
+    uint16_t word0 = static_cast<uint16_t>((static_cast<uint16_t>(buf[1]) << 8) | buf[0]);
+    uint16_t word1 = static_cast<uint16_t>((static_cast<uint16_t>(buf[3]) << 8) | buf[2]);
+    uint32_t serial = (static_cast<uint32_t>(word1) << 16) | static_cast<uint32_t>(word0);
 
     return {Status::Ok, serial};
 }

@@ -1,4 +1,4 @@
-../Drivers/SensataPte7300/Impl/../SensataPte7300.hpp:77:26:constexpr uint8_t pca9547_channel_control_byte(uint8_t)	16	static
+../Drivers/SensataPte7300/Impl/../SensataPte7300.hpp:103:26:constexpr uint8_t pca9547_channel_control_byte(uint8_t)	16	static
 ../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:5:27:constexpr uint16_t to_hal_addr(uint8_t)	16	static
 ../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:10:15:Status hal_to_status(HAL_StatusTypeDef)	16	static
 ../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:21:1:Pca9547Mux::Pca9547Mux(I2C_HandleTypeDef*, uint8_t, uint32_t)	24	static
@@ -16,10 +16,10 @@
 ../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:116:8:Status SensataPte7300::disable_mux_channels()	16	static
 ../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:121:17:Result<unsigned char> SensataPte7300::read_mux_control_register()	24	static
 ../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:130:8:Status SensataPte7300::ensure_mux_channel_selected()	16	static
-../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:147:8:Status SensataPte7300::trigger_and_read(uint8_t, uint8_t*, size_t)	40	static
-../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:167:6:bool SensataPte7300::verify_crc(const uint8_t*, size_t)	40	static
-../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:200:28:Result<Pte7300Measurement> SensataPte7300::read_measurement_raw()	40	static
-../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:229:17:Result<short int> SensataPte7300::read_pressure_raw()	32	static
-../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:235:17:Result<short int> SensataPte7300::read_bridge_temperature_raw()	32	static
-../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:241:17:Result<short int> SensataPte7300::read_status_raw()	32	static
-../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:247:18:Result<long unsigned int> SensataPte7300::read_device_serial()	40	static
+../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:140:8:Status SensataPte7300::read_register(uint8_t, uint8_t*, size_t)	40	static
+../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:152:8:Status SensataPte7300::write_command(uint16_t)	32	static
+../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:172:28:Result<Pte7300Measurement> SensataPte7300::read_measurement_raw()	64	static
+../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:238:17:Result<short int> SensataPte7300::read_pressure_raw()	48	static
+../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:244:17:Result<short int> SensataPte7300::read_bridge_temperature_raw()	48	static
+../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:250:17:Result<short int> SensataPte7300::read_status_raw()	48	static
+../Drivers/SensataPte7300/Impl/SensataPte7300.cpp:258:18:Result<long unsigned int> SensataPte7300::read_device_serial()	32	static

@@ -1,5 +1,7 @@
-../Drivers/SensataPte7300/Impl/SensataPte7300HardwareTest.cpp:48:20:const char* status_str(Status)	11
-../Drivers/SensataPte7300/Impl/SensataPte7300HardwareTest.cpp:65:13:void log_mux_register(SensataPte7300&)	3
-../Drivers/SensataPte7300/Impl/SensataPte7300HardwareTest.cpp:81:6:void run_pte7300_hardware_test()	13
-../Drivers/SensataPte7300/Impl/SensataPte7300HardwareTest.cpp:219:6:void run_pte7300_i2c_scanner()	6
-../Drivers/SensataPte7300/Impl/SensataPte7300HardwareTest.cpp:267:6:void run_pte7300_channel0_scope_probe()	4
+../Drivers/SensataPte7300/Impl/../SensataPte7300.hpp:218:17:Pte7300Step SensataPte7300::last_step() const	1
+../Drivers/SensataPte7300/Impl/SensataPte7300HardwareTest.cpp:52:20:const char* status_str(Status)	11
+../Drivers/SensataPte7300/Impl/SensataPte7300HardwareTest.cpp:69:20:const char* step_str(Pte7300Step)	8
+../Drivers/SensataPte7300/Impl/SensataPte7300HardwareTest.cpp:83:13:void log_mux_register(SensataPte7300&)	3
+../Drivers/SensataPte7300/Impl/SensataPte7300HardwareTest.cpp:99:6:void run_pte7300_hardware_test()	15
+../Drivers/SensataPte7300/Impl/SensataPte7300HardwareTest.cpp:248:6:void run_pte7300_i2c_scanner()	6
+../Drivers/SensataPte7300/Impl/SensataPte7300HardwareTest.cpp:296:6:void run_pte7300_channel0_scope_probe()	4

@@ -33,6 +33,10 @@ static constexpr uint8_t  k_test_sensor_address  = 0x6D; // 7-bit, excluding CRC
 // Set to false to skip CRC and log raw bytes for protocol analysis.
 static constexpr bool     k_test_use_crc         = false;
 
+// 100 bar for a tank sensor, 400 bar for a COPV sensor (per DPRComputer
+// reference project) -- set to match whichever physical part is under test.
+static constexpr float    k_test_pressure_full_scale_bar = 100.0f;
+
 #define LOG(fmt, ...) printf("[PTE7300] " fmt "\r\n", ##__VA_ARGS__)
 
 // ---------------------------------------------------------------------------
@@ -62,6 +66,20 @@ static const char* status_str(Status s)
     }
 }
 
+static const char* step_str(Pte7300Step step)
+{
+    switch (step) {
+        case Pte7300Step::None:        return "None";
+        case Pte7300Step::MuxSelect:   return "MuxSelect";
+        case Pte7300Step::WriteStart:  return "WriteStart";
+        case Pte7300Step::ReadDspT:    return "ReadDspT";
+        case Pte7300Step::ReadDspS:    return "ReadDspS";
+        case Pte7300Step::ReadStatus:  return "ReadStatus";
+        case Pte7300Step::ReadSerial:  return "ReadSerial";
+        default:                       return "Unknown";
+    }
+}
+
 static void log_mux_register(SensataPte7300& drv)
 {
     auto r = drv.read_mux_control_register();
@@ -86,6 +104,7 @@ void run_pte7300_hardware_test()
     cfg.sensor_address_7bit = k_test_sensor_address;
     cfg.i2c_timeout_ms      = 10;
     cfg.use_crc             = k_test_use_crc;
+    cfg.pressure_full_scale_bar = k_test_pressure_full_scale_bar;
 
     SensataPte7300 drv(&hi2c1, cfg);
 
@@ -159,7 +178,7 @@ void run_pte7300_hardware_test()
     // ------------------------------------------------------------------
     LOG("[5] read_measurement_raw ...");
     auto meas = drv.read_measurement_raw();
-    LOG("  status = %s", status_str(meas.status));
+    LOG("  status = %s  (failed at step: %s)", status_str(meas.status), step_str(drv.last_step()));
 
     if (meas.status == Status::Ok) {
         LOG("  pressure_raw           = %d (0x%04X)",
@@ -171,6 +190,17 @@ void run_pte7300_hardware_test()
         LOG("  status_raw             = %d (0x%04X)",
             static_cast<int>(meas.value.status_raw),
             static_cast<uint16_t>(meas.value.status_raw));
+        LOG("  pressure               = %.3f bar", static_cast<double>(meas.value.pressure_bar));
+        LOG("  temperature            = %.2f C", static_cast<double>(meas.value.temperature_c));
+
+        {
+            char hexbuf[32] = {0};
+            int  pos = 0;
+            for (uint8_t i = 0; i < meas.value.raw_len && pos < (int)sizeof(hexbuf) - 3; i++) {
+                pos += snprintf(hexbuf + pos, sizeof(hexbuf) - pos, "%02X ", meas.value.raw_bytes[i]);
+            }
+            LOG("  raw frame (%u bytes) = %s", meas.value.raw_len, hexbuf);
+        }
 
     } else if (meas.status == Status::CrcError) {
         LOG("  CRC failed — retry with k_test_use_crc=false to see raw bytes");
@@ -178,9 +208,8 @@ void run_pte7300_hardware_test()
 
     } else if (meas.status == Status::I2cError) {
         LOG("  I2cError on measurement read");
-        LOG("  ASSUMED trigger byte is 0xAC — if sensor NACKs it, try:");
-        LOG("    a) Remove trigger write and read directly (comment out in trigger_and_read)");
-        LOG("    b) Try trigger byte 0xF3, 0x00, or 0x01");
+        LOG("  Register protocol (CMD/DSP_T/DSP_S/STATUS) is confirmed from");
+        LOG("  a working reference driver -- check wiring/address, not the protocol");
 
     } else if (meas.status == Status::Timeout) {
         LOG("  Timeout — increase i2c_timeout_ms or check clock stretching");
@@ -275,7 +304,9 @@ void run_pte7300_channel0_scope_probe()
         static_cast<unsigned long>(k_probe_idle_ms));
 
     const uint16_t addr = static_cast<uint16_t>(k_test_sensor_address) << 1;
-    uint8_t        byte = k_cmd_trigger_measurement;
+    // Any register address works to generate bus traffic for the scope --
+    // use the pressure ("DSP_S") register.
+    uint8_t        byte = k_pte7300_reg_dsp_s;
 
     while (true) {
         // Re-verify (not just re-select) the channel at the start of every

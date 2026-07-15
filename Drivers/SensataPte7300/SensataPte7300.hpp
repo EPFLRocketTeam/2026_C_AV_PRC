@@ -35,6 +35,19 @@ struct Result {
     T      value;
 };
 
+// Identifies which internal step of read_measurement_raw()/read_device_serial()
+// a non-Ok Result came from -- a single I2cError doesn't say whether the mux
+// select, the START write, or one specific register read is the failing one.
+enum class Pte7300Step : uint8_t {
+    None,
+    MuxSelect,
+    WriteStart,
+    ReadDspT,
+    ReadDspS,
+    ReadStatus,
+    ReadSerial
+};
+
 // ---------------------------------------------------------------------------
 // Driver configuration
 // ---------------------------------------------------------------------------
@@ -43,15 +56,28 @@ struct SensorConfig {
     uint8_t  mux_address_7bit        = 0x70; // PCA9547 default if A2=A1=A0=0
     uint8_t  mux_channel             = 0;    // 0..7
     uint8_t  sensor_address_7bit     = 0x6C; // PTE7300 7-bit address (excluding CRC)
-    bool     use_crc                 = true;
+    // CRC-mode framing (address|1, CRC4 header + CRC8 payload) is not yet
+    // ported -- read_measurement_raw()/read_device_serial() return
+    // Status::ProtocolNotDefined if this is true. Default false so the
+    // confirmed no-CRC register protocol is used unless explicitly opted in.
+    bool     use_crc                 = false;
     uint32_t i2c_timeout_ms          = 10;
-    float    pressure_full_scale_bar = 16.0f; // configurable per part number
+    // Full-scale pressure in bar for this specific sensor's calibrated
+    // range -- CONFIRMED per DPRComputer::read_pressure() (reference
+    // project): 100 bar for tank sensors, 400 bar for a COPV sensor. Only
+    // this scale changes between part numbers; the raw-counts range and
+    // temperature formula are the same for all of them.
+    float    pressure_full_scale_bar = 100.0f;
 };
 
 struct Pte7300Measurement {
     int16_t pressure_raw;
     int16_t bridge_temperature_raw;
     int16_t status_raw;
+    float   pressure_bar;    // computed from pressure_raw, see k_pte7300_* constants
+    float   temperature_c;   // computed from bridge_temperature_raw
+    uint8_t raw_bytes[7]; // pre-parse frame bytes, for protocol debugging
+    uint8_t raw_len;      // valid bytes in raw_bytes (6, or 7 with CRC)
 };
 
 // ---------------------------------------------------------------------------
@@ -90,54 +116,51 @@ static constexpr uint8_t k_pte7300_default_address_7bit    = 0x6C;
 static constexpr uint8_t k_pte7300_address_with_crc_listed = 0xDA;
 
 // ---------------------------------------------------------------------------
-// PTE7300 protocol constants  (ASSUMED — not in the public product brief)
-//
-// The PTE7300 commercial datasheet does not publish its I2C register map.
-// All values below are derived from common Sensata I2C sensor patterns.
-//
-// HOW TO DEBUG ON HARDWARE:
-//   1. Connect a logic analyzer to the I2C bus.
-//   2. Run run_pte7300_hardware_test() and capture the bus traffic.
-//   3. Compare the trigger byte (0xAC) and the response bytes against what
-//      the sensor actually returns.
-//   4. If the sensor NACKs the trigger write, try commenting out the trigger
-//      write in read_measurement_raw() and reading directly — some sensors
-//      respond to a bare read without a prior command byte.
-//   5. If CRC fails, try toggling use_crc=false and log raw bytes.
+// PTE7300 register map  (CONFIRMED — ported from a working Teensy/Arduino
+// driver (PTE7300_I2C.cpp, EPFL ERT FHI 2024-2025 DPR project) that read
+// this exact sensor successfully. Not a trigger+fixed-frame protocol: the
+// PTE7300 exposes memory-mapped 16-bit registers. A read is two separate
+// I2C transactions -- write the 1-byte register address, then a fresh
+// START to read N*2 bytes back. Each 16-bit word is little-endian on the
+// wire (low byte first, high byte second) -- the opposite of what this
+// driver originally assumed.
 // ---------------------------------------------------------------------------
 
-// ASSUMED: trigger byte to start an on-demand single-cycle measurement.
-// 0xAC is used by several Sensata/Honeywell I2C pressure sensors.
-// Alternatives to try if this fails: 0xF3, 0x00, or no trigger at all.
-static constexpr uint8_t k_cmd_trigger_measurement = 0xAC;
+static constexpr uint8_t k_pte7300_reg_cmd    = 0x22; // command register (write-only)
+static constexpr uint8_t k_pte7300_reg_serial = 0x50; // serial number, 2 words (32-bit)
+static constexpr uint8_t k_pte7300_reg_dsp_t  = 0x2E; // temperature result
+static constexpr uint8_t k_pte7300_reg_dsp_s  = 0x30; // pressure ("signal") result
+static constexpr uint8_t k_pte7300_reg_status = 0x36; // status word
+static constexpr uint8_t k_pte7300_reg_adc_tc = 0x26; // raw ADC / temp-compensation (unused here)
 
-// ASSUMED: frame returned after a measurement trigger read.
-// Format: [press_H, press_L, temp_H, temp_L, status_H, status_L] big-endian
-// + 1 CRC byte at the end = 7 bytes total.
-// Alternative layout to try if this is wrong:
-//   [press_H, press_L, crc, temp_H, temp_L, crc, status_H, status_L, crc]
-static constexpr size_t k_measurement_data_bytes = 6;
-static constexpr size_t k_measurement_with_crc   = 7; // data + 1 trailing CRC
+// 16-bit command codes, written little-endian (low byte first) to
+// k_pte7300_reg_cmd as a single 3-byte transaction: [reg_addr, cmd_lo, cmd_hi].
+static constexpr uint16_t k_pte7300_cmd_start = 0x8B93; // start a single measurement cycle
+static constexpr uint16_t k_pte7300_cmd_sleep = 0x6C32;
+static constexpr uint16_t k_pte7300_cmd_idle  = 0x7BBA;
+static constexpr uint16_t k_pte7300_cmd_reset = 0xB169;
 
-// ASSUMED: device serial number frame.
-// Format: [serial_B3, serial_B2, serial_B1, serial_B0] big-endian + 1 CRC = 5 bytes.
-// ASSUMED: same trigger command as measurement; may need a different byte.
-static constexpr uint8_t k_cmd_trigger_serial  = 0xAC; // ASSUMED — may differ
-static constexpr size_t  k_serial_data_bytes   = 4;
-static constexpr size_t  k_serial_with_crc     = 5;
+// Delay between issuing START and reading the result registers. The
+// reference implementation didn't show this delay explicitly (it lived in
+// the caller, which wasn't available to port), so this value is a safe
+// margin, not a confirmed datasheet number -- tune down if a shorter delay
+// still reads cleanly.
+static constexpr uint32_t k_pte7300_start_delay_ms = 20;
 
-// ASSUMED: CRC-8 parameters (Dallas/Maxim style, common in I2C sensors).
-// Polynomial : 0x31
-// Init value : 0xFF
-// XOR out    : 0x00
-// No bit reflection
-// If CRC check always fails, try init=0x00 or polynomial=0x07 (SMBUS).
-static constexpr uint8_t k_crc8_polynomial = 0x31;
-static constexpr uint8_t k_crc8_init       = 0xFF;
+// ---------------------------------------------------------------------------
+// PTE7300 raw-to-engineering-units conversion  (CONFIRMED — ported from
+// DPRComputer::read_pressure() / read_temperature(), same reference
+// project). The raw-counts range is fixed regardless of part number; only
+// the full-scale pressure differs (SensorConfig::pressure_full_scale_bar):
+//   pressure_bar  = (pressure_raw - counts_min) * full_scale_bar
+//                   / (counts_max - counts_min)
+//   temperature_c = bridge_temperature_raw * temp_scale + temp_offset
+// ---------------------------------------------------------------------------
 
-// Delay between trigger write and data read (datasheet: response < 1 ms).
-// 1 ms provides margin; reduce to 0 if the sensor uses clock-stretching.
-static constexpr uint32_t k_pte7300_trigger_delay_ms = 1;
+static constexpr float k_pte7300_pressure_counts_min = -16000.0f;
+static constexpr float k_pte7300_pressure_counts_max =  16000.0f;
+static constexpr float k_pte7300_temp_scale           = 82.5f / 16000.0f;
+static constexpr float k_pte7300_temp_offset          = 42.5f;
 
 // ---------------------------------------------------------------------------
 // Pca9547Mux
@@ -190,17 +213,24 @@ public:
     Result<uint32_t>           read_device_serial();
     Result<Pte7300Measurement> read_measurement_raw();
 
+    // Which step the most recent read_measurement_raw()/read_device_serial()
+    // call failed at (Pte7300Step::None if the last call succeeded).
+    Pte7300Step last_step() const { return last_step_; }
+
 private:
     Status ensure_mux_channel_selected();
 
-    // Trigger + read helper: writes trigger_cmd, waits k_pte7300_trigger_delay_ms,
-    // then reads frame_len bytes into buf.
-    Status trigger_and_read(uint8_t trigger_cmd, uint8_t* buf, size_t frame_len);
+    // Register read: writes the 1-byte register address, then reads
+    // byte_len bytes back as a separate I2C transaction (matches the
+    // reference beginTransmission/write/endTransmission + requestFrom
+    // sequence -- two transactions, not a repeated start).
+    Status read_register(uint8_t reg_addr, uint8_t* buf, size_t byte_len);
 
-    // CRC-8 check: computes CRC over data[0..len-2] and compares with data[len-1].
-    bool verify_crc(const uint8_t* data, size_t frame_len);
+    // Command write: [k_pte7300_reg_cmd, cmd_lo, cmd_hi] in one transaction.
+    Status write_command(uint16_t cmd);
 
     Pca9547Mux         mux_;
     SensorConfig       config_;
     I2C_HandleTypeDef* hi2c_;
+    Pte7300Step        last_step_ = Pte7300Step::None;
 };
