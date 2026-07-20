@@ -223,6 +223,7 @@ Result<Pte7300Measurement> SensataPte7300::read_measurement_raw()
     m.pressure_bar = (static_cast<float>(m.pressure_raw) - k_pte7300_pressure_counts_min)
         * config_.pressure_full_scale_bar
         / (k_pte7300_pressure_counts_max - k_pte7300_pressure_counts_min);
+    m.pressure_psi = m.pressure_bar * k_bar_to_psi;
     m.temperature_c = static_cast<float>(m.bridge_temperature_raw) * k_pte7300_temp_scale
         + k_pte7300_temp_offset;
 

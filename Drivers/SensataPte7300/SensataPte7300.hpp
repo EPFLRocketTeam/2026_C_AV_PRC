@@ -75,6 +75,7 @@ struct Pte7300Measurement {
     int16_t bridge_temperature_raw;
     int16_t status_raw;
     float   pressure_bar;    // computed from pressure_raw, see k_pte7300_* constants
+    float   pressure_psi;    // pressure_bar converted to psi
     float   temperature_c;   // computed from bridge_temperature_raw
     uint8_t raw_bytes[7]; // pre-parse frame bytes, for protocol debugging
     uint8_t raw_len;      // valid bytes in raw_bytes (6, or 7 with CRC)
@@ -161,6 +162,9 @@ static constexpr float k_pte7300_pressure_counts_min = -16000.0f;
 static constexpr float k_pte7300_pressure_counts_max =  16000.0f;
 static constexpr float k_pte7300_temp_scale           = 82.5f / 16000.0f;
 static constexpr float k_pte7300_temp_offset          = 42.5f;
+
+// 1 bar = 14.5037738 psi (exact, since 1 bar = 100000 Pa and 1 psi = 6894.757... Pa).
+static constexpr float k_bar_to_psi = 14.5037738f;
 
 // ---------------------------------------------------------------------------
 // Pca9547Mux

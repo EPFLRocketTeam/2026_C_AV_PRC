@@ -16,6 +16,15 @@ extern "C" {
 void run_pte7300_hardware_test();
 
 /**
+ * @brief One-shot PTE7300 data read + print: pressure (bar) and
+ * temperature (C) only -- no mux probing, channel walk, serial number, or
+ * hints. Unlike run_pte7300_hardware_test(), this does not loop or block:
+ * call it repeatedly from the main loop (same pattern as
+ * FDC1004_ManualTest()) to get a continuous data stream.
+ */
+void pte7300_print_data();
+
+/**
  * @brief Continuous I2C bus scanner across every PCA9547 mux channel.
  *
  * Selects each mux channel (0..7) in turn and probes every 7-bit address

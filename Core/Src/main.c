@@ -44,6 +44,20 @@
 #define CANBUS_TEST_TX_ID   0x100u   /*  PRC -> FC  */
 #define CANBUS_TEST_RX_ID   0x101u   /*  FC -> PRC  */
 
+/* PRB_CMD_VALVES (FC -> PRB): manual valve override, per ICD.
+ * data[0] = (valve_id << 4) | state, data[1] = magic byte.
+ * TODO: PRB_VALVE_MAGIC value is a placeholder -- confirm the real magic
+ * byte with whoever owns the ICD before relying on this for real testing. */
+#define PRB_CMD_VALVES_ID   0x211u
+#define PRB_VALVE_MAGIC     0xF1u
+
+#define PRB_VALVE_ID_SOL1   0xAu
+#define PRB_VALVE_ID_SOL2   0xBu
+#define PRB_VALVE_ID_SOL3   0xCu
+#define PRB_VALVE_ID_SOL4   0xDu
+#define PRB_VALVE_STATE_OPEN    0x1u
+#define PRB_VALVE_STATE_CLOSED  0x0u
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -52,6 +66,7 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc3;
 
 FDCAN_HandleTypeDef hfdcan1;
@@ -68,6 +83,7 @@ TIM_HandleTypeDef htim4;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void PeriphCommonClock_Config(void);
 static void MPU_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_FDCAN1_Init(void);
@@ -75,6 +91,7 @@ static void MX_I2C1_Init(void);
 static void MX_SDMMC1_SD_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_ADC3_Init(void);
+static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -95,19 +112,54 @@ int _write(int file, char *ptr, int len) {
     return len;
 }
 
+/* PRB_CMD_VALVES handler: data0 = (valve_id << 4) | state, data1 = magic.
+ * Manual valve override -- hardcoded Sol1-4 mapping per ICD, quick test only. */
+static void handle_prb_cmd_valves(uint8_t data0, uint8_t data1)
+{
+    if (data1 != PRB_VALVE_MAGIC)
+    {
+        printf("[PRB] CMD_VALVES bad magic 0x%02X (expected 0x%02X) -- ignored\r\n",
+               data1, PRB_VALVE_MAGIC);
+        return;
+    }
+
+    uint8_t valve_id = (data0 >> 4) & 0x0Fu;
+    uint8_t state     = data0 & 0x0Fu;
+
+    GPIO_TypeDef *port = NULL;
+    uint16_t      pin  = 0;
+    const char   *name = "?";
+
+    switch (valve_id)
+    {
+        case PRB_VALVE_ID_SOL1: port = Sol1_ctrl_GPIO_Port; pin = Sol1_ctrl_Pin; name = "Sol1"; break;
+        case PRB_VALVE_ID_SOL2: port = Sol2_ctrl_GPIO_Port; pin = Sol2_ctrl_Pin; name = "Sol2"; break;
+        case PRB_VALVE_ID_SOL3: port = Sol3_ctrl_GPIO_Port; pin = Sol3_ctrl_Pin; name = "Sol3"; break;
+        case PRB_VALVE_ID_SOL4: port = Sol4_ctrl_GPIO_Port; pin = Sol4_ctrl_Pin; name = "Sol4"; break;
+        default:
+            printf("[PRB] CMD_VALVES unknown valve id 0x%X\r\n", valve_id);
+            return;
+    }
+
+    HAL_GPIO_WritePin(port, pin, (state == PRB_VALVE_STATE_OPEN) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    printf("[PRB] CMD_VALVES %s -> %s\r\n", name,
+           (state == PRB_VALVE_STATE_OPEN) ? "OPEN" : "CLOSED");
+}
+
 /* Drains FDCAN1 RX_FIFO0 and prints every received message: ID, DLC, and
  * the full data payload (not just the first byte). Call every loop
  * iteration -- draining fully each time avoids reading stale entries when
- * traffic arrives faster than the loop period. */
+ * traffic arrives faster than the loop period. Dispatches PRB_CMD_VALVES
+ * to handle_prb_cmd_valves(); everything else is print-only for now. */
 static void print_fdcan_rx_messages(void)
 {
     uint32_t rxFillLevel;
-    printf("Trying RX\r\n");
+    //printf("Trying RX\r\n");
     while ((rxFillLevel = HAL_FDCAN_GetRxFifoFillLevel(&hfdcan1, FDCAN_RX_FIFO0)) > 0)
     {
         FDCAN_RxHeaderTypeDef rxHeader;
         uint8_t rxData[8] = {0};
-        printf("In loop \r\n");
+        //printf("In loop \r\n");
         if (HAL_FDCAN_GetRxMessage(&hfdcan1, FDCAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
         {
             printf("[CAN] RX id=0x%03lX dlc=%lu ts=%lu data=",
@@ -119,6 +171,11 @@ static void print_fdcan_rx_messages(void)
                 printf("%02X ", rxData[i]);
             }
             printf("(fill=%lu)\r\n", (unsigned long)rxFillLevel);
+
+            if (rxHeader.Identifier == PRB_CMD_VALVES_ID && rxHeader.DataLength >= FDCAN_DLC_BYTES_2)
+            {
+                handle_prb_cmd_valves(rxData[0], rxData[1]);
+            }
         }
         else
         {
@@ -157,6 +214,63 @@ static void i2c_bus_scan(I2C_HandleTypeDef *hi2c)
     }
 }
 
+/* STM32H743's internal temperature sensor: only available on ADC3 (already
+ * used for PT1000), channel ADC_CHANNEL_TEMPSENSOR. Factory calibration
+ * words TS_CAL1 (30 C)/TS_CAL2 (110 C), both @ VDDA=3.3V, live at fixed
+ * addresses per the datasheet -- this CMSIS package doesn't define the
+ * usual TEMPSENSOR_CAL1_ADDR/TEMPSENSOR_CAL2_ADDR macros, so they're
+ * hardcoded here (matches UID_BASE 0x1FF1E800 + 0x20 / + 0x40). */
+#define TEMPSENSOR_CAL1_ADDR ((uint16_t*)(0x1FF1E820UL))
+#define TEMPSENSOR_CAL2_ADDR ((uint16_t*)(0x1FF1E840UL))
+#define TEMPSENSOR_CAL1_TEMP (30)
+#define TEMPSENSOR_CAL2_TEMP (110)
+
+/* Reads and prints the MCU's internal die temperature via ADC3. Assumes
+ * VDDA ~= 3.3V (the calibration reference voltage) -- if VDDA is known to
+ * differ meaningfully on this board, scale raw16 by (VDDA_mV/3300) before
+ * the calibration formula. */
+static void print_mcu_temperature(void)
+{
+    ADC_ChannelConfTypeDef sConfig = {0};
+    sConfig.Channel      = ADC_CHANNEL_TEMPSENSOR;
+    sConfig.Rank         = ADC_REGULAR_RANK_1;
+    sConfig.SamplingTime = ADC_SAMPLETIME_810CYCLES_5; // temp sensor needs a long sample time
+    sConfig.SingleDiff   = ADC_SINGLE_ENDED;
+    sConfig.OffsetNumber = ADC_OFFSET_NONE;
+    sConfig.Offset       = 0;
+    sConfig.OffsetSignedSaturation = DISABLE;
+
+    if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
+    {
+        printf("[TEMP] ConfigChannel failed\r\n");
+        return;
+    }
+
+    if (HAL_ADC_Start(&hadc3) != HAL_OK)
+    {
+        printf("[TEMP] Start failed\r\n");
+        return;
+    }
+
+    if (HAL_ADC_PollForConversion(&hadc3, 100) != HAL_OK)
+    {
+        HAL_ADC_Stop(&hadc3);
+        printf("[TEMP] PollForConversion failed\r\n");
+        return;
+    }
+
+    uint32_t raw16 = HAL_ADC_GetValue(&hadc3); // hadc3 is 16-bit resolution, matches TS_CAL width
+    HAL_ADC_Stop(&hadc3);
+
+    int32_t temp_c = (((int32_t)raw16 - (int32_t)(*TEMPSENSOR_CAL1_ADDR))
+                       * (TEMPSENSOR_CAL2_TEMP - TEMPSENSOR_CAL1_TEMP))
+                      / ((int32_t)(*TEMPSENSOR_CAL2_ADDR) - (int32_t)(*TEMPSENSOR_CAL1_ADDR))
+                      + TEMPSENSOR_CAL1_TEMP;
+
+    printf("[TEMP] MCU internal temperature: %ld C (raw=%lu)\r\n",
+           (long)temp_c, (unsigned long)raw16);
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -185,6 +299,9 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
+  /* Configure the peripherals common clocks */
+  PeriphCommonClock_Config();
+
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
@@ -193,10 +310,11 @@ int main(void)
   MX_GPIO_Init();
   MX_FDCAN1_Init();
   MX_I2C1_Init();
-  //MX_SDMMC1_SD_Init();
+  MX_SDMMC1_SD_Init();
   MX_TIM4_Init();
   MX_USB_DEVICE_Init();
   MX_ADC3_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 
 
@@ -213,81 +331,57 @@ int main(void)
 
   HAL_Delay(1000);
 
+  static uint32_t lastPeriodicTick = 0;
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
 
-	  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
-	  HAL_Delay(100);
-	  //run_pte7300_hardware_test();
-	  FDC1004_ManualTest(&hi2c1);
+	  /*  Drain the whole FIFO every iteration, unthrottled -- this is the
+	   *  fast path. Popping only one message per loop let the queue back
+	   *  up (self-reception + peer traffic arriving faster than we
+	   *  drained it), so we kept reading stale entries instead of the
+	   *  newest one. Dispatches PRB_CMD_VALVES to handle_prb_cmd_valves()
+	   *  (opens/closes Sol1-4) with minimal latency -- no HAL_Delay()
+	   *  blocking this between reads -- and prints everything else it
+	   *  receives. */
+	  print_fdcan_rx_messages();
 
-	  //Valve_ManualTest();    /* TODO: verify Sol1-4/BV_CTRL wiring & NC/NO assumptions before running, see Drivers/Valve/Impl/ValveList.cpp */
+	  // Slow path: LED blink + sensor print, throttled to a human-readable
+	  // interval via HAL_GetTick() instead of a blocking HAL_Delay(), which
+	  // would otherwise stall CAN RX (above) for the same duration.
+	  if (HAL_GetTick() - lastPeriodicTick >= 1000)
+	  {
+	    lastPeriodicTick = HAL_GetTick();
 
-	  /*{
-
-	    static uint8_t canTestCounter = 0x01;  // nonzero start: makes stale/zeroed reads obvious
-
-	    FDCAN_TxHeaderTypeDef txHeader;
-	    txHeader.Identifier          = CANBUS_TEST_TX_ID;
-	    txHeader.IdType              = FDCAN_STANDARD_ID;
-	    txHeader.TxFrameType         = FDCAN_DATA_FRAME;
-	    txHeader.DataLength          = FDCAN_DLC_BYTES_1;
-	    txHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	    txHeader.BitRateSwitch       = FDCAN_BRS_OFF;
-	    txHeader.FDFormat            = FDCAN_CLASSIC_CAN;
-	    txHeader.TxEventFifoControl  = FDCAN_NO_TX_EVENTS;
-	    txHeader.MessageMarker       = 0;
-*/
-
-	    /*  HAL_FDCAN_AddMessageToTxFifoQ always word-copies 4 bytes regardless
-	     *  of DataLength, so the buffer must be padded to a 4-byte boundary
-	     *  even though only 1 byte is actually put on the wire (per DLC). */
-	  /*
-	    uint8_t txData[4] = { canTestCounter, 0, 0, 0 };
-	    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &txHeader, txData) == HAL_OK)
-	    {
-	      printf("[CAN] TX id=0x%03lX data=0x%02X\r\n", (unsigned long)CANBUS_TEST_TX_ID, canTestCounter);
-	      canTestCounter++;
+	    // Blink each "_ON" indicator LED only while its matching setup jumper
+	    // reads active. Assumed active-high (jumper pulls the input to 3V3) --
+	    // if the LEDs never light, the jumpers are probably wired active-low:
+	    // flip these to "== GPIO_PIN_RESET".
+	    if (HAL_GPIO_ReadPin(ENG_SETUP_GPIO_Port, ENG_SETUP_Pin) == GPIO_PIN_SET) {
+	      HAL_GPIO_TogglePin(ENG_ON_GPIO_Port, ENG_ON_Pin);
+	    } else {
+	      HAL_GPIO_WritePin(ENG_ON_GPIO_Port, ENG_ON_Pin, GPIO_PIN_RESET);
 	    }
-	    else
-	    {*/
-	      /* Decode ErrorCode so we know exactly which of the 3 possible
-	       * HAL_FDCAN_AddMessageToTxFifoQ failure paths this is:
-	       *   NOT_STARTED (0x08) -> hfdcan1.State != HAL_FDCAN_STATE_BUSY
-	       *   PARAM       (0x20) -> TXBC.TFQS == 0 (Tx FIFO/Queue never
-	       *                          got allocated in message RAM)
-	       *   FIFO_FULL   (0x200)-> queue genuinely full (32 pending,
-	       *                          nothing ever actually transmitted) */
-	      /*printf("[CAN] TX failed, ErrorCode=0x%08lX state=%d\r\n",
-	             (unsigned long)hfdcan1.ErrorCode, (int)hfdcan1.State);
-	    }*/
-
-	    /*  Drain the whole FIFO each iteration -- popping only one message
-	     *  per loop let the queue back up (self-reception + peer traffic
-	     *  arriving faster than we drained it), so we kept reading stale
-	     *  entries instead of the newest one. */
-	    /*print_fdcan_rx_messages();
-
-	    {
-	      FDCAN_ProtocolStatusTypeDef protoStatus;
-	      FDCAN_ErrorCountersTypeDef  errCounters;
-	      HAL_FDCAN_GetProtocolStatus(&hfdcan1, &protoStatus);
-	      HAL_FDCAN_GetErrorCounters(&hfdcan1, &errCounters);
-	      printf("[CAN] status busoff=%lu errpass=%lu warn=%lu lastErr=%lu tec=%lu rec=%lu\r\n",
-	             protoStatus.BusOff, protoStatus.ErrorPassive, protoStatus.Warning,
-	             protoStatus.LastErrorCode, errCounters.TxErrorCnt, errCounters.RxErrorCnt);
-	      printf("[CAN] msgRam StdFilterSA=0x%08lX RxFIFO0SA=0x%08lX TxFIFOQSA=0x%08lX\r\n",
-	             (unsigned long)hfdcan1.msgRam.StandardFilterSA,
-	             (unsigned long)hfdcan1.msgRam.RxFIFO0SA,
-	             (unsigned long)hfdcan1.msgRam.TxFIFOQSA);
+	    if (HAL_GPIO_ReadPin(LOX_SETUP_GPIO_Port, LOX_SETUP_Pin) == GPIO_PIN_SET) {
+	      HAL_GPIO_TogglePin(LOX_ON_GPIO_Port, LOX_ON_Pin);
+	    } else {
+	      HAL_GPIO_WritePin(LOX_ON_GPIO_Port, LOX_ON_Pin, GPIO_PIN_RESET);
 	    }
-	  }*/
+	    if (HAL_GPIO_ReadPin(ETH_SETUP_GPIO_Port, ETH_SETUP_Pin) == GPIO_PIN_SET) {
+	      HAL_GPIO_TogglePin(ETH_ON_GPIO_Port, ETH_ON_Pin);
+	    } else {
+	      HAL_GPIO_WritePin(ETH_ON_GPIO_Port, ETH_ON_Pin, GPIO_PIN_RESET);
+	    }
 
+	    //run_pte7300_hardware_test();
+	    //pte7300_print_data();
+	    //FDC1004_ManualTest(&hi2c1);
+	    //print_mcu_temperature();
 
-
+	    //Valve_ManualTest();    /* TODO: verify Sol1-4/BV_CTRL wiring & NC/NO assumptions before running, see Drivers/Valve/Impl/ValveList.cpp */
+	  }
   }
   /* USER CODE END 3 */
 }
@@ -349,6 +443,101 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief Peripherals Common Clock Configuration
+  * @retval None
+  */
+void PeriphCommonClock_Config(void)
+{
+  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+
+  /** Initializes the peripherals clock
+  */
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_ADC;
+  PeriphClkInitStruct.PLL2.PLL2M = 1;
+  PeriphClkInitStruct.PLL2.PLL2N = 10;
+  PeriphClkInitStruct.PLL2.PLL2P = 2;
+  PeriphClkInitStruct.PLL2.PLL2Q = 2;
+  PeriphClkInitStruct.PLL2.PLL2R = 2;
+  PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_3;
+  PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOMEDIUM;
+  PeriphClkInitStruct.PLL2.PLL2FRACN = 0;
+  PeriphClkInitStruct.AdcClockSelection = RCC_ADCCLKSOURCE_PLL2;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/**
+  * @brief ADC1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC1_Init(void)
+{
+
+  /* USER CODE BEGIN ADC1_Init 0 */
+
+  /* USER CODE END ADC1_Init 0 */
+
+  ADC_MultiModeTypeDef multimode = {0};
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC1_Init 1 */
+
+  /* USER CODE END ADC1_Init 1 */
+
+  /** Common config
+  */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
+  hadc1.Init.Resolution = ADC_RESOLUTION_16B;
+  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc1.Init.LowPowerAutoWait = DISABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
+  hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+  hadc1.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
+  hadc1.Init.OversamplingMode = DISABLE;
+  hadc1.Init.Oversampling.Ratio = 1;
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure the ADC multi-mode
+  */
+  multimode.Mode = ADC_MODE_INDEPENDENT;
+  if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_5;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
+  sConfig.OffsetSignedSaturation = DISABLE;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC1_Init 2 */
+
+  /* USER CODE END ADC1_Init 2 */
+
 }
 
 /**
@@ -470,6 +659,20 @@ static void MX_FDCAN1_Init(void)
   {
     Error_Handler();
   }
+
+  /* PRB_CMD_VALVES (FC -> PRB manual valve override), per ICD section 2.x. */
+  FDCAN_FilterTypeDef canFilterValves;
+  canFilterValves.IdType       = FDCAN_STANDARD_ID;
+  canFilterValves.FilterIndex  = 1;
+  canFilterValves.FilterType   = FDCAN_FILTER_MASK;
+  canFilterValves.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
+  canFilterValves.FilterID1    = PRB_CMD_VALVES_ID;
+  canFilterValves.FilterID2    = 0x7FF;  /* exact-match mask */
+  if (HAL_FDCAN_ConfigFilter(&hfdcan1, &canFilterValves) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
   if (HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE) != HAL_OK)
   {
     Error_Handler();
@@ -643,7 +846,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(BOOT_LED_GPIO_Port, BOOT_LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, LEDCTRL_Pin|ETH_ON_Pin|LOX_ON_Pin|ENGONE_ON_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, LEDCTRL_Pin|ETH_ON_Pin|LOX_ON_Pin|ENG_ON_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, GPIO_PIN_SET);
@@ -660,8 +863,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : ENG_SETUP_Pin LOX_SETUP_Pin ETH_SETUP_Pin */
-  GPIO_InitStruct.Pin = ENG_SETUP_Pin|LOX_SETUP_Pin|ETH_SETUP_Pin;
+  /*Configure GPIO pins : ENG_SETUP_Pin ETH_SETUP_Pin LOX_SETUP_Pin */
+  GPIO_InitStruct.Pin = ENG_SETUP_Pin|ETH_SETUP_Pin|LOX_SETUP_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -679,12 +882,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(BOOT_LED_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : Vtemp_Pin */
-  GPIO_InitStruct.Pin = Vtemp_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(Vtemp_GPIO_Port, &GPIO_InitStruct);
-
   /*Configure GPIO pin : Igniter_Pin */
   GPIO_InitStruct.Pin = Igniter_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
@@ -697,9 +894,9 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(PWRGD_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LEDCTRL_Pin ETH_ON_Pin LOX_ON_Pin ENGONE_ON_Pin
+  /*Configure GPIO pins : LEDCTRL_Pin ETH_ON_Pin LOX_ON_Pin ENG_ON_Pin
                            PD6 */
-  GPIO_InitStruct.Pin = LEDCTRL_Pin|ETH_ON_Pin|LOX_ON_Pin|ENGONE_ON_Pin
+  GPIO_InitStruct.Pin = LEDCTRL_Pin|ETH_ON_Pin|LOX_ON_Pin|ENG_ON_Pin
                           |GPIO_PIN_6;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;

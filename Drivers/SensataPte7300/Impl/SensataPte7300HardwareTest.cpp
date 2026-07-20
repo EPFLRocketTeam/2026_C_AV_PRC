@@ -181,7 +181,9 @@ void run_pte7300_hardware_test()
     LOG("  status = %s  (failed at step: %s)", status_str(meas.status), step_str(drv.last_step()));
 
     if (meas.status == Status::Ok) {
-        LOG("  pressure_raw           = %d (0x%04X)",
+        LOG("  pressure               = %.3f bar (%.2f psi)  (raw=%d, 0x%04X)",
+            static_cast<double>(meas.value.pressure_bar),
+            static_cast<double>(meas.value.pressure_psi),
             static_cast<int>(meas.value.pressure_raw),
             static_cast<uint16_t>(meas.value.pressure_raw));
         LOG("  bridge_temperature_raw = %d (0x%04X)",
@@ -190,7 +192,6 @@ void run_pte7300_hardware_test()
         LOG("  status_raw             = %d (0x%04X)",
             static_cast<int>(meas.value.status_raw),
             static_cast<uint16_t>(meas.value.status_raw));
-        LOG("  pressure               = %.3f bar", static_cast<double>(meas.value.pressure_bar));
         LOG("  temperature            = %.2f C", static_cast<double>(meas.value.temperature_c));
 
         {
@@ -228,6 +229,36 @@ void run_pte7300_hardware_test()
     }
 
     LOG("=== PTE7300 hardware test END ===");
+}
+
+// ---------------------------------------------------------------------------
+// Lean data-only read: just pressure (bar) and temperature (C), no mux
+// probing / channel walk / serial number / hints. Call every loop
+// iteration from main() -- unlike run_pte7300_hardware_test(), this does
+// not block or loop internally.
+// ---------------------------------------------------------------------------
+
+void pte7300_print_data()
+{
+    SensorConfig cfg;
+    cfg.mux_address_7bit        = k_test_mux_address;
+    cfg.mux_channel              = k_test_sensor_channel;
+    cfg.sensor_address_7bit      = k_test_sensor_address;
+    cfg.i2c_timeout_ms           = 10;
+    cfg.use_crc                  = k_test_use_crc;
+    cfg.pressure_full_scale_bar  = k_test_pressure_full_scale_bar;
+
+    SensataPte7300 drv(&hi2c1, cfg);
+
+    auto meas = drv.read_measurement_raw();
+    if (meas.status == Status::Ok) {
+        LOG("pressure=%.3f bar (%.2f psi)  temperature=%.2f C",
+            static_cast<double>(meas.value.pressure_bar),
+            static_cast<double>(meas.value.pressure_psi),
+            static_cast<double>(meas.value.temperature_c));
+    } else {
+        LOG("read failed: %s (step=%s)", status_str(meas.status), step_str(drv.last_step()));
+    }
 }
 
 // ---------------------------------------------------------------------------
