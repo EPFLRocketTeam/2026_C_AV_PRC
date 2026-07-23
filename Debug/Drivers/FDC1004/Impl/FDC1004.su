@@ -1,16 +1,16 @@
 ../Drivers/FDC1004/Impl/FDC1004.cpp:15:1:FDC1004::FDC1004(I2C_HandleTypeDef*, uint8_t, uint8_t)	24	static
-../Drivers/FDC1004/Impl/FDC1004.cpp:24:6:bool FDC1004::begin()	16	static
-../Drivers/FDC1004/Impl/FDC1004.cpp:30:6:bool FDC1004::isConnected()	16	static
-../Drivers/FDC1004/Impl/FDC1004.cpp:36:9:uint8_t FDC1004::getAddress()	16	static
-../Drivers/FDC1004/Impl/FDC1004.cpp:46:7:float FDC1004::getCapacitance(uint8_t)	32	static
-../Drivers/FDC1004/Impl/FDC1004.cpp:87:6:bool FDC1004::setRate(uint8_t)	16	static
-../Drivers/FDC1004/Impl/FDC1004.cpp:98:9:uint8_t FDC1004::getRate()	16	static
-../Drivers/FDC1004/Impl/FDC1004.cpp:104:6:bool FDC1004::setCapdac(uint8_t, uint8_t)	16	static
-../Drivers/FDC1004/Impl/FDC1004.cpp:112:9:uint8_t FDC1004::getCapdac(uint8_t)	16	static
-../Drivers/FDC1004/Impl/FDC1004.cpp:123:5:int FDC1004::getLastError()	24	static
-../Drivers/FDC1004/Impl/FDC1004.cpp:135:6:bool FDC1004::_configureMeasurement(uint8_t, uint8_t, uint8_t)	24	static
-../Drivers/FDC1004/Impl/FDC1004.cpp:158:6:bool FDC1004::_triggerMeasurement(uint8_t, uint8_t)	24	static
-../Drivers/FDC1004/Impl/FDC1004.cpp:168:6:bool FDC1004::_readMeasurement(uint8_t, int16_t*)	32	static
-../Drivers/FDC1004/Impl/FDC1004.cpp:191:9:uint8_t FDC1004::_measurementDelay()	16	static
-../Drivers/FDC1004/Impl/FDC1004.cpp:203:6:bool FDC1004::_readRegister(uint8_t, uint16_t*)	40	static
-../Drivers/FDC1004/Impl/FDC1004.cpp:224:6:bool FDC1004::_writeRegister(uint8_t, uint16_t)	32	static
+../Drivers/FDC1004/Impl/FDC1004.cpp:24:6:bool FDC1004::begin()	24	static
+../Drivers/FDC1004/Impl/FDC1004.cpp:48:6:bool FDC1004::isConnected()	16	static
+../Drivers/FDC1004/Impl/FDC1004.cpp:56:9:uint8_t FDC1004::getAddress()	16	static
+../Drivers/FDC1004/Impl/FDC1004.cpp:66:7:float FDC1004::getCapacitance(uint8_t)	32	static
+../Drivers/FDC1004/Impl/FDC1004.cpp:117:6:bool FDC1004::setRate(uint8_t)	16	static
+../Drivers/FDC1004/Impl/FDC1004.cpp:128:9:uint8_t FDC1004::getRate()	16	static
+../Drivers/FDC1004/Impl/FDC1004.cpp:134:6:bool FDC1004::setCapdac(uint8_t, uint8_t)	16	static
+../Drivers/FDC1004/Impl/FDC1004.cpp:142:9:uint8_t FDC1004::getCapdac(uint8_t)	16	static
+../Drivers/FDC1004/Impl/FDC1004.cpp:153:5:int FDC1004::getLastError()	24	static
+../Drivers/FDC1004/Impl/FDC1004.cpp:165:6:bool FDC1004::_configureMeasurement(uint8_t, uint8_t, uint8_t)	24	static
+../Drivers/FDC1004/Impl/FDC1004.cpp:188:6:bool FDC1004::_triggerMeasurement(uint8_t, uint8_t)	24	static
+../Drivers/FDC1004/Impl/FDC1004.cpp:198:6:bool FDC1004::_readMeasurement(uint8_t, int16_t*)	32	static
+../Drivers/FDC1004/Impl/FDC1004.cpp:221:9:uint8_t FDC1004::_measurementDelay()	16	static
+../Drivers/FDC1004/Impl/FDC1004.cpp:233:6:bool FDC1004::_readRegister(uint8_t, uint16_t*)	40	static
+../Drivers/FDC1004/Impl/FDC1004.cpp:254:6:bool FDC1004::_writeRegister(uint8_t, uint16_t)	32	static

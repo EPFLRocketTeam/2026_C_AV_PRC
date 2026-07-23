@@ -18,19 +18,21 @@ static bool            s_initialized  = false;
 
 void Valve_InitAll()
 {
-    // NC + active_high are ASSUMED (see ValveList.hpp TODO) — verify against
-    // the actual drive circuit before relying on this for anything live.
-    static SolenoidValve sol1({
+    // Fail-safe state matches PR's confirmed part list (Vent=NO,
+    // SafetyDpr=NC); active_high is still ASSUMED (see ValveList.hpp TODO)
+    // — verify against the actual drive circuit before relying on this for
+    // anything live.
+    static SolenoidValve vent({
         .port      = Sol1_ctrl_GPIO_Port,
         .pin       = Sol1_ctrl_Pin,
-        .fail_safe = FailSafeState::NormallyClosed,
-        .name      = "Sol1_ctrl",
+        .fail_safe = FailSafeState::NormallyOpen,
+        .name      = "Vent",
     });
-    static SolenoidValve sol2({
+    static SolenoidValve safety_dpr({
         .port      = Sol2_ctrl_GPIO_Port,
         .pin       = Sol2_ctrl_Pin,
         .fail_safe = FailSafeState::NormallyClosed,
-        .name      = "Sol2_ctrl",
+        .name      = "SafetyDpr",
     });
     static SolenoidValve sol3({
         .port      = Sol3_ctrl_GPIO_Port,
@@ -44,8 +46,8 @@ void Valve_InitAll()
         .fail_safe = FailSafeState::NormallyClosed,
         .name      = "Sol4_ctrl",
     });
-    s_solenoids[0] = &sol1;
-    s_solenoids[1] = &sol2;
+    s_solenoids[0] = &vent;
+    s_solenoids[1] = &safety_dpr;
     s_solenoids[2] = &sol3;
     s_solenoids[3] = &sol4;
 
@@ -69,8 +71,8 @@ IValve* Valve_Get(ValveId id)
     }
 
     switch (id) {
-        case ValveId::Sol1:      return s_solenoids[0];
-        case ValveId::Sol2:      return s_solenoids[1];
+        case ValveId::Vent:      return s_solenoids[0];
+        case ValveId::SafetyDpr: return s_solenoids[1];
         case ValveId::Sol3:      return s_solenoids[2];
         case ValveId::Sol4:      return s_solenoids[3];
         case ValveId::BallValve: return s_servo;

@@ -47,8 +47,10 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Core/Src/../../Drivers/PT1000/main_test_pt1000.h \
  ../Core/Src/../../Drivers/SensataPte7300/SensataPte7300HardwareTest.hpp \
  ../Core/Src/../../Drivers/KULITE_CTL190/kulite_manual_test.hpp \
- ../Core/Src/../../Drivers/Valve/valve_manual_test.hpp \
- ../USB_DEVICE/App/usbd_cdc_if.h \
+ ../Core/Src/../../Drivers/LMT85/lmt85_manual_test.hpp \
+ ../Core/Src/../../Application/FlightControl/prc_fsm_c_api.h \
+ ../Core/Src/../../Application/FlightControl/prc_can.hpp \
+ ../Core/Inc/CAN.h ../USB_DEVICE/App/usbd_cdc_if.h \
  ../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc/usbd_cdc.h \
  ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h \
  ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_def.h \
@@ -104,7 +106,10 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Src/../../Drivers/PT1000/main_test_pt1000.h:
 ../Core/Src/../../Drivers/SensataPte7300/SensataPte7300HardwareTest.hpp:
 ../Core/Src/../../Drivers/KULITE_CTL190/kulite_manual_test.hpp:
-../Core/Src/../../Drivers/Valve/valve_manual_test.hpp:
+../Core/Src/../../Drivers/LMT85/lmt85_manual_test.hpp:
+../Core/Src/../../Application/FlightControl/prc_fsm_c_api.h:
+../Core/Src/../../Application/FlightControl/prc_can.hpp:
+../Core/Inc/CAN.h:
 ../USB_DEVICE/App/usbd_cdc_if.h:
 ../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc/usbd_cdc.h:
 ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h:

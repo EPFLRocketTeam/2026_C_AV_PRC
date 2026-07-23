@@ -27,7 +27,12 @@
 #define FDC1004_REG_CONF_MEAS3      0x0A   //  16    RW
 #define FDC1004_REG_CONF_MEAS4      0x0B   //  16    RW
 #define FDC1004_REG_FDC_CONF        0x0C   //  16    RW
+#define FDC1004_REG_MANUFACTURER_ID 0xFE   //  16    R-
 #define FDC1004_REG_DEVICE_ID       0xFF   //  16    R-
+
+//  expected identity register values
+#define FDC1004_MANUFACTURER_ID     0x5449  //  'TI'
+#define FDC1004_DEVICE_ID           0x1004
 
 //  CONF_MEASx bit shifts
 #define FDC1004_CONF_MEAS_CHA_SHIFT     13
@@ -52,9 +57,25 @@
 #define FDC1004_UPPER_BOUND  0x4000
 #define FDC1004_LOWER_BOUND  (-0x4000)
 
-//  conversion constants (see datasheet)
-#define FDC1004_ATTOFARADS_UPPER_WORD  457
-#define FDC1004_FEMTOFARADS_CAPDAC     3028
+//  |raw| at or above this value is treated as a clipped (saturated) conversion.
+//  full scale of the upper word is +/-32767; leave a small guard band.
+#define FDC1004_CLIP_THRESHOLD  0x7FF0
+
+//  conversion constants (datasheet section 8.1.1):
+//  C(pF) = raw24 / 2^19 + CAPDAC * 3.125
+//  we keep only the upper 16 bits of the 24-bit result, so one count of
+//  the upper word is 2^8 / 2^19 pF  ->  2048 counts per pF.
+#define FDC1004_COUNTS_PER_PF   2048.0f
+#define FDC1004_CAPDAC_PF       3.125f
+
+//  error codes (getLastError()):
+//   0  no error
+//  -1  I2C transmit failed
+//  -2  I2C receive failed
+//  -3  invalid parameter
+//  -4  measurement not ready (DONE flag not set)
+//  -5  conversion clipped (saturated); CAPDAC will step, retry
+//  -6  device/manufacturer ID mismatch
 
 
 class FDC1004
@@ -63,12 +84,13 @@ public:
   explicit FDC1004(I2C_HandleTypeDef *i2c, const uint8_t address = FDC1004_I2C_ADDRESS,
                     const uint8_t rate = FDC1004_RATE_100HZ);
 
+  //  checks I2C presence AND verifies manufacturer + device ID registers.
   bool     begin();
   bool     isConnected();
   uint8_t  getAddress();
 
   //  full measurement cycle (configure + trigger + wait + read), auto-adjusts CAPDAC.
-  //  returns NAN on error (check getLastError()).
+  //  returns NAN on error, including clipped conversions (check getLastError()).
   float    getCapacitance(uint8_t channel);
 
   bool     setRate(uint8_t rate);

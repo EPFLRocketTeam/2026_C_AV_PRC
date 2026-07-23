@@ -1,6 +1,6 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
-# Toolchain: GNU Tools for STM32 (14.3.rel1)
+# Toolchain: GNU Tools for STM32 (13.3.rel1)
 ################################################################################
 
 -include ../makefile.init
@@ -17,11 +17,18 @@ RM := rm -rf
 -include Drivers/Valve/Impl/subdir.mk
 -include Drivers/SensataPte7300/Impl/subdir.mk
 -include Drivers/STM32H7xx_HAL_Driver/Src/subdir.mk
+-include Drivers/PrcBoardId/Impl/subdir.mk
 -include Drivers/PT1000/Impl/subdir.mk
+-include Drivers/LMT85/Impl/subdir.mk
 -include Drivers/KULITE_CTL190/Impl/subdir.mk
 -include Drivers/FDC1004/Impl/subdir.mk
+-include Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/src/prc_intranet/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
+-include Application/FlightControl/subdir.mk
+-include Application/Data/Stores/subdir.mk
+-include Application/Data/subdir.mk
+-include Application/Control/subdir.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -97,8 +104,8 @@ all: main-build
 main-build: 2026_C_AV_PRC_IOC.elf secondary-outputs
 
 # Tool invocations
-2026_C_AV_PRC_IOC.elf 2026_C_AV_PRC_IOC.map: $(OBJS) $(USER_OBJS) /Users/julianruizrodriguez/STM32CubeIDE/workspace_2.1.0/2026_C_AV_PRC_IOC/STM32H743VITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "2026_C_AV_PRC_IOC.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/Users/julianruizrodriguez/STM32CubeIDE/workspace_2.1.0/2026_C_AV_PRC_IOC/STM32H743VITX_FLASH.ld" -Wl,-Map="2026_C_AV_PRC_IOC.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+2026_C_AV_PRC_IOC.elf 2026_C_AV_PRC_IOC.map: $(OBJS) $(USER_OBJS) C:\Users\MSI\Test\prc\2026_C_AV_PRC\STM32H743VITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "2026_C_AV_PRC_IOC.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\Users\MSI\Test\prc\2026_C_AV_PRC\STM32H743VITX_FLASH.ld" -Wl,-Map="2026_C_AV_PRC_IOC.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

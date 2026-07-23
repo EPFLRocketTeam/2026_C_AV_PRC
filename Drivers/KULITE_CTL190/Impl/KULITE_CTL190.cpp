@@ -31,6 +31,11 @@ Status init(Handle* handle, const Config& config) {
         return Status::ERROR_NOT_INITIALIZED;
     }
 
+    if (config.sensitivity_mv_per_unit <= 0.0f || config.calibration_excitation_v <= 0.0f ||
+        config.actual_excitation_v <= 0.0f || config.max_overpressure <= 0.0f) {
+        return Status::ERROR_NOT_INITIALIZED;
+    }
+
     handle->config         = config;
     handle->zero_offset_mv = 0.0f;
     handle->initialized    = true;
@@ -74,20 +79,29 @@ Status read_pressure(const Handle* handle, float* pressure) {
     /* Subtract zero offset (compensates Residual Unbalance) */
     sensor_mv -= handle->zero_offset_mv;
 
-    /* Convert millivolts to pressure:
-     *   pressure = (sensor_mv / fso_mv) * pressure_max
+    /* Convert millivolts to pressure using this sensor's real calibrated
+     * sensitivity, not a generic fso_mv/pressure_max ratio -- a given
+     * unit's actual sensitivity can differ substantially from the
+     * family-nominal FSO/range ratio (confirmed on this unit: 0.05 mV/PSI
+     * measured vs. ~0.33 mV/PSI implied by nominal 100mV FSO / 300 PSI).
      *
-     * This is a linear relationship because the CTL-190
-     * Wheatstone bridge output is proportional to pressure.
+     * Bridge output is directly proportional to excitation voltage, so the
+     * as-calibrated sensitivity (measured at calibration_excitation_v) is
+     * scaled by (actual_excitation_v / calibration_excitation_v) to get the
+     * effective sensitivity for the excitation actually driving this
+     * circuit -- e.g. calibrated at 10V but run at 11V reads ~10% high
+     * unless corrected.
      */
-    float p = (sensor_mv / cfg.fso_mv) * cfg.pressure_max;
+    float effective_sensitivity = cfg.sensitivity_mv_per_unit *
+                                   (cfg.actual_excitation_v / cfg.calibration_excitation_v);
+    float p = sensor_mv / effective_sensitivity;
 
-    /* Overpressure detection:
-     * The CTL-190 datasheet specifies max 2x rated pressure (up to 500 PSI)
-     * and 1.5x above 500 PSI. We flag readings beyond 1.1x full scale
-     * as out of range to provide an early warning margin.
+    /* Overpressure detection: flag readings above this sensor's real
+     * calibrated max_overpressure (proof/burst rating, e.g. 3000 PSI on a
+     * 2000 PSI rated unit -- the CTL-190 datasheet's "1.5x rated above 500
+     * PSI" overpressure rule), not an arbitrary margin on pressure_max.
      */
-    if (p > cfg.pressure_max * 1.1f || p < -cfg.pressure_max * 0.1f) {
+    if (p > cfg.max_overpressure || p < -cfg.pressure_max * 0.1f) {
         *pressure = p; /* Still store the value for diagnostics */
         return Status::ERROR_OUT_OF_RANGE;
     }

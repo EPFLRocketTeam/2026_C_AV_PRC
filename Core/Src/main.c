@@ -27,7 +27,10 @@
 #include "../../Drivers/PT1000/main_test_pt1000.h"
 #include "../../Drivers/SensataPte7300/SensataPte7300HardwareTest.hpp"
 #include "../../Drivers/KULITE_CTL190/kulite_manual_test.hpp"
-#include "../../Drivers/Valve/valve_manual_test.hpp"
+#include "../../Drivers/LMT85/lmt85_manual_test.hpp"
+#include "../../Application/FlightControl/prc_fsm_c_api.h"
+#include "../../Application/FlightControl/prc_can.hpp"
+#include "CAN.h"
 #include "usbd_cdc_if.h"
 
 /* USER CODE END Includes */
@@ -39,24 +42,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
-/*  CAN bus test between 2026_C_AV_PRC and 2026_C_AV_FC (PD0=RX, PD1=TX on both boards).  */
-#define CANBUS_TEST_TX_ID   0x100u   /*  PRC -> FC  */
-#define CANBUS_TEST_RX_ID   0x101u   /*  FC -> PRC  */
-
-/* PRB_CMD_VALVES (FC -> PRB): manual valve override, per ICD.
- * data[0] = (valve_id << 4) | state, data[1] = magic byte.
- * TODO: PRB_VALVE_MAGIC value is a placeholder -- confirm the real magic
- * byte with whoever owns the ICD before relying on this for real testing. */
-#define PRB_CMD_VALVES_ID   0x211u
-#define PRB_VALVE_MAGIC     0xF1u
-
-#define PRB_VALVE_ID_SOL1   0xAu
-#define PRB_VALVE_ID_SOL2   0xBu
-#define PRB_VALVE_ID_SOL3   0xCu
-#define PRB_VALVE_ID_SOL4   0xDu
-#define PRB_VALVE_STATE_OPEN    0x1u
-#define PRB_VALVE_STATE_CLOSED  0x0u
 
 /* USER CODE END PD */
 
@@ -110,78 +95,6 @@ int _write(int file, char *ptr, int len) {
         }
     }
     return len;
-}
-
-/* PRB_CMD_VALVES handler: data0 = (valve_id << 4) | state, data1 = magic.
- * Manual valve override -- hardcoded Sol1-4 mapping per ICD, quick test only. */
-static void handle_prb_cmd_valves(uint8_t data0, uint8_t data1)
-{
-    if (data1 != PRB_VALVE_MAGIC)
-    {
-        printf("[PRB] CMD_VALVES bad magic 0x%02X (expected 0x%02X) -- ignored\r\n",
-               data1, PRB_VALVE_MAGIC);
-        return;
-    }
-
-    uint8_t valve_id = (data0 >> 4) & 0x0Fu;
-    uint8_t state     = data0 & 0x0Fu;
-
-    GPIO_TypeDef *port = NULL;
-    uint16_t      pin  = 0;
-    const char   *name = "?";
-
-    switch (valve_id)
-    {
-        case PRB_VALVE_ID_SOL1: port = Sol1_ctrl_GPIO_Port; pin = Sol1_ctrl_Pin; name = "Sol1"; break;
-        case PRB_VALVE_ID_SOL2: port = Sol2_ctrl_GPIO_Port; pin = Sol2_ctrl_Pin; name = "Sol2"; break;
-        case PRB_VALVE_ID_SOL3: port = Sol3_ctrl_GPIO_Port; pin = Sol3_ctrl_Pin; name = "Sol3"; break;
-        case PRB_VALVE_ID_SOL4: port = Sol4_ctrl_GPIO_Port; pin = Sol4_ctrl_Pin; name = "Sol4"; break;
-        default:
-            printf("[PRB] CMD_VALVES unknown valve id 0x%X\r\n", valve_id);
-            return;
-    }
-
-    HAL_GPIO_WritePin(port, pin, (state == PRB_VALVE_STATE_OPEN) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    printf("[PRB] CMD_VALVES %s -> %s\r\n", name,
-           (state == PRB_VALVE_STATE_OPEN) ? "OPEN" : "CLOSED");
-}
-
-/* Drains FDCAN1 RX_FIFO0 and prints every received message: ID, DLC, and
- * the full data payload (not just the first byte). Call every loop
- * iteration -- draining fully each time avoids reading stale entries when
- * traffic arrives faster than the loop period. Dispatches PRB_CMD_VALVES
- * to handle_prb_cmd_valves(); everything else is print-only for now. */
-static void print_fdcan_rx_messages(void)
-{
-    uint32_t rxFillLevel;
-    //printf("Trying RX\r\n");
-    while ((rxFillLevel = HAL_FDCAN_GetRxFifoFillLevel(&hfdcan1, FDCAN_RX_FIFO0)) > 0)
-    {
-        FDCAN_RxHeaderTypeDef rxHeader;
-        uint8_t rxData[8] = {0};
-        //printf("In loop \r\n");
-        if (HAL_FDCAN_GetRxMessage(&hfdcan1, FDCAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
-        {
-            printf("[CAN] RX id=0x%03lX dlc=%lu ts=%lu data=",
-                   (unsigned long)rxHeader.Identifier,
-                   (unsigned long)rxHeader.DataLength,
-                   (unsigned long)rxHeader.RxTimestamp);
-            for (uint32_t i = 0; i < rxHeader.DataLength; i++)
-            {
-                printf("%02X ", rxData[i]);
-            }
-            printf("(fill=%lu)\r\n", (unsigned long)rxFillLevel);
-
-            if (rxHeader.Identifier == PRB_CMD_VALVES_ID && rxHeader.DataLength >= FDCAN_DLC_BYTES_2)
-            {
-                handle_prb_cmd_valves(rxData[0], rxData[1]);
-            }
-        }
-        else
-        {
-            printf("[CAN] RX read failed\r\n");
-        }
-    }
 }
 
 /* Plain I2C bus scanner, independent of any mux/channel selection -- just
@@ -310,7 +223,7 @@ int main(void)
   MX_GPIO_Init();
   MX_FDCAN1_Init();
   MX_I2C1_Init();
-  MX_SDMMC1_SD_Init();
+  //MX_SDMMC1_SD_Init();
   MX_TIM4_Init();
   MX_USB_DEVICE_Init();
   MX_ADC3_Init();
@@ -323,7 +236,11 @@ int main(void)
   //run_pte7300_i2c_scanner();
   //i2c_bus_scan(&hi2c1);
   //run_pte7300_channel0_scope_probe();
-  //manual_test_ctl190();  /* one-shot ~32s test, then returns */
+  //manual_test_ctl190();  /* loops forever -- never returns, everything below this line won't run while active */
+  //manual_test_lmt85();  /* loops forever -- never returns, everything below this line won't run while active */
+
+  Prc_Fsm_Init();  /* latches board role from ENG_SETUP/ETH_SETUP/LOX_SETUP straps, see Drivers/PrcBoardId/PrcBoardId.hpp -- also calls Valve_InitAll() */
+  Prc_Can_ConfigNodeFilter(&hfdcan1);  /* now that role is latched, accept this board's own DPR node ID -- see Application/FlightControl/prc_can.cpp */
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -338,15 +255,27 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  /*  Drain the whole FIFO every iteration, unthrottled -- this is the
-	   *  fast path. Popping only one message per loop let the queue back
-	   *  up (self-reception + peer traffic arriving faster than we
-	   *  drained it), so we kept reading stale entries instead of the
-	   *  newest one. Dispatches PRB_CMD_VALVES to handle_prb_cmd_valves()
-	   *  (opens/closes Sol1-4) with minimal latency -- no HAL_Delay()
-	   *  blocking this between reads -- and prints everything else it
-	   *  receives. */
-	  print_fdcan_rx_messages();
+	  //Prc_Fsm_Tick();    /* TODO: Prc_Fsm_Init() above now latches a real board role, but this still drives real solenoids/servo off unconfirmed set-pressure constants and unwired sensor data -- see prc_state.cpp's TODOs before enabling */
+
+	  /*  Real CAN command decode, per Core/Inc/CAN.h's dictionary. Drains
+	   *  the FIFO every iteration, unthrottled -- no HAL_Delay()/throttling
+	   *  between reads, same reasoning as the LED slow-path split below (a
+	   *  throttled decode would leave commands sitting in the FIFO for up
+	   *  to 1s). See Application/FlightControl/prc_can.cpp for the actual
+	   *  per-message decode/validation. */
+	  if (HAL_FDCAN_GetRxFifoFillLevel(&hfdcan1, FDCAN_RX_FIFO0) > 0)
+	  {
+	    FDCAN_RxHeaderTypeDef rxHeader;
+	    uint8_t rxData[8] = {0};
+	    if (HAL_FDCAN_GetRxMessage(&hfdcan1, FDCAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
+	    {
+	      /* FDCAN_DLC_BYTES_0..8 (the only codes possible here -- classic
+	       * frames, RxFifo0ElmtSize = FDCAN_DATA_BYTES_8) are numerically
+	       * equal to the byte count, so DataLength can be used directly;
+	       * no HAL conversion macro exists for it in this HAL version. */
+	      Prc_Can_ProcessRxMessage(rxHeader.Identifier, rxData, rxHeader.DataLength);
+	    }
+	  }
 
 	  // Slow path: LED blink + sensor print, throttled to a human-readable
 	  // interval via HAL_GetTick() instead of a blocking HAL_Delay(), which
@@ -374,6 +303,10 @@ int main(void)
 	    } else {
 	      HAL_GPIO_WritePin(ETH_ON_GPIO_Port, ETH_ON_Pin, GPIO_PIN_RESET);
 	    }
+
+	    // Periodic DPR telemetry (tank + COPV pressures/temps), throttled to
+	    // this same 1s tick. See Application/FlightControl/prc_can.cpp.
+	    Prc_Can_SendTelemetry(&hfdcan1);
 
 	    //run_pte7300_hardware_test();
 	    //pte7300_print_data();
@@ -629,7 +562,7 @@ static void MX_FDCAN1_Init(void)
   hfdcan1.Init.DataTimeSeg1 = 1;
   hfdcan1.Init.DataTimeSeg2 = 1;
   hfdcan1.Init.MessageRAMOffset = 0;
-  hfdcan1.Init.StdFiltersNbr = 1;
+  hfdcan1.Init.StdFiltersNbr = 2; /* index 0: FC broadcast (static, below). index 1: this board's own node, configured dynamically by Prc_Can_ConfigNodeFilter() once role detection has run -- see USER CODE 2. */
   hfdcan1.Init.ExtFiltersNbr = 0;
   hfdcan1.Init.RxFifo0ElmtsNbr = 4;
   hfdcan1.Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_8;
@@ -648,27 +581,20 @@ static void MX_FDCAN1_Init(void)
   }
   /* USER CODE BEGIN FDCAN1_Init 2 */
 
+  /* Accepts any message addressed to CAN_NODE_FC (node nibble only masked
+   * -- priority/index free), per Core/Inc/CAN.h -- catches
+   * CANID_BROADCAST_ABORT (0x000), CANID_TIME_SYNC (0x500), and any future
+   * FC-broadcast message without needing a new filter added here. Index 1
+   * (this board's own node) is configured later, once role detection has
+   * run -- see Prc_Can_ConfigNodeFilter() in USER CODE 2. */
   FDCAN_FilterTypeDef canFilter;
   canFilter.IdType       = FDCAN_STANDARD_ID;
   canFilter.FilterIndex  = 0;
   canFilter.FilterType   = FDCAN_FILTER_MASK;
   canFilter.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
-  canFilter.FilterID1    = CANBUS_TEST_RX_ID;
-  canFilter.FilterID2    = 0x7FF;  /* exact-match mask: only CANBUS_TEST_RX_ID accepted */
+  canFilter.FilterID1    = (CAN_NODE_FC << 4);
+  canFilter.FilterID2    = 0x0F0; /* mask: only the node nibble must match */
   if (HAL_FDCAN_ConfigFilter(&hfdcan1, &canFilter) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /* PRB_CMD_VALVES (FC -> PRB manual valve override), per ICD section 2.x. */
-  FDCAN_FilterTypeDef canFilterValves;
-  canFilterValves.IdType       = FDCAN_STANDARD_ID;
-  canFilterValves.FilterIndex  = 1;
-  canFilterValves.FilterType   = FDCAN_FILTER_MASK;
-  canFilterValves.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
-  canFilterValves.FilterID1    = PRB_CMD_VALVES_ID;
-  canFilterValves.FilterID2    = 0x7FF;  /* exact-match mask */
-  if (HAL_FDCAN_ConfigFilter(&hfdcan1, &canFilterValves) != HAL_OK)
   {
     Error_Handler();
   }

@@ -1,6 +1,6 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
-# Toolchain: GNU Tools for STM32 (14.3.rel1)
+# Toolchain: GNU Tools for STM32 (13.3.rel1)
 ################################################################################
 
 C++M_SRCS := 
@@ -39,11 +39,18 @@ CPP_DEPS :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
+Application/Control \
+Application/Data/Stores \
+Application/Data \
+Application/FlightControl \
 Core/Src \
 Core/Startup \
+Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/src/prc_intranet \
 Drivers/FDC1004/Impl \
 Drivers/KULITE_CTL190/Impl \
+Drivers/LMT85/Impl \
 Drivers/PT1000/Impl \
+Drivers/PrcBoardId/Impl \
 Drivers/STM32H7xx_HAL_Driver/Src \
 Drivers/SensataPte7300/Impl \
 Drivers/Valve/Impl \

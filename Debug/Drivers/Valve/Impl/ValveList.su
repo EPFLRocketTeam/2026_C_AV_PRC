@@ -2,13 +2,13 @@
 ../Drivers/Valve/Valve.hpp:39:13:virtual IValve::~IValve()	16	static
 ../Drivers/Valve/Valve.hpp:84:7:SolenoidValve::~SolenoidValve()	16	static
 ../Drivers/Valve/Valve.hpp:84:7:virtual SolenoidValve::~SolenoidValve()	16	static
-../Drivers/Valve/Impl/ValveList.cpp:28:6:void __tcf_0()	8	static
-../Drivers/Valve/Impl/ValveList.cpp:34:6:void __tcf_1()	8	static
-../Drivers/Valve/Impl/ValveList.cpp:40:6:void __tcf_2()	8	static
-../Drivers/Valve/Impl/ValveList.cpp:46:6:void __tcf_3()	8	static
+../Drivers/Valve/Impl/ValveList.cpp:30:6:void __tcf_0()	8	static
+../Drivers/Valve/Impl/ValveList.cpp:36:6:void __tcf_1()	8	static
+../Drivers/Valve/Impl/ValveList.cpp:42:6:void __tcf_2()	8	static
+../Drivers/Valve/Impl/ValveList.cpp:48:6:void __tcf_3()	8	static
 ../Drivers/Valve/Valve.hpp:126:7:ServoBallValve::~ServoBallValve()	16	static
 ../Drivers/Valve/Valve.hpp:126:7:virtual ServoBallValve::~ServoBallValve()	16	static
-../Drivers/Valve/Impl/ValveList.cpp:59:6:void __tcf_4()	8	static
-../Drivers/Valve/Impl/ValveList.cpp:19:6:void Valve_InitAll()	96	static,ignoring_inline_asm
-../Drivers/Valve/Impl/ValveList.cpp:65:9:IValve* Valve_Get(ValveId)	16	static
-../Drivers/Valve/Impl/ValveList.cpp:81:17:ServoBallValve* Valve_GetBallValve()	4	static
+../Drivers/Valve/Impl/ValveList.cpp:61:6:void __tcf_4()	8	static
+../Drivers/Valve/Impl/ValveList.cpp:19:6:void Valve_InitAll()	96	static
+../Drivers/Valve/Impl/ValveList.cpp:67:9:IValve* Valve_Get(ValveId)	16	static
+../Drivers/Valve/Impl/ValveList.cpp:83:17:ServoBallValve* Valve_GetBallValve()	4	static

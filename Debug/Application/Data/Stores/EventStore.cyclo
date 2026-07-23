@@ -1,0 +1,7 @@
+../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::Event]	1
+../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::Event]	1
+../Application/Data/data.hpp:262:7:prc::EventStore::~EventStore()	1
+../Application/Data/data.hpp:262:7:virtual prc::EventStore::~EventStore()	1
+../Application/Data/Stores/EventStore.cpp:5:1:prc::Event::Event()	1
+../Application/Data/data.hpp:136:29:prc::IStore<prc::Event>::IStore()	1
+../Application/Data/Stores/EventStore.cpp:7:1:prc::EventStore::EventStore()	1

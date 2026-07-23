@@ -1,0 +1,8 @@
+../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::BoardIdentity]	16	static
+../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::BoardIdentity]	16	static
+../Application/Data/data.hpp:157:7:prc::BoardIdentityStore::~BoardIdentityStore()	16	static
+../Application/Data/data.hpp:157:7:virtual prc::BoardIdentityStore::~BoardIdentityStore()	16	static
+../Application/Data/Stores/BoardIdentityStore.cpp:5:1:prc::BoardIdentity::BoardIdentity()	16	static
+../Application/Data/data.hpp:136:29:prc::IStore<prc::BoardIdentity>::IStore()	16	static
+../Application/Data/Stores/BoardIdentityStore.cpp:9:1:prc::BoardIdentityStore::BoardIdentityStore()	16	static
+../Application/Data/Stores/BoardIdentityStore.cpp:11:11:prc::BoardRole prc::BoardIdentityStore::get_role() const	16	static

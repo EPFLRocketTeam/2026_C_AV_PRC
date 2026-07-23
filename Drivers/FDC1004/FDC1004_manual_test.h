@@ -15,6 +15,13 @@ extern volatile float fdc_cap_ch0_pf;
 extern volatile float fdc_cap_ch1_pf;
 extern volatile float fdc_cap_ch2_pf;
 extern volatile float fdc_cap_ch3_pf;
+
+//  per-channel error code from the last conversion attempt
+//  (see error code table in FDC1004.h). 0 = OK.
+extern volatile int   fdc_err_ch[4];
+
+//  first nonzero per-channel error, or 0 if all channels OK.
+//  kept for backward compatibility with existing debugger watches.
 extern volatile int   fdc_last_error;
 
 void FDC1004_ManualTest(I2C_HandleTypeDef *hi2c);

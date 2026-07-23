@@ -77,8 +77,49 @@ namespace Ctl190 {
         float           amp_gain;       /**< Gain of the INA128 (= 1 + 50k/R_G)    */
 
         /* --- Sensor parameters --- */
-        float           fso_mv;         /**< Full Scale Output in mV (nominal 100)  */
-        float           pressure_max;   /**< Full scale pressure (sensor range max) */
+        float           fso_mv;         /**< Full Scale Output in mV (nominal 100) --
+                                              family datasheet spec, kept for
+                                              reference/display only; NOT used in the
+                                              pressure calculation (see
+                                              sensitivity_mv_per_unit below). */
+        float           pressure_max;   /**< Rated full-scale pressure (nameplate
+                                              value, per this sensor's calibration
+                                              certificate -- e.g. 2000 PSI). Used for
+                                              display/reference; the hard out-of-range
+                                              ceiling is max_overpressure below, not a
+                                              margin on this value. */
+        float           max_overpressure; /**< Maximum overpressure/proof rating (per
+                                              calibration certificate -- e.g. 3000 PSI,
+                                              the CTL-190 datasheet's "1.5x rated above
+                                              500 PSI" rule). Readings above this are
+                                              flagged out-of-range; this is a real
+                                              instrument limit, not an arbitrary
+                                              margin. */
+
+        /* --- Calibration sensitivity (this specific sensor's cal certificate) --- */
+        float           sensitivity_mv_per_unit; /**< As-calibrated sensitivity, in mV
+                                              per `unit` (e.g. 0.05 for 0.05 mV/PSI),
+                                              measured at calibration_excitation_v.
+                                              This is what actually converts sensor_mv
+                                              to pressure -- do NOT derive it from
+                                              fso_mv/pressure_max: a given unit's real
+                                              calibrated sensitivity can differ
+                                              substantially from the family-nominal
+                                              FSO/range ratio. */
+        float           calibration_excitation_v; /**< Excitation voltage the
+                                              sensitivity above was measured at (per
+                                              the calibration certificate, e.g. 10.0). */
+        float           actual_excitation_v;      /**< Excitation voltage actually
+                                              driving the bridge in this circuit.
+                                              Bridge output is directly proportional
+                                              to excitation, so if this differs from
+                                              calibration_excitation_v, the effective
+                                              sensitivity scales by
+                                              (actual/calibration) -- e.g. calibrated
+                                              at 10V but run at 11V reads ~10% high
+                                              unless corrected. Must not exceed
+                                              MAX_EXCITATION_V. */
+
         PressureUnit    unit;           /**< Output pressure unit (BAR or PSI)      */
     };
 

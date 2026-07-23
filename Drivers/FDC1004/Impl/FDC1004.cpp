@@ -23,13 +23,33 @@ FDC1004::FDC1004(I2C_HandleTypeDef *i2c, const uint8_t address, const uint8_t ra
 
 bool FDC1004::begin()
 {
-  return isConnected();
+  if (! isConnected()) 
+  {
+    _error = -1;
+    return false;
+  }
+
+  //  address 0x50 is also the standard I2C EEPROM address, so a bare ACK
+  //  proves little. verify we are actually talking to a TI FDC1004.
+  uint16_t manId = 0;
+  uint16_t devId = 0;
+  if (! _readRegister(FDC1004_REG_MANUFACTURER_ID, &manId)) return false;
+  if (! _readRegister(FDC1004_REG_DEVICE_ID, &devId)) return false;
+
+  if (manId != FDC1004_MANUFACTURER_ID || devId != FDC1004_DEVICE_ID)
+  {
+    _error = -6;
+    return false;
+  }
+  return true;
 }
 
 
 bool FDC1004::isConnected()
 {
-  return HAL_I2C_IsDeviceReady(_i2c, _address << 1, 3, 1000) == HAL_OK;
+  //  1 trial, short timeout: a missing sensor should fail fast,
+  //  not stall the main loop for seconds.
+  return HAL_I2C_IsDeviceReady(_i2c, _address << 1, 1, 20) == HAL_OK;
 }
 
 
@@ -73,9 +93,19 @@ float FDC1004::getCapacitance(uint8_t channel)
     _capdac[channel] = capdac - 1;
   }
 
-  float capacitance_af = (float)FDC1004_ATTOFARADS_UPPER_WORD * (float)raw;
-  float capacitance_pf = capacitance_af / 1000000.0f;
-  capacitance_pf += ((float)FDC1004_FEMTOFARADS_CAPDAC * (float)capdac) / 1000.0f;
+  //  a clipped conversion is not a measurement: report it instead of
+  //  returning a plausible-looking but meaningless capacitance.
+  //  CAPDAC has already been stepped above, so retrying will converge.
+  if (raw >= FDC1004_CLIP_THRESHOLD || raw <= -FDC1004_CLIP_THRESHOLD)
+  {
+    _error = -5;
+    return NAN;
+  }
+
+  //  datasheet conversion: C(pF) = raw24 / 2^19 + CAPDAC * 3.125
+  //  upper word only -> 2048 counts per pF.
+  float capacitance_pf = (float)raw / FDC1004_COUNTS_PER_PF;
+  capacitance_pf += FDC1004_CAPDAC_PF * (float)capdac;
   return capacitance_pf;
 }
 
@@ -210,7 +240,7 @@ bool FDC1004::_readRegister(uint8_t reg, uint16_t *value)
     _error = -1;
     return false;
   }
-  if (HAL_I2C_Master_Receive(_i2c, (_address << 1) | 1, buf, 2, 10) != HAL_OK)
+  if (HAL_I2C_Master_Receive(_i2c, _address << 1, buf, 2, 10) != HAL_OK)
   {
     _error = -2;
     return false;
