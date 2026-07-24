@@ -56,14 +56,11 @@ static float SetPressureBarFor(BoardRole role) {
 static bool IsLox(BoardRole role) { return role == BoardRole::DprLox; }
 
 static float CurrentTankPressureBar(const PropSensors &s, BoardRole role) {
-  return static_cast<float>(IsLox(role) ? s.LOX_pressure : s.fuel_pressure);
+  return static_cast<float>(IsLox(role) ? s.pressure_OTA : s.pressure_ETA);
 }
 
-// N2_pressure is this board's COPV/pressurant reading (same field FC's own
-// Event.dpr_*_pressure_ok would presumably be derived from, were it wired
-// up) -- see PASSIVATE's two-phase venting logic below.
-static float CurrentCopvPressureBar(const PropSensors &s) {
-  return static_cast<float>(s.N2_pressure);
+static float CurrentCopvPressureBar(const PropSensors &s, BoardRole role) {
+  return static_cast<float>(IsLox(role) ? s.pressure_HPO : s.pressure_HPE);
 }
 
 // Threshold below which a tank/COPV is considered "vented" -- ported from
@@ -347,7 +344,7 @@ static void ApplyValveActions(State state, State previous_state, const DataDump 
         // One-time RST setup on entry to the ramp phase (matches BDPR
         // calling updateRST()+RST_p.set() once per phase-entry, not every
         // tick -- see the RST controller comment above).
-        const float copv_bar = CurrentCopvPressureBar(dump.propSensors);
+        const float copv_bar = CurrentCopvPressureBar(dump.propSensors, dump.boardIdentity.role);
         UpdateRstPolynomials(g_ramp_r, g_ramp_s, g_ramp_t, copv_bar);
         const float current_bar = CurrentTankPressureBar(dump.propSensors, dump.boardIdentity.role);
         g_ramp_rst.reset(current_bar);
@@ -379,7 +376,7 @@ static void ApplyValveActions(State state, State previous_state, const DataDump 
       case State::REGULATE: {
         // One-time RST setup on entry to closed-loop regulation (matches
         // BDPR calling updateRST()+RST_c.set() once per phase-entry).
-        const float copv_bar = CurrentCopvPressureBar(dump.propSensors);
+        const float copv_bar = CurrentCopvPressureBar(dump.propSensors, dump.boardIdentity.role);
         UpdateRstPolynomials(g_regulate_r, g_regulate_s, g_regulate_t, copv_bar);
         const float current_bar = CurrentTankPressureBar(dump.propSensors, dump.boardIdentity.role);
         g_regulate_rst.reset(current_bar);
@@ -426,7 +423,7 @@ static void ApplyValveActions(State state, State previous_state, const DataDump 
     //     VENT, since this board has no separate COPV-only vent path).
     //   once BOTH tank and COPV are vented: close everything.
     const float tank_bar = CurrentTankPressureBar(dump.propSensors, dump.boardIdentity.role);
-    const float copv_bar = CurrentCopvPressureBar(dump.propSensors);
+    const float copv_bar = CurrentCopvPressureBar(dump.propSensors, dump.boardIdentity.role);
     const bool tank_vented = tank_bar <= k_vented_threshold_bar;
     const bool copv_vented = copv_bar <= k_vented_threshold_bar;
 
