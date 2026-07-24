@@ -5,6 +5,7 @@
 
 #include "Application/Data/data.hpp"
 #include "Application/FlightControl/uplink_cmd.hpp"
+#include "log_aggregator/chunker.hpp"
 #include "prc_intranet/const.hpp"
 #include "prc_intranet/dispatch.hpp"
 #include "prc_intranet/transmit.hpp"
@@ -121,6 +122,31 @@ void CbSend(void* driver_ptr, uint16_t can_id, const uint8_t* buffer, uint32_t d
   }
 }
 
+// log_aggregator::SendChunkFn: called once per 8-byte chunk of a
+// forwarded printf write. `ctx` is the prc_intranet context (same one
+// used for telemetry/RX), with driver_ptr already pointing at hfdcan
+// (set by Prc_Log_Forward below before chunking starts).
+void SendLogChunk(void* ctx, const uint8_t chunk[8]) noexcept {
+  auto* channel_ctx = static_cast<pi::context*>(ctx);
+
+  pi::payload::log_chunk payload{};
+  memcpy(payload.bytes, chunk, sizeof(payload.bytes));
+
+  switch (CurrentRole()) {
+    case BoardRole::DprEth:
+      pi::send_log_chunk_dpr_eth(channel_ctx, payload);
+      break;
+    case BoardRole::DprLox:
+      pi::send_log_chunk_dpr_lox(channel_ctx, payload);
+      break;
+    default:
+      // EngineBay/Unknown: no log_chunk id wired for EngineBay here yet,
+      // and Unknown means role detection hasn't latched. Drop silently,
+      // same as every other role gate in this file.
+      break;
+  }
+}
+
 pi::context& Ctx() {
   static pi::context ctx = [] {
     pi::prc_driver driver{};
@@ -223,4 +249,28 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
     pi::send_dpr_eth_pressures(&ctx, pressures);
     pi::send_dpr_eth_temps_1(&ctx, temps);
   }
+}
+
+void Prc_Log_Forward(FDCAN_HandleTypeDef *hfdcan, const uint8_t *data, uint32_t length) {
+  const BoardRole role = CurrentRole();
+  if (role != BoardRole::DprLox && role != BoardRole::DprEth) {
+    return;
+  }
+
+  // Reentrancy guard: CbSend prints a warning on TX failure, and that
+  // printf would otherwise recurse straight back into this function via
+  // _write() -- if the underlying CAN TX condition that failed the first
+  // send is still failing, that recursion never terminates. A failed
+  // send while already forwarding just gets dropped instead of retried.
+  static bool in_progress = false;
+  if (in_progress) {
+    return;
+  }
+  in_progress = true;
+
+  pi::context& ctx = Ctx();
+  ctx.driver.driver_ptr = hfdcan;
+  log_aggregator::chunk_and_send(data, length, &ctx, SendLogChunk);
+
+  in_progress = false;
 }

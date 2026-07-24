@@ -94,6 +94,14 @@ int _write(int file, char *ptr, int len) {
             break;
         }
     }
+
+#ifdef ENABLE_LOG
+    // Relay the same bytes over CAN to FC, tagged with this board's role
+    // (see Application/FlightControl/prc_can.cpp). Local VCP output above
+    // is unaffected either way -- this is purely additive.
+    Prc_Log_Forward(&hfdcan1, (const uint8_t*)ptr, (uint32_t)len);
+#endif
+
     return len;
 }
 
@@ -255,7 +263,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  //Prc_Fsm_Tick();    /* TODO: Prc_Fsm_Init() above now latches a real board role, but this still drives real solenoids/servo off unconfirmed set-pressure constants and unwired sensor data -- see prc_state.cpp's TODOs before enabling */
+	  Prc_Fsm_Tick();
 
 	  /*  Real CAN command decode, per Core/Inc/CAN.h's dictionary. Drains
 	   *  the FIFO every iteration, unthrottled -- no HAL_Delay()/throttling

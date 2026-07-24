@@ -89,6 +89,7 @@
 									<listOptionValue builtIn="false" value="../Drivers/KULITE_CTL190"/>
 									<listOptionValue builtIn="false" value="../Drivers/LMT85"/>
 									<listOptionValue builtIn="false" value="../Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include"/>
+									<listOptionValue builtIn="false" value="../Drivers/LOG_AGGREGATOR/2026_C_AV_LOG_AGGREGATOR/include"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.definedsymbols.1447266007" name="Define symbols (-D)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.definedsymbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="DEBUG"/>
@@ -216,6 +217,7 @@
 									<listOptionValue builtIn="false" value="../Drivers/KULITE_CTL190"/>
 									<listOptionValue builtIn="false" value="../Drivers/LMT85"/>
 									<listOptionValue builtIn="false" value="../Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include"/>
+									<listOptionValue builtIn="false" value="../Drivers/LOG_AGGREGATOR/2026_C_AV_LOG_AGGREGATOR/include"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.definedsymbols.1866376793" name="Define symbols (-D)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.definedsymbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="USE_PWR_LDO_SUPPLY"/>
