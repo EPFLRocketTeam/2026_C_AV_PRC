@@ -27,26 +27,27 @@
 ../Application/Data/data.hpp:252:7:prc::PrcStore::~PrcStore()	1
 ../Application/Data/data.hpp:266:21:void __tcf_0()	1
 ../Application/Data/data.hpp:265:27:static prc::PrcStore& prc::PrcStore::get_instance()	3
-../Application/FlightControl/prc_can.cpp:18:6:void {anonymous}::SetCmd(uint8_t, uint8_t)	1
-../Application/FlightControl/prc_can.cpp:25:11:prc::BoardRole {anonymous}::CurrentRole()	1
-../Application/FlightControl/prc_can.cpp:32:6:void {anonymous}::OnBroadcastAbort(void*, prc_intranet::payload::safety_key)	2
-../Application/FlightControl/prc_can.cpp:45:6:void {anonymous}::OnDprEthAbort(void*, prc_intranet::payload::safety_key)	3
-../Application/FlightControl/prc_can.cpp:49:6:void {anonymous}::OnDprEthPassivate(void*, prc_intranet::payload::safety_key)	3
-../Application/FlightControl/prc_can.cpp:53:6:void {anonymous}::OnDprEthPressurize(void*, prc_intranet::payload::on_off)	4
-../Application/FlightControl/prc_can.cpp:58:6:void {anonymous}::OnDprEthReset(void*, prc_intranet::payload::reset)	3
-../Application/FlightControl/prc_can.cpp:71:6:void {anonymous}::OnDprEthCmdValves(void*, prc_intranet::payload::cmd_valves)	1
-../Application/FlightControl/prc_can.cpp:75:6:void {anonymous}::OnDprLoxAbort(void*, prc_intranet::payload::safety_key)	3
-../Application/FlightControl/prc_can.cpp:79:6:void {anonymous}::OnDprLoxPassivate(void*, prc_intranet::payload::safety_key)	3
-../Application/FlightControl/prc_can.cpp:83:6:void {anonymous}::OnDprLoxPressurize(void*, prc_intranet::payload::on_off)	4
-../Application/FlightControl/prc_can.cpp:88:6:void {anonymous}::OnDprLoxReset(void*, prc_intranet::payload::reset)	3
-../Application/FlightControl/prc_can.cpp:92:6:void {anonymous}::OnDprLoxCmdValves(void*, prc_intranet::payload::cmd_valves)	1
-../Application/FlightControl/prc_can.cpp:103:6:void {anonymous}::CbSend(void*, uint16_t, const uint8_t*, uint32_t)	2
-../Application/FlightControl/prc_can.cpp:129:6:void {anonymous}::SendLogChunk(void*, const uint8_t*)	3
-../Application/FlightControl/prc_can.cpp:151:28:{anonymous}::Ctx()::<lambda()>	1
-../Application/FlightControl/prc_can.cpp:150:14:prc_intranet::context& {anonymous}::Ctx()	3
-../Application/FlightControl/prc_can.cpp:172:6:void Prc_Can_ProcessRxMessage(uint32_t, const uint8_t*, uint32_t)	3
-../Application/FlightControl/prc_can.cpp:184:6:void Prc_Can_ConfigNodeFilter(FDCAN_HandleTypeDef*)	5
-../Application/FlightControl/prc_can.cpp:208:6:void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef*)	8
-../Application/FlightControl/prc_can.cpp:263:6:void Prc_Log_Forward(FDCAN_HandleTypeDef*, const uint8_t*, uint32_t)	4
+../Application/FlightControl/prc_can.cpp:19:6:void {anonymous}::SetCmd(uint8_t, uint8_t)	1
+../Application/FlightControl/prc_can.cpp:26:11:prc::BoardRole {anonymous}::CurrentRole()	1
+../Application/FlightControl/prc_can.cpp:33:6:void {anonymous}::OnBroadcastAbort(void*, prc_intranet::payload::safety_key)	2
+../Application/FlightControl/prc_can.cpp:46:6:void {anonymous}::OnDprEthAbort(void*, prc_intranet::payload::safety_key)	3
+../Application/FlightControl/prc_can.cpp:50:6:void {anonymous}::OnDprEthPassivate(void*, prc_intranet::payload::safety_key)	3
+../Application/FlightControl/prc_can.cpp:54:6:void {anonymous}::OnDprEthPressurize(void*, prc_intranet::payload::on_off)	4
+../Application/FlightControl/prc_can.cpp:59:6:void {anonymous}::OnDprEthReset(void*, prc_intranet::payload::reset)	3
+../Application/FlightControl/prc_can.cpp:67:6:void {anonymous}::ApplyCmdValves(prc_intranet::payload::cmd_valves)	7
+../Application/FlightControl/prc_can.cpp:83:6:void {anonymous}::OnDprEthCmdValves(void*, prc_intranet::payload::cmd_valves)	2
+../Application/FlightControl/prc_can.cpp:88:6:void {anonymous}::OnDprLoxAbort(void*, prc_intranet::payload::safety_key)	3
+../Application/FlightControl/prc_can.cpp:92:6:void {anonymous}::OnDprLoxPassivate(void*, prc_intranet::payload::safety_key)	3
+../Application/FlightControl/prc_can.cpp:96:6:void {anonymous}::OnDprLoxPressurize(void*, prc_intranet::payload::on_off)	4
+../Application/FlightControl/prc_can.cpp:101:6:void {anonymous}::OnDprLoxReset(void*, prc_intranet::payload::reset)	3
+../Application/FlightControl/prc_can.cpp:105:6:void {anonymous}::OnDprLoxCmdValves(void*, prc_intranet::payload::cmd_valves)	2
+../Application/FlightControl/prc_can.cpp:117:6:void {anonymous}::CbSend(void*, uint16_t, const uint8_t*, uint32_t)	2
+../Application/FlightControl/prc_can.cpp:143:6:void {anonymous}::SendLogChunk(void*, const uint8_t*)	3
+../Application/FlightControl/prc_can.cpp:165:28:{anonymous}::Ctx()::<lambda()>	1
+../Application/FlightControl/prc_can.cpp:164:14:prc_intranet::context& {anonymous}::Ctx()	3
+../Application/FlightControl/prc_can.cpp:186:6:void Prc_Can_ProcessRxMessage(uint32_t, const uint8_t*, uint32_t)	3
+../Application/FlightControl/prc_can.cpp:198:6:void Prc_Can_ConfigNodeFilter(FDCAN_HandleTypeDef*)	5
+../Application/FlightControl/prc_can.cpp:222:6:void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef*)	8
+../Application/FlightControl/prc_can.cpp:277:6:void Prc_Log_Forward(FDCAN_HandleTypeDef*, const uint8_t*, uint32_t)	4
 ../Application/Data/data.hpp:108:15:void prc::IStore<T>::set(const T&) [with T = prc::UplinkCmd]	1
 ../Application/Data/data.hpp:109:19:const T& prc::IStore<T>::get() const [with T = prc::State]	1

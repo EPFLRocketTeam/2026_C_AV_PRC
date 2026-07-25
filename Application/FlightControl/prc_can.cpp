@@ -75,6 +75,9 @@ void ApplyCmdValves(pi::payload::cmd_valves cmd) noexcept {
 
   if (cmd.state == pi::constants::VALVE_STATE_OPEN) valve->open();
   else if (cmd.state == pi::constants::VALVE_STATE_CLOSED) valve->close();
+  else return;
+
+  printf("[PRC CAN] cmd_valves: %s -> %s\r\n", valve->name(), valve->is_open() ? "open" : "closed");
 }
 
 void OnDprEthCmdValves(void*, pi::payload::cmd_valves cmd) noexcept {
