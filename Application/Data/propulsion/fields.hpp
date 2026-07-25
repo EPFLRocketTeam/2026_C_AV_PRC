@@ -28,6 +28,6 @@
   X_raw_FIELD(double, pressure_ETA1, ##__VA_ARGS__) \
   X_raw_FIELD(double, pressure_ETA2, ##__VA_ARGS__) \
   X_raw_FIELD(double, pressure_ETA3, ##__VA_ARGS__) \
-  X_proc_FIELD(double, pressure_ETA_mean, ##__VA_ARGS__) \
+  X_proc_FIELD(double, pressure_ETA, ##__VA_ARGS__) \
   X_FIELD(double, pressure_HPE, ##__VA_ARGS__)
 #endif
