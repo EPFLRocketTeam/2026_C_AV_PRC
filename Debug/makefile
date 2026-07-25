@@ -19,6 +19,7 @@ RM := rm -rf
 -include Drivers/STM32H7xx_HAL_Driver/Src/subdir.mk
 -include Drivers/PrcBoardId/Impl/subdir.mk
 -include Drivers/PT1000/Impl/subdir.mk
+-include Drivers/LOG_AGGREGATOR/2026_C_AV_LOG_AGGREGATOR/src/log_aggregator/subdir.mk
 -include Drivers/LMT85/Impl/subdir.mk
 -include Drivers/KULITE_CTL190/Impl/subdir.mk
 -include Drivers/FDC1004/Impl/subdir.mk

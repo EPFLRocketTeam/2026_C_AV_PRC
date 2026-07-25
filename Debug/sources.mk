@@ -49,6 +49,7 @@ Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/src/prc_intranet \
 Drivers/FDC1004/Impl \
 Drivers/KULITE_CTL190/Impl \
 Drivers/LMT85/Impl \
+Drivers/LOG_AGGREGATOR/2026_C_AV_LOG_AGGREGATOR/src/log_aggregator \
 Drivers/PT1000/Impl \
 Drivers/PrcBoardId/Impl \
 Drivers/STM32H7xx_HAL_Driver/Src \

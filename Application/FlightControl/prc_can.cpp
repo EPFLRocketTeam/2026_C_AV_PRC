@@ -5,6 +5,7 @@
 
 #include "Application/Data/data.hpp"
 #include "Application/FlightControl/uplink_cmd.hpp"
+#include "Drivers/Valve/ValveList.hpp"
 #include "log_aggregator/chunker.hpp"
 #include "prc_intranet/const.hpp"
 #include "prc_intranet/dispatch.hpp"
@@ -59,17 +60,26 @@ void OnDprEthReset(void*, pi::payload::reset r) noexcept {
   if (CurrentRole() != BoardRole::DprEth) return;
   if (r.magic == pi::constants::RESET_MAGIC) SetCmd(kCmdReset);
 }
-// TODO: manual single-valve override, decoded here but not acted on yet.
-// VALVE_SAFETY/VALVE_VENT/VALVE_BALLVALVE (prc_intranet/const.hpp) are
-// still placeholder byte values; confirm before wiring this to
-// Valve_Get(k_valve_safety)/Valve_Get(k_valve_vent) (see prc_state.cpp).
-// Likely only meaningful in MANUAL, same as the engine PRC's CMD_VALVES
-// override -- and per 2025_C_PR_DPR's precedent, should probably be gated
-// to MANUAL/ABORT_ON_GROUND only, not open in every state. The ball valve
-// is proportional (ServoBallValve::set_position), not open/closed, so
-// VALVE_BALLVALVE has no meaningful action here yet.
-void OnDprEthCmdValves(void*, pi::payload::cmd_valves) noexcept {
+// Bench-test hookup: Sol3/Sol4 are this board's spare solenoid channels
+// (see ValveList.hpp), temporarily repurposed as "LOX main"/"Ethanol main"
+// for wiring two solenoids to a single board and driving them from FC's
+// shell (main lox/main fuel). Not a real mission valve mapping yet.
+void ApplyCmdValves(pi::payload::cmd_valves cmd) noexcept {
+  ValveId id;
+  if (cmd.valve_id == pi::constants::VALVE_SOL3) id = ValveId::Sol3;
+  else if (cmd.valve_id == pi::constants::VALVE_SOL4) id = ValveId::Sol4;
+  else return;
+
+  IValve* valve = Valve_Get(id);
+  if (!valve) return;
+
+  if (cmd.state == pi::constants::VALVE_STATE_OPEN) valve->open();
+  else if (cmd.state == pi::constants::VALVE_STATE_CLOSED) valve->close();
+}
+
+void OnDprEthCmdValves(void*, pi::payload::cmd_valves cmd) noexcept {
   if (CurrentRole() != BoardRole::DprEth) return;
+  ApplyCmdValves(cmd);
 }
 
 void OnDprLoxAbort(void*, pi::payload::safety_key key) noexcept {
@@ -89,8 +99,9 @@ void OnDprLoxReset(void*, pi::payload::reset r) noexcept {
   if (CurrentRole() != BoardRole::DprLox) return;
   if (r.magic == pi::constants::RESET_MAGIC) SetCmd(kCmdReset);
 }
-void OnDprLoxCmdValves(void*, pi::payload::cmd_valves) noexcept {
+void OnDprLoxCmdValves(void*, pi::payload::cmd_valves cmd) noexcept {
   if (CurrentRole() != BoardRole::DprLox) return;
+  ApplyCmdValves(cmd);
 }
 
 // HAL_FDCAN_AddMessageToTxFifoQ word-copies from this buffer regardless of

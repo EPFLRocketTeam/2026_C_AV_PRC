@@ -44,6 +44,7 @@ Application/FlightControl/prc_can.o: \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_pcd_ex.h \
  ../Application/Data/data.hpp ../Application/Data/fsm.hpp \
  ../Application/FlightControl/uplink_cmd.hpp \
+ ../Drivers/LOG_AGGREGATOR/2026_C_AV_LOG_AGGREGATOR/include/log_aggregator/chunker.hpp \
  ../Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include/prc_intranet/const.hpp \
  ../Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include/prc_intranet/message_list.hpp \
  ../Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include/prc_intranet/can_id.hpp \
@@ -96,6 +97,7 @@ Application/FlightControl/prc_can.o: \
 ../Application/Data/data.hpp:
 ../Application/Data/fsm.hpp:
 ../Application/FlightControl/uplink_cmd.hpp:
+../Drivers/LOG_AGGREGATOR/2026_C_AV_LOG_AGGREGATOR/include/log_aggregator/chunker.hpp:
 ../Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include/prc_intranet/const.hpp:
 ../Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include/prc_intranet/message_list.hpp:
 ../Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include/prc_intranet/can_id.hpp:

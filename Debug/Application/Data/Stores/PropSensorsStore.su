@@ -1,43 +1,55 @@
-../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::PropSensors]	16	static
-../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::PropSensors]	16	static
-../Application/Data/data.hpp:164:7:prc::PropSensorsStore::~PropSensorsStore()	16	static
-../Application/Data/data.hpp:164:7:virtual prc::PropSensorsStore::~PropSensorsStore()	16	static
+../Application/Data/data.hpp:106:11:prc::IStore<T>::~IStore() [with T = prc::PropSensors]	16	static
+../Application/Data/data.hpp:106:11:prc::IStore<T>::~IStore() [with T = prc::PropSensors]	16	static
+../Application/Data/data.hpp:132:7:prc::PropSensorsStore::~PropSensorsStore()	16	static
+../Application/Data/data.hpp:132:7:virtual prc::PropSensorsStore::~PropSensorsStore()	16	static
 ../Application/Data/Stores/PropSensorsStore.cpp:5:1:prc::PropSensors::PropSensors()	16	static
-../Application/Data/data.hpp:136:29:prc::IStore<prc::PropSensors>::IStore()	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:30:1:prc::PropSensorsStore::PropSensorsStore()	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:32:8:double prc::PropSensorsStore::get_N2_pressure() const	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:33:6:void prc::PropSensorsStore::set_N2_pressure(double)	24	static
-../Application/Data/Stores/PropSensorsStore.cpp:35:8:double prc::PropSensorsStore::get_fuel_pressure() const	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:36:6:void prc::PropSensorsStore::set_fuel_pressure(double)	24	static
-../Application/Data/Stores/PropSensorsStore.cpp:38:8:double prc::PropSensorsStore::get_LOX_pressure() const	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:39:6:void prc::PropSensorsStore::set_LOX_pressure(double)	24	static
-../Application/Data/Stores/PropSensorsStore.cpp:41:8:double prc::PropSensorsStore::get_igniter_pressure() const	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:42:6:void prc::PropSensorsStore::set_igniter_pressure(double)	24	static
-../Application/Data/Stores/PropSensorsStore.cpp:44:8:double prc::PropSensorsStore::get_LOX_inj_pressure() const	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:45:6:void prc::PropSensorsStore::set_LOX_inj_pressure(double)	24	static
-../Application/Data/Stores/PropSensorsStore.cpp:47:8:double prc::PropSensorsStore::get_fuel_inj_pressure() const	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:48:6:void prc::PropSensorsStore::set_fuel_inj_pressure(double)	24	static
-../Application/Data/Stores/PropSensorsStore.cpp:50:8:double prc::PropSensorsStore::get_chamber_pressure() const	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:51:6:void prc::PropSensorsStore::set_chamber_pressure(double)	24	static
-../Application/Data/Stores/PropSensorsStore.cpp:53:8:double prc::PropSensorsStore::get_fuel_level() const	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:54:6:void prc::PropSensorsStore::set_fuel_level(double)	24	static
-../Application/Data/Stores/PropSensorsStore.cpp:56:8:double prc::PropSensorsStore::get_LOX_level() const	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:57:6:void prc::PropSensorsStore::set_LOX_level(double)	24	static
-../Application/Data/Stores/PropSensorsStore.cpp:59:8:double prc::PropSensorsStore::get_N2_temperature() const	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:60:6:void prc::PropSensorsStore::set_N2_temperature(double)	24	static
-../Application/Data/Stores/PropSensorsStore.cpp:62:8:double prc::PropSensorsStore::get_fuel_temperature() const	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:63:6:void prc::PropSensorsStore::set_fuel_temperature(double)	24	static
-../Application/Data/Stores/PropSensorsStore.cpp:65:8:double prc::PropSensorsStore::get_LOX_temperature() const	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:66:6:void prc::PropSensorsStore::set_LOX_temperature(double)	24	static
-../Application/Data/Stores/PropSensorsStore.cpp:68:8:double prc::PropSensorsStore::get_igniter_temperature() const	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:69:6:void prc::PropSensorsStore::set_igniter_temperature(double)	24	static
-../Application/Data/Stores/PropSensorsStore.cpp:71:8:double prc::PropSensorsStore::get_fuel_inj_temperature() const	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:72:6:void prc::PropSensorsStore::set_fuel_inj_temperature(double)	24	static
-../Application/Data/Stores/PropSensorsStore.cpp:74:8:double prc::PropSensorsStore::get_fuel_inj_cooling_temperature() const	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:75:6:void prc::PropSensorsStore::set_fuel_inj_cooling_temperature(double)	24	static
-../Application/Data/Stores/PropSensorsStore.cpp:77:8:double prc::PropSensorsStore::get_LOX_inj_temperature() const	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:78:6:void prc::PropSensorsStore::set_LOX_inj_temperature(double)	24	static
-../Application/Data/Stores/PropSensorsStore.cpp:80:8:double prc::PropSensorsStore::get_chamber_temperature() const	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:81:6:void prc::PropSensorsStore::set_chamber_temperature(double)	24	static
-../Application/Data/Stores/PropSensorsStore.cpp:83:10:uint32_t prc::PropSensorsStore::get_PR_state() const	16	static
-../Application/Data/Stores/PropSensorsStore.cpp:84:6:void prc::PropSensorsStore::set_PR_state(uint32_t)	16	static
+../Application/Data/data.hpp:104:29:prc::IStore<prc::PropSensors>::IStore()	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:32:1:prc::PropSensorsStore::PropSensorsStore()	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:34:8:double prc::PropSensorsStore::get_pressure_C() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:35:6:void prc::PropSensorsStore::set_pressure_C(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:36:8:double prc::PropSensorsStore::get_pressure_C_mean() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:37:6:void prc::PropSensorsStore::set_pressure_C_mean(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:39:8:double prc::PropSensorsStore::get_temperature_C() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:40:6:void prc::PropSensorsStore::set_temperature_C(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:41:8:double prc::PropSensorsStore::get_temperature_C_mean() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:42:6:void prc::PropSensorsStore::set_temperature_C_mean(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:44:8:double prc::PropSensorsStore::get_pressure_OIN() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:45:6:void prc::PropSensorsStore::set_pressure_OIN(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:46:8:double prc::PropSensorsStore::get_pressure_OIN_mean() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:47:6:void prc::PropSensorsStore::set_pressure_OIN_mean(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:49:8:double prc::PropSensorsStore::get_pressure_EIN() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:50:6:void prc::PropSensorsStore::set_pressure_EIN(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:51:8:double prc::PropSensorsStore::get_pressure_EIN_mean() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:52:6:void prc::PropSensorsStore::set_pressure_EIN_mean(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:54:8:double prc::PropSensorsStore::get_temperature_EIN() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:55:6:void prc::PropSensorsStore::set_temperature_EIN(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:56:8:double prc::PropSensorsStore::get_temperature_EIN_mean() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:57:6:void prc::PropSensorsStore::set_temperature_EIN_mean(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:59:8:double prc::PropSensorsStore::get_temperature_OIN() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:60:6:void prc::PropSensorsStore::set_temperature_OIN(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:61:8:double prc::PropSensorsStore::get_temperature_OIN_mean() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:62:6:void prc::PropSensorsStore::set_temperature_OIN_mean(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:64:8:double prc::PropSensorsStore::get_pressure_OTA() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:65:6:void prc::PropSensorsStore::set_pressure_OTA(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:66:8:double prc::PropSensorsStore::get_pressure_OTA_mean() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:67:6:void prc::PropSensorsStore::set_pressure_OTA_mean(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:69:8:double prc::PropSensorsStore::get_pressure_HPO() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:70:6:void prc::PropSensorsStore::set_pressure_HPO(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:71:8:double prc::PropSensorsStore::get_pressure_HPO_mean() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:72:6:void prc::PropSensorsStore::set_pressure_HPO_mean(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:74:8:double prc::PropSensorsStore::get_temperature_OTA(uint8_t) const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:75:6:void prc::PropSensorsStore::set_temperature_OTA(uint8_t, double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:76:8:double prc::PropSensorsStore::get_temperature_OTA_mean(uint8_t) const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:77:6:void prc::PropSensorsStore::set_temperature_OTA_mean(uint8_t, double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:79:8:double prc::PropSensorsStore::get_FLS() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:80:6:void prc::PropSensorsStore::set_FLS(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:81:8:double prc::PropSensorsStore::get_FLS_mean() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:82:6:void prc::PropSensorsStore::set_FLS_mean(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:84:8:double prc::PropSensorsStore::get_pressure_ETA() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:85:6:void prc::PropSensorsStore::set_pressure_ETA(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:86:8:double prc::PropSensorsStore::get_pressure_ETA_mean() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:87:6:void prc::PropSensorsStore::set_pressure_ETA_mean(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:89:8:double prc::PropSensorsStore::get_pressure_HPE() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:90:6:void prc::PropSensorsStore::set_pressure_HPE(double)	24	static
+../Application/Data/Stores/PropSensorsStore.cpp:91:8:double prc::PropSensorsStore::get_pressure_HPE_mean() const	16	static
+../Application/Data/Stores/PropSensorsStore.cpp:92:6:void prc::PropSensorsStore::set_pressure_HPE_mean(double)	24	static

@@ -1,21 +1,21 @@
-../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::State]	1
-../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::State]	1
-../Application/Data/data.hpp:148:7:prc::StateStore::~StateStore()	1
-../Application/Data/data.hpp:148:7:virtual prc::StateStore::~StateStore()	1
-../Application/Data/data.hpp:136:29:prc::IStore<prc::State>::IStore()	1
+../Application/Data/data.hpp:106:11:prc::IStore<T>::~IStore() [with T = prc::State]	1
+../Application/Data/data.hpp:106:11:prc::IStore<T>::~IStore() [with T = prc::State]	1
+../Application/Data/data.hpp:116:7:prc::StateStore::~StateStore()	1
+../Application/Data/data.hpp:116:7:virtual prc::StateStore::~StateStore()	1
+../Application/Data/data.hpp:104:29:prc::IStore<prc::State>::IStore()	1
 ../Application/Data/data.cpp:7:1:prc::StateStore::StateStore()	1
 ../Application/Data/data.cpp:9:17:const prc::DataDump& prc::PrcStore::get() const	1
 ../Application/Data/data.cpp:20:6:void prc::PrcStore::set(const prc::DataDump&)	1
 ../Application/Data/data.cpp:29:11:prc::DataDump* prc::PrcStore::get_ref()	1
-../Application/Data/data.hpp:141:19:const T& prc::IStore<T>::get() const [with T = prc::State]	1
-../Application/Data/data.hpp:141:19:const T& prc::IStore<T>::get() const [with T = prc::BoardIdentity]	1
-../Application/Data/data.hpp:141:19:const T& prc::IStore<T>::get() const [with T = prc::PropSensors]	1
-../Application/Data/data.hpp:141:19:const T& prc::IStore<T>::get() const [with T = prc::Valves]	1
-../Application/Data/data.hpp:141:19:const T& prc::IStore<T>::get() const [with T = prc::UplinkCmd]	1
-../Application/Data/data.hpp:141:19:const T& prc::IStore<T>::get() const [with T = prc::Event]	1
-../Application/Data/data.hpp:140:15:void prc::IStore<T>::set(const T&) [with T = prc::State]	1
-../Application/Data/data.hpp:140:15:void prc::IStore<T>::set(const T&) [with T = prc::BoardIdentity]	1
-../Application/Data/data.hpp:140:15:void prc::IStore<T>::set(const T&) [with T = prc::PropSensors]	1
-../Application/Data/data.hpp:140:15:void prc::IStore<T>::set(const T&) [with T = prc::Valves]	1
-../Application/Data/data.hpp:140:15:void prc::IStore<T>::set(const T&) [with T = prc::UplinkCmd]	1
-../Application/Data/data.hpp:140:15:void prc::IStore<T>::set(const T&) [with T = prc::Event]	1
+../Application/Data/data.hpp:109:19:const T& prc::IStore<T>::get() const [with T = prc::State]	1
+../Application/Data/data.hpp:109:19:const T& prc::IStore<T>::get() const [with T = prc::BoardIdentity]	1
+../Application/Data/data.hpp:109:19:const T& prc::IStore<T>::get() const [with T = prc::PropSensors]	1
+../Application/Data/data.hpp:109:19:const T& prc::IStore<T>::get() const [with T = prc::Valves]	1
+../Application/Data/data.hpp:109:19:const T& prc::IStore<T>::get() const [with T = prc::UplinkCmd]	1
+../Application/Data/data.hpp:109:19:const T& prc::IStore<T>::get() const [with T = prc::Event]	1
+../Application/Data/data.hpp:108:15:void prc::IStore<T>::set(const T&) [with T = prc::State]	1
+../Application/Data/data.hpp:108:15:void prc::IStore<T>::set(const T&) [with T = prc::BoardIdentity]	1
+../Application/Data/data.hpp:108:15:void prc::IStore<T>::set(const T&) [with T = prc::PropSensors]	1
+../Application/Data/data.hpp:108:15:void prc::IStore<T>::set(const T&) [with T = prc::Valves]	1
+../Application/Data/data.hpp:108:15:void prc::IStore<T>::set(const T&) [with T = prc::UplinkCmd]	1
+../Application/Data/data.hpp:108:15:void prc::IStore<T>::set(const T&) [with T = prc::Event]	1

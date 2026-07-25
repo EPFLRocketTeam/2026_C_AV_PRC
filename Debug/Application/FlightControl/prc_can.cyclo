@@ -1,49 +1,52 @@
-../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::State]	1
-../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::State]	1
-../Application/Data/data.hpp:148:7:prc::StateStore::~StateStore()	1
-../Application/Data/data.hpp:148:7:virtual prc::StateStore::~StateStore()	1
-../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::BoardIdentity]	1
-../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::BoardIdentity]	1
-../Application/Data/data.hpp:157:7:prc::BoardIdentityStore::~BoardIdentityStore()	1
-../Application/Data/data.hpp:157:7:virtual prc::BoardIdentityStore::~BoardIdentityStore()	1
-../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::PropSensors]	1
-../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::PropSensors]	1
-../Application/Data/data.hpp:164:7:prc::PropSensorsStore::~PropSensorsStore()	1
-../Application/Data/data.hpp:164:7:virtual prc::PropSensorsStore::~PropSensorsStore()	1
-../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::Valves]	1
-../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::Valves]	1
-../Application/Data/data.hpp:223:7:prc::ValvesStore::~ValvesStore()	1
-../Application/Data/data.hpp:223:7:virtual prc::ValvesStore::~ValvesStore()	1
-../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::UplinkCmd]	1
-../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::UplinkCmd]	1
-../Application/Data/data.hpp:249:7:prc::UplinkCmdStore::~UplinkCmdStore()	1
-../Application/Data/data.hpp:249:7:virtual prc::UplinkCmdStore::~UplinkCmdStore()	1
-../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::Event]	1
-../Application/Data/data.hpp:138:11:prc::IStore<T>::~IStore() [with T = prc::Event]	1
-../Application/Data/data.hpp:262:7:prc::EventStore::~EventStore()	1
-../Application/Data/data.hpp:262:7:virtual prc::EventStore::~EventStore()	1
-../Application/Data/data.hpp:267:8:prc::DataDump::DataDump()	1
-../Application/Data/data.hpp:297:3:prc::PrcStore::PrcStore()	1
-../Application/Data/data.hpp:278:7:prc::PrcStore::~PrcStore()	1
-../Application/Data/data.hpp:292:21:void __tcf_0()	1
-../Application/Data/data.hpp:291:27:static prc::PrcStore& prc::PrcStore::get_instance()	3
-../Application/FlightControl/prc_can.cpp:17:6:void {anonymous}::SetCmd(uint8_t, uint8_t)	1
-../Application/FlightControl/prc_can.cpp:24:11:prc::BoardRole {anonymous}::CurrentRole()	1
-../Application/FlightControl/prc_can.cpp:31:6:void {anonymous}::OnBroadcastAbort(void*, prc_intranet::payload::safety_key)	2
-../Application/FlightControl/prc_can.cpp:44:6:void {anonymous}::OnDprEthAbort(void*, prc_intranet::payload::safety_key)	3
-../Application/FlightControl/prc_can.cpp:48:6:void {anonymous}::OnDprEthPassivate(void*, prc_intranet::payload::safety_key)	3
-../Application/FlightControl/prc_can.cpp:52:6:void {anonymous}::OnDprEthPressurize(void*, prc_intranet::payload::on_off)	4
-../Application/FlightControl/prc_can.cpp:57:6:void {anonymous}::OnDprEthReset(void*, prc_intranet::payload::reset)	3
-../Application/FlightControl/prc_can.cpp:66:6:void {anonymous}::OnDprEthCmdValves(void*, prc_intranet::payload::cmd_valves)	1
-../Application/FlightControl/prc_can.cpp:70:6:void {anonymous}::OnDprLoxAbort(void*, prc_intranet::payload::safety_key)	3
-../Application/FlightControl/prc_can.cpp:74:6:void {anonymous}::OnDprLoxPassivate(void*, prc_intranet::payload::safety_key)	3
-../Application/FlightControl/prc_can.cpp:78:6:void {anonymous}::OnDprLoxPressurize(void*, prc_intranet::payload::on_off)	4
-../Application/FlightControl/prc_can.cpp:83:6:void {anonymous}::OnDprLoxReset(void*, prc_intranet::payload::reset)	3
-../Application/FlightControl/prc_can.cpp:87:6:void {anonymous}::OnDprLoxCmdValves(void*, prc_intranet::payload::cmd_valves)	1
-../Application/FlightControl/prc_can.cpp:98:6:void {anonymous}::CbSend(void*, uint16_t, const uint8_t*, uint32_t)	2
-../Application/FlightControl/prc_can.cpp:121:28:{anonymous}::Ctx()::<lambda()>	1
-../Application/FlightControl/prc_can.cpp:120:14:prc_intranet::context& {anonymous}::Ctx()	3
-../Application/FlightControl/prc_can.cpp:142:6:void Prc_Can_ProcessRxMessage(uint32_t, const uint8_t*, uint32_t)	3
-../Application/FlightControl/prc_can.cpp:154:6:void Prc_Can_ConfigNodeFilter(FDCAN_HandleTypeDef*)	5
-../Application/FlightControl/prc_can.cpp:178:6:void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef*)	6
-../Application/Data/data.hpp:140:15:void prc::IStore<T>::set(const T&) [with T = prc::UplinkCmd]	1
+../Application/Data/data.hpp:106:11:prc::IStore<T>::~IStore() [with T = prc::State]	1
+../Application/Data/data.hpp:106:11:prc::IStore<T>::~IStore() [with T = prc::State]	1
+../Application/Data/data.hpp:116:7:prc::StateStore::~StateStore()	1
+../Application/Data/data.hpp:116:7:virtual prc::StateStore::~StateStore()	1
+../Application/Data/data.hpp:106:11:prc::IStore<T>::~IStore() [with T = prc::BoardIdentity]	1
+../Application/Data/data.hpp:106:11:prc::IStore<T>::~IStore() [with T = prc::BoardIdentity]	1
+../Application/Data/data.hpp:125:7:prc::BoardIdentityStore::~BoardIdentityStore()	1
+../Application/Data/data.hpp:125:7:virtual prc::BoardIdentityStore::~BoardIdentityStore()	1
+../Application/Data/data.hpp:106:11:prc::IStore<T>::~IStore() [with T = prc::PropSensors]	1
+../Application/Data/data.hpp:106:11:prc::IStore<T>::~IStore() [with T = prc::PropSensors]	1
+../Application/Data/data.hpp:132:7:prc::PropSensorsStore::~PropSensorsStore()	1
+../Application/Data/data.hpp:132:7:virtual prc::PropSensorsStore::~PropSensorsStore()	1
+../Application/Data/data.hpp:106:11:prc::IStore<T>::~IStore() [with T = prc::Valves]	1
+../Application/Data/data.hpp:106:11:prc::IStore<T>::~IStore() [with T = prc::Valves]	1
+../Application/Data/data.hpp:197:7:prc::ValvesStore::~ValvesStore()	1
+../Application/Data/data.hpp:197:7:virtual prc::ValvesStore::~ValvesStore()	1
+../Application/Data/data.hpp:106:11:prc::IStore<T>::~IStore() [with T = prc::UplinkCmd]	1
+../Application/Data/data.hpp:106:11:prc::IStore<T>::~IStore() [with T = prc::UplinkCmd]	1
+../Application/Data/data.hpp:223:7:prc::UplinkCmdStore::~UplinkCmdStore()	1
+../Application/Data/data.hpp:223:7:virtual prc::UplinkCmdStore::~UplinkCmdStore()	1
+../Application/Data/data.hpp:106:11:prc::IStore<T>::~IStore() [with T = prc::Event]	1
+../Application/Data/data.hpp:106:11:prc::IStore<T>::~IStore() [with T = prc::Event]	1
+../Application/Data/data.hpp:236:7:prc::EventStore::~EventStore()	1
+../Application/Data/data.hpp:236:7:virtual prc::EventStore::~EventStore()	1
+../Application/Data/data.hpp:241:8:prc::DataDump::DataDump()	1
+../Application/Data/data.hpp:271:3:prc::PrcStore::PrcStore()	1
+../Application/Data/data.hpp:252:7:prc::PrcStore::~PrcStore()	1
+../Application/Data/data.hpp:266:21:void __tcf_0()	1
+../Application/Data/data.hpp:265:27:static prc::PrcStore& prc::PrcStore::get_instance()	3
+../Application/FlightControl/prc_can.cpp:18:6:void {anonymous}::SetCmd(uint8_t, uint8_t)	1
+../Application/FlightControl/prc_can.cpp:25:11:prc::BoardRole {anonymous}::CurrentRole()	1
+../Application/FlightControl/prc_can.cpp:32:6:void {anonymous}::OnBroadcastAbort(void*, prc_intranet::payload::safety_key)	2
+../Application/FlightControl/prc_can.cpp:45:6:void {anonymous}::OnDprEthAbort(void*, prc_intranet::payload::safety_key)	3
+../Application/FlightControl/prc_can.cpp:49:6:void {anonymous}::OnDprEthPassivate(void*, prc_intranet::payload::safety_key)	3
+../Application/FlightControl/prc_can.cpp:53:6:void {anonymous}::OnDprEthPressurize(void*, prc_intranet::payload::on_off)	4
+../Application/FlightControl/prc_can.cpp:58:6:void {anonymous}::OnDprEthReset(void*, prc_intranet::payload::reset)	3
+../Application/FlightControl/prc_can.cpp:71:6:void {anonymous}::OnDprEthCmdValves(void*, prc_intranet::payload::cmd_valves)	1
+../Application/FlightControl/prc_can.cpp:75:6:void {anonymous}::OnDprLoxAbort(void*, prc_intranet::payload::safety_key)	3
+../Application/FlightControl/prc_can.cpp:79:6:void {anonymous}::OnDprLoxPassivate(void*, prc_intranet::payload::safety_key)	3
+../Application/FlightControl/prc_can.cpp:83:6:void {anonymous}::OnDprLoxPressurize(void*, prc_intranet::payload::on_off)	4
+../Application/FlightControl/prc_can.cpp:88:6:void {anonymous}::OnDprLoxReset(void*, prc_intranet::payload::reset)	3
+../Application/FlightControl/prc_can.cpp:92:6:void {anonymous}::OnDprLoxCmdValves(void*, prc_intranet::payload::cmd_valves)	1
+../Application/FlightControl/prc_can.cpp:103:6:void {anonymous}::CbSend(void*, uint16_t, const uint8_t*, uint32_t)	2
+../Application/FlightControl/prc_can.cpp:129:6:void {anonymous}::SendLogChunk(void*, const uint8_t*)	3
+../Application/FlightControl/prc_can.cpp:151:28:{anonymous}::Ctx()::<lambda()>	1
+../Application/FlightControl/prc_can.cpp:150:14:prc_intranet::context& {anonymous}::Ctx()	3
+../Application/FlightControl/prc_can.cpp:172:6:void Prc_Can_ProcessRxMessage(uint32_t, const uint8_t*, uint32_t)	3
+../Application/FlightControl/prc_can.cpp:184:6:void Prc_Can_ConfigNodeFilter(FDCAN_HandleTypeDef*)	5
+../Application/FlightControl/prc_can.cpp:208:6:void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef*)	8
+../Application/FlightControl/prc_can.cpp:263:6:void Prc_Log_Forward(FDCAN_HandleTypeDef*, const uint8_t*, uint32_t)	4
+../Application/Data/data.hpp:108:15:void prc::IStore<T>::set(const T&) [with T = prc::UplinkCmd]	1
+../Application/Data/data.hpp:109:19:const T& prc::IStore<T>::get() const [with T = prc::State]	1

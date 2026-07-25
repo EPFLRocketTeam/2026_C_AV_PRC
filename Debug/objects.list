@@ -23,6 +23,8 @@
 "./Drivers/KULITE_CTL190/Impl/kulite_manual_test.o"
 "./Drivers/LMT85/Impl/LMT85.o"
 "./Drivers/LMT85/Impl/lmt85_manual_test.o"
+"./Drivers/LOG_AGGREGATOR/2026_C_AV_LOG_AGGREGATOR/src/log_aggregator/chunker.o"
+"./Drivers/LOG_AGGREGATOR/2026_C_AV_LOG_AGGREGATOR/src/log_aggregator/reassembler.o"
 "./Drivers/PT1000/Impl/PT1000.o"
 "./Drivers/PT1000/Impl/main_test_pt1000.o"
 "./Drivers/PrcBoardId/Impl/PrcBoardId.o"
