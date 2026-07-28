@@ -1,7 +1,0 @@
-../Application/Data/./istore.hpp:12:11:prc::IStore<T>::~IStore() [with T = prc::Event]	16	static
-../Application/Data/./istore.hpp:12:11:prc::IStore<T>::~IStore() [with T = prc::Event]	16	static
-../Application/Data/data.hpp:126:7:prc::EventStore::~EventStore()	16	static
-../Application/Data/data.hpp:126:7:virtual prc::EventStore::~EventStore()	16	static
-../Application/Data/Stores/EventStore.cpp:5:1:prc::Event::Event()	16	static
-../Application/Data/./istore.hpp:10:29:prc::IStore<prc::Event>::IStore()	16	static
-../Application/Data/Stores/EventStore.cpp:7:1:prc::EventStore::EventStore()	16	static

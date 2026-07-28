@@ -1,3 +1,0 @@
-../Drivers/Valve/Impl/valve_manual_test.cpp:9:13:void exercise(ValveId)	2
-../Drivers/Valve/Impl/valve_manual_test.cpp:29:13:void exercise_ball_valve_positions()	3
-../Drivers/Valve/Impl/valve_manual_test.cpp:45:6:void Valve_ManualTest()	1
