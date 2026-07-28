@@ -1,25 +1,26 @@
 
 #pragma once
-#include "Modules/Sensors/policy/poll/timer.hpp"
-#include "Modules/Sensors/policy/poll/always.hpp"
+#include "Modules/Sensors/policy/timer.hpp"
+#include "Modules/Sensors/policy/always.hpp"
 
-#include "Modules/Sensors/policy/setter/store.hpp"
-#include "Modules/Sensors/policy/setter/branch.hpp"
-
-#include "Modules/Sensors/policy/filters/average.hpp"
+#include "Modules/Sensors/pipelines/store.hpp"
+#include "Modules/Sensors/pipelines/branch.hpp"
+#include "Modules/Sensors/pipelines/nothing.hpp"
+#include "Modules/Sensors/pipelines/average.hpp"
+#include "Modules/Sensors/pipelines/outlier.hpp"
 
 #include <cstdint>
 
 template<
     typename PollPolicy,
     typename Sensor,
-    typename SetterPolicy
+    typename DataPipeline
 >
 struct SensorModule {
 private:
     PollPolicy   poll_policy;
     Sensor       sensor;
-    SetterPolicy setter_policy;
+    DataPipeline pipeline;
 public:
     Sensor& getSensor () { return sensor; }
 
@@ -32,10 +33,6 @@ public:
         auto data = sensor.poll();
         poll_policy.registerPollEnd();
 
-        setter_policy.set(data);
+        pipeline.ingest(data);
     }
-};
-
-struct SampleSensorModule {
-    double poll () { return 0.; }
 };

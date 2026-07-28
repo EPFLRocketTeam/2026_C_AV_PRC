@@ -10,7 +10,7 @@ struct StoreSetterPolicy {
 private:
     Storage storage;
 public:
-    void set (const auto &data) {
+    inline void ingest (const auto &data) {
         auto &ref = storage.ref();
 
         (ref.*Setter)(data);
@@ -25,8 +25,8 @@ struct PrcStorage {
 };
 
 #define ENGINE_SETTER_POLICY(member) StoreSetterPolicy<PrcStorage<\
-    &prc::PrcStore::propSensorsStoreEngine>, &member>;
+    &prc::PrcStore::propSensorsStoreEngine>, &member>
 #define ETH_SETTER_POLICY(member) StoreSetterPolicy<PrcStorage<\
-    &prc::PrcStore::propSensorsStoreEth>, &member>;
+    &prc::PrcStore::propSensorsStoreEth>, &member>
 #define LOX_SETTER_POLICY(member) StoreSetterPolicy<PrcStorage<\
-    &prc::PrcStore::propSensorsStoreLox>, &member>;
+    &prc::PrcStore::propSensorsStoreLox>, &member>
