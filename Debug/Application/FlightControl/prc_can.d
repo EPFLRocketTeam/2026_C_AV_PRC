@@ -43,6 +43,9 @@ Application/FlightControl/prc_can.o: \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_ll_usb.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_pcd_ex.h \
  ../Application/Data/data.hpp ../Application/Data/fsm.hpp \
+ ../Application/Data/./istore.hpp \
+ ../Application/Data/./propulsion/data.hpp \
+ ../Application/Data/./propulsion/./fields.hpp \
  ../Application/FlightControl/uplink_cmd.hpp \
  ../Drivers/Valve/ValveList.hpp ../Drivers/Valve/Valve.hpp \
  ../Drivers/LOG_AGGREGATOR/2026_C_AV_LOG_AGGREGATOR/include/log_aggregator/chunker.hpp \
@@ -97,6 +100,9 @@ Application/FlightControl/prc_can.o: \
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_pcd_ex.h:
 ../Application/Data/data.hpp:
 ../Application/Data/fsm.hpp:
+../Application/Data/./istore.hpp:
+../Application/Data/./propulsion/data.hpp:
+../Application/Data/./propulsion/./fields.hpp:
 ../Application/FlightControl/uplink_cmd.hpp:
 ../Drivers/Valve/ValveList.hpp:
 ../Drivers/Valve/Valve.hpp:

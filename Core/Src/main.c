@@ -246,7 +246,7 @@ int main(void)
   //run_pte7300_channel0_scope_probe();
   //manual_test_ctl190();  /* loops forever -- never returns, everything below this line won't run while active */
   //manual_test_lmt85();  /* loops forever -- never returns, everything below this line won't run while active */
-
+  main_init();
   Prc_Fsm_Init();  /* latches board role from ENG_SETUP/ETH_SETUP/LOX_SETUP straps, see Drivers/PrcBoardId/PrcBoardId.hpp -- also calls Valve_InitAll() */
   Prc_Can_ConfigNodeFilter(&hfdcan1);  /* now that role is latched, accept this board's own DPR node ID -- see Application/FlightControl/prc_can.cpp */
   /* USER CODE END 2 */
@@ -262,7 +262,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
+	  main_tick();
 	  Prc_Fsm_Tick();
 
 	  /*  Real CAN command decode, per Core/Inc/CAN.h's dictionary. Drains

@@ -1,8 +1,8 @@
-../Application/Data/data.hpp:106:11:prc::IStore<T>::~IStore() [with T = prc::BoardIdentity]	1
-../Application/Data/data.hpp:106:11:prc::IStore<T>::~IStore() [with T = prc::BoardIdentity]	1
-../Application/Data/data.hpp:125:7:prc::BoardIdentityStore::~BoardIdentityStore()	1
-../Application/Data/data.hpp:125:7:virtual prc::BoardIdentityStore::~BoardIdentityStore()	1
+../Application/Data/./istore.hpp:12:11:prc::IStore<T>::~IStore() [with T = prc::BoardIdentity]	1
+../Application/Data/./istore.hpp:12:11:prc::IStore<T>::~IStore() [with T = prc::BoardIdentity]	1
+../Application/Data/data.hpp:80:7:prc::BoardIdentityStore::~BoardIdentityStore()	1
+../Application/Data/data.hpp:80:7:virtual prc::BoardIdentityStore::~BoardIdentityStore()	1
 ../Application/Data/Stores/BoardIdentityStore.cpp:5:1:prc::BoardIdentity::BoardIdentity()	1
-../Application/Data/data.hpp:104:29:prc::IStore<prc::BoardIdentity>::IStore()	1
+../Application/Data/./istore.hpp:10:29:prc::IStore<prc::BoardIdentity>::IStore()	1
 ../Application/Data/Stores/BoardIdentityStore.cpp:9:1:prc::BoardIdentityStore::BoardIdentityStore()	1
 ../Application/Data/Stores/BoardIdentityStore.cpp:11:11:prc::BoardRole prc::BoardIdentityStore::get_role() const	1

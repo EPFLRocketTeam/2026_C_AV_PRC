@@ -1,4 +1,4 @@
-
+#pragma once
 #include "./fields.hpp"
 #include "../istore.hpp"
 

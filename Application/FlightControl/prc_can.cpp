@@ -228,7 +228,7 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
   pi::context& ctx = Ctx();
   ctx.driver.driver_ptr = hfdcan;
 
-  auto& sensors = PrcStore::get_instance().propSensorsStore;
+  // auto& sensors = PrcStore::get_instance().propSensorsStore;
   auto& valves  = PrcStore::get_instance().valvesStore;
   const bool is_lox = (role == BoardRole::DprLox);
 
@@ -245,27 +245,27 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
     pi::send_dpr_lox_state(&ctx, state);
 
     pi::payload::dpr_lox_pressures pressures{};
-    pressures.p_ota = static_cast<float>(sensors.get_pressure_OTA_mean());
-    pressures.p_hpo = static_cast<float>(sensors.get_pressure_HPO_mean());
+//    pressures.p_ota = static_cast<float>(sensors.get_pressure_OTA_mean());
+//    pressures.p_hpo = static_cast<float>(sensors.get_pressure_HPO_mean());
     pi::send_dpr_lox_pressures(&ctx, pressures);
     p_tank = pressures.p_ota;
     p_copv = pressures.p_hpo;
 
     pi::payload::dpr_lox_temps_ota temps_1_2{};
-    temps_1_2.t1 = static_cast<float>(sensors.get_temperature_OTA_mean(0));
-    temps_1_2.t2 = static_cast<float>(sensors.get_temperature_OTA_mean(1));
+//    temps_1_2.t1 = static_cast<float>(sensors.get_temperature_OTA_mean(0));
+//    temps_1_2.t2 = static_cast<float>(sensors.get_temperature_OTA_mean(1));
     pi::send_dpr_lox_temps_ota_1_2(&ctx, temps_1_2);
 
     pi::payload::dpr_lox_temps_ota temps_3_4{};
-    temps_3_4.t1 = static_cast<float>(sensors.get_temperature_OTA_mean(2));
-    temps_3_4.t2 = static_cast<float>(sensors.get_temperature_OTA_mean(3));
+//    temps_3_4.t1 = static_cast<float>(sensors.get_temperature_OTA_mean(2));
+//    temps_3_4.t2 = static_cast<float>(sensors.get_temperature_OTA_mean(3));
     pi::send_dpr_lox_temps_ota_3_4(&ctx, temps_3_4);
   } else {
     pi::send_dpr_eth_state(&ctx, state);
 
     pi::payload::dpr_eth_pressures pressures{};
-    pressures.p_eta = static_cast<float>(sensors.get_pressure_ETA_mean());
-    pressures.p_hpe = static_cast<float>(sensors.get_pressure_HPE_mean());
+//    pressures.p_eta = static_cast<float>(sensors.get_pressure_ETA_mean());
+//    pressures.p_hpe = static_cast<float>(sensors.get_pressure_HPE_mean());
     pi::send_dpr_eth_pressures(&ctx, pressures);
     p_tank = pressures.p_eta;
     p_copv = pressures.p_hpe;

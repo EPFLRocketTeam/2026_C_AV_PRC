@@ -42,7 +42,9 @@ SUBDIRS := \
 Application/Control \
 Application/Data/Stores \
 Application/Data \
+Application/Data/propulsion \
 Application/FlightControl \
+Application \
 Core/Src \
 Core/Startup \
 Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/src/prc_intranet \

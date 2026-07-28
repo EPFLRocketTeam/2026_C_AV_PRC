@@ -1,5 +1,8 @@
 Application/Data/data.o: ../Application/Data/data.cpp \
  ../Application/Data/data.hpp ../Application/Data/fsm.hpp \
+ ../Application/Data/./istore.hpp \
+ ../Application/Data/./propulsion/data.hpp \
+ ../Application/Data/./propulsion/./fields.hpp \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h \
  ../Core/Inc/stm32h7xx_hal_conf.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_rcc.h \
@@ -43,6 +46,9 @@ Application/Data/data.o: ../Application/Data/data.cpp \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_pcd_ex.h
 ../Application/Data/data.hpp:
 ../Application/Data/fsm.hpp:
+../Application/Data/./istore.hpp:
+../Application/Data/./propulsion/data.hpp:
+../Application/Data/./propulsion/./fields.hpp:
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h:
 ../Core/Inc/stm32h7xx_hal_conf.h:
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_rcc.h:

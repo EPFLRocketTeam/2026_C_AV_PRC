@@ -9,7 +9,7 @@ using namespace prc;
 #define X_raw_FIELD(type, field, cls) \
     type cls::CONCAT(get_, field) () const { \
         return data_.field; \
-    } void cls::CONCAT(set_, field) (type value) { \
+    } __attribute__((weak)) void cls::CONCAT(set_, field) (type value) { \
         data_.field = value; \
     }
 #define X_proc_FIELD(type, field, cls) X_raw_FIELD(type, CONCAT(field, _mean), cls)

@@ -2,6 +2,7 @@
 #pragma once
 #include <cstdint>
 #include <tuple>
+#include <sigutils/outlier.hpp>
 
 namespace outlier_pipeline {
 

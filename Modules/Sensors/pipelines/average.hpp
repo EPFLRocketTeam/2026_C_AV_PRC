@@ -4,6 +4,7 @@
  * produce a raw pressure or/and temperature and output a mean pressure or/and temperature
  */
 #include "sigutils/average.hpp"
+#include "Modules/Sensors/pipelines/nothing.hpp"
 
 namespace average_pipeline {
 
@@ -25,4 +26,7 @@ namespace average_pipeline {
         }
     };
     
+    template<const size_t WindowSize, typename MeanSetter>
+    using MeanPipeline = SimplePipeline<NoPipeline, WindowSize, MeanSetter>;
+
 };

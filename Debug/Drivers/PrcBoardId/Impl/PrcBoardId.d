@@ -2,7 +2,10 @@ Drivers/PrcBoardId/Impl/PrcBoardId.o: \
  ../Drivers/PrcBoardId/Impl/PrcBoardId.cpp \
  ../Drivers/PrcBoardId/Impl/../PrcBoardId.hpp \
  ../Application/Data/data.hpp ../Application/Data/fsm.hpp \
- ../Core/Inc/main.h ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h \
+ ../Application/Data/./istore.hpp \
+ ../Application/Data/./propulsion/data.hpp \
+ ../Application/Data/./propulsion/./fields.hpp ../Core/Inc/main.h \
+ ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h \
  ../Core/Inc/stm32h7xx_hal_conf.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_rcc.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_def.h \
@@ -46,6 +49,9 @@ Drivers/PrcBoardId/Impl/PrcBoardId.o: \
 ../Drivers/PrcBoardId/Impl/../PrcBoardId.hpp:
 ../Application/Data/data.hpp:
 ../Application/Data/fsm.hpp:
+../Application/Data/./istore.hpp:
+../Application/Data/./propulsion/data.hpp:
+../Application/Data/./propulsion/./fields.hpp:
 ../Core/Inc/main.h:
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h:
 ../Core/Inc/stm32h7xx_hal_conf.h:

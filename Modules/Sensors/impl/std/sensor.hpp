@@ -8,10 +8,10 @@ struct pressure_temperature {
 };
 
 struct SampleSensor {
-    pressure_temperature poll () { return { 0., 0. }; }
+    pressure_temperature poll () { return { -1.0, -1.0 }; }
 };
 struct SampleDoubleSensor {
-    double poll () { return 0.; }
+    double poll () { return -1.0; }
 };
 
 template<typename PressurePipeline, typename TemperaturePipeline>

@@ -17,7 +17,10 @@ using PressureEtaSensorModule = multi::Module<
                 PRESSURE_ETA_MIN_VALUE,
                 PRESSURE_ETA_MAX_VALUE
             >,
-            ETH_SETTER_POLICY(prc::PropSensorsStoreEth::set_pressure_ETA_mean)
+            average_pipeline::MeanPipeline<
+				PRESSURE_ETA_WINDOW_SIZE,
+				ETH_SETTER_POLICY(prc::PropSensorsStoreEth::set_pressure_ETA_mean)
+			>
         >,
         // Temperature, simply unpack it. The module uses only pressure sensors
         //   so the temperature pipelines will be NoPipeline and after inlining

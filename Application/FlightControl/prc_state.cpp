@@ -55,13 +55,13 @@ static float SetPressureBarFor(BoardRole role) {
 
 static bool IsLox(BoardRole role) { return role == BoardRole::DprLox; }
 
-static float CurrentTankPressureBar(const PropSensors &s, BoardRole role) {
-  return static_cast<float>(IsLox(role) ? s.pressure_OTA : s.pressure_ETA);
-}
-
-static float CurrentCopvPressureBar(const PropSensors &s, BoardRole role) {
-  return static_cast<float>(IsLox(role) ? s.pressure_HPO : s.pressure_HPE);
-}
+//static float CurrentTankPressureBar(const PropSensors &s, BoardRole role) {
+//  return static_cast<float>(IsLox(role) ? s.pressure_OTA : s.pressure_ETA);
+//}
+//
+//static float CurrentCopvPressureBar(const PropSensors &s, BoardRole role) {
+//  return static_cast<float>(IsLox(role) ? s.pressure_HPO : s.pressure_HPE);
+//}
 
 // Threshold below which a tank/COPV is considered "vented" -- ported from
 // 2026_C_PR_BDPR's BVDPR.ino passivation() (`<= 1.0` bar, i.e. ~atmospheric).
@@ -109,10 +109,10 @@ State PrcState::fromPressurizeOn(DataDump const &dump) {
   // k_ramp_exit_threshold_ratio of the final set pressure -- ported from
   // BDPR's tankPress() exit check (BVDPR.ino:517), not a fixed duration.
   const float target_bar  = SetPressureBarFor(dump.boardIdentity.role);
-  const float current_bar = CurrentTankPressureBar(dump.propSensors, dump.boardIdentity.role);
-  if (current_bar >= k_ramp_exit_threshold_ratio * target_bar) {
-    return State::INITIALIZE_REGULATE;
-  }
+//  const float current_bar = CurrentTankPressureBar(dump.propSensors, dump.boardIdentity.role);
+//  if (current_bar >= k_ramp_exit_threshold_ratio * target_bar) {
+//    return State::INITIALIZE_REGULATE;
+//  }
 
   return currentState;
 }
@@ -344,12 +344,12 @@ static void ApplyValveActions(State state, State previous_state, const DataDump 
         // One-time RST setup on entry to the ramp phase (matches BDPR
         // calling updateRST()+RST_p.set() once per phase-entry, not every
         // tick -- see the RST controller comment above).
-        const float copv_bar = CurrentCopvPressureBar(dump.propSensors, dump.boardIdentity.role);
-        UpdateRstPolynomials(g_ramp_r, g_ramp_s, g_ramp_t, copv_bar);
-        const float current_bar = CurrentTankPressureBar(dump.propSensors, dump.boardIdentity.role);
-        g_ramp_rst.reset(current_bar);
-        g_ramp_p0_bar = current_bar;
-        g_ramp_t0_ms  = HAL_GetTick();
+//        const float copv_bar = CurrentCopvPressureBar(dump.propSensors, dump.boardIdentity.role);
+//        UpdateRstPolynomials(g_ramp_r, g_ramp_s, g_ramp_t, copv_bar);
+//        const float current_bar = CurrentTankPressureBar(dump.propSensors, dump.boardIdentity.role);
+//        g_ramp_rst.reset(current_bar);
+//        g_ramp_p0_bar = current_bar;
+//        g_ramp_t0_ms  = HAL_GetTick();
         break;
       }
       case State::PRESSURIZE_OFF:
@@ -376,10 +376,10 @@ static void ApplyValveActions(State state, State previous_state, const DataDump 
       case State::REGULATE: {
         // One-time RST setup on entry to closed-loop regulation (matches
         // BDPR calling updateRST()+RST_c.set() once per phase-entry).
-        const float copv_bar = CurrentCopvPressureBar(dump.propSensors, dump.boardIdentity.role);
-        UpdateRstPolynomials(g_regulate_r, g_regulate_s, g_regulate_t, copv_bar);
-        const float current_bar = CurrentTankPressureBar(dump.propSensors, dump.boardIdentity.role);
-        g_regulate_rst.reset(current_bar);
+//        const float copv_bar = CurrentCopvPressureBar(dump.propSensors, dump.boardIdentity.role);
+//        UpdateRstPolynomials(g_regulate_r, g_regulate_s, g_regulate_t, copv_bar);
+//        const float current_bar = CurrentTankPressureBar(dump.propSensors, dump.boardIdentity.role);
+//        g_regulate_rst.reset(current_bar);
         break;
       }
       default:
@@ -389,23 +389,23 @@ static void ApplyValveActions(State state, State previous_state, const DataDump 
 
   // Continuous (every tick, not just on entry):
   if (state == State::PRESSURIZE_ON || state == State::REGULATE) {
-    const float final_target_bar = SetPressureBarFor(dump.boardIdentity.role);
-    const float current_bar = CurrentTankPressureBar(dump.propSensors, dump.boardIdentity.role);
-
-    // PRESSURIZE_ON tracks a climbing ramp reference (ported from BDPR's
-    // pressurisationTask(), BVDPR.ino:270); REGULATE targets the final set
-    // pressure directly. No clamp on the ramp value -- BDPR's doesn't have
-    // one either, since fromPressurizeOn() already leaves this state once
-    // pressure is within k_ramp_exit_threshold_ratio of final_target_bar,
-    // before the reference can climb meaningfully past it.
-    const float target_bar = (state == State::PRESSURIZE_ON)
-        ? g_ramp_p0_bar + static_cast<float>(HAL_GetTick() - g_ramp_t0_ms) * k_ramp_rate_bar_per_ms
-        : final_target_bar;
-
-    RstController &rst = (state == State::REGULATE) ? g_regulate_rst : g_ramp_rst;
-    if (ServoBallValve* ball = Valve_GetBallValve()) {
-      ball->set_position(BallValvePercentFor(rst, target_bar, current_bar));
-    }
+//    const float final_target_bar = SetPressureBarFor(dump.boardIdentity.role);
+//    const float current_bar = CurrentTankPressureBar(dump.propSensors, dump.boardIdentity.role);
+//
+//    // PRESSURIZE_ON tracks a climbing ramp reference (ported from BDPR's
+//    // pressurisationTask(), BVDPR.ino:270); REGULATE targets the final set
+//    // pressure directly. No clamp on the ramp value -- BDPR's doesn't have
+//    // one either, since fromPressurizeOn() already leaves this state once
+//    // pressure is within k_ramp_exit_threshold_ratio of final_target_bar,
+//    // before the reference can climb meaningfully past it.
+//    const float target_bar = (state == State::PRESSURIZE_ON)
+//        ? g_ramp_p0_bar + static_cast<float>(HAL_GetTick() - g_ramp_t0_ms) * k_ramp_rate_bar_per_ms
+//        : final_target_bar;
+//
+//    RstController &rst = (state == State::REGULATE) ? g_regulate_rst : g_ramp_rst;
+//    if (ServoBallValve* ball = Valve_GetBallValve()) {
+//      ball->set_position(BallValvePercentFor(rst, target_bar, current_bar));
+//    }
 
     if (state == State::REGULATE) {
       // SAFETY stays open in closed-loop regulation (was already opened on
@@ -422,25 +422,25 @@ static void ApplyValveActions(State state, State previous_state, const DataDump 
     //     fully open -- now vent the COPV too (through SAFETY -> tank ->
     //     VENT, since this board has no separate COPV-only vent path).
     //   once BOTH tank and COPV are vented: close everything.
-    const float tank_bar = CurrentTankPressureBar(dump.propSensors, dump.boardIdentity.role);
-    const float copv_bar = CurrentCopvPressureBar(dump.propSensors, dump.boardIdentity.role);
-    const bool tank_vented = tank_bar <= k_vented_threshold_bar;
-    const bool copv_vented = copv_bar <= k_vented_threshold_bar;
+//    const float tank_bar = CurrentTankPressureBar(dump.propSensors, dump.boardIdentity.role);
+//    const float copv_bar = CurrentCopvPressureBar(dump.propSensors, dump.boardIdentity.role);
+//    const bool tank_vented = tank_bar <= k_vented_threshold_bar;
+//    const bool copv_vented = copv_bar <= k_vented_threshold_bar;
 
-    if (tank_vented && copv_vented) {
-      SetSafety(false, is_lox, valvesStore);
-      SetVent(false, is_lox, valvesStore);
-      if (ServoBallValve* ball = Valve_GetBallValve()) ball->set_position(0.0f);
-    } else if (tank_vented) {
-      // Phase B: also vent the COPV.
-      SetSafety(true, is_lox, valvesStore);
-      SetVent(true, is_lox, valvesStore);
-      if (ServoBallValve* ball = Valve_GetBallValve()) ball->set_position(100.0f);
-    } else {
-      // Phase A: vent the tank only.
-      SetSafety(false, is_lox, valvesStore);
-      SetVent(true, is_lox, valvesStore);
-    }
+//    if (tank_vented && copv_vented) {
+//      SetSafety(false, is_lox, valvesStore);
+//      SetVent(false, is_lox, valvesStore);
+//      if (ServoBallValve* ball = Valve_GetBallValve()) ball->set_position(0.0f);
+//    } else if (tank_vented) {
+//      // Phase B: also vent the COPV.
+//      SetSafety(true, is_lox, valvesStore);
+//      SetVent(true, is_lox, valvesStore);
+//      if (ServoBallValve* ball = Valve_GetBallValve()) ball->set_position(100.0f);
+//    } else {
+//      // Phase A: vent the tank only.
+//      SetSafety(false, is_lox, valvesStore);
+//      SetVent(true, is_lox, valvesStore);
+//    }
   }
 }
 
