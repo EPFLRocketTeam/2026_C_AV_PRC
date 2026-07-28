@@ -29,18 +29,18 @@ namespace internal {
 
         static constexpr std::size_t NumberSensors = sizeof...(Sensors);
     public:
-        MultiFrame<NumberSensors> poll () {
-            MultiFrame<NumberSensors> frame;
+        Frame<NumberSensors> poll () {
+            Frame<NumberSensors> frame;
 
             std::apply([&frame](auto&... pipeline_instance) {
                 std::size_t idx = 0;
-                (({
+                ([&]{
                     pressure_temperature result = pipeline_instance.poll();
                     frame.pressures[idx] = result.pressure;
                     frame.temperatures[idx] = result.temperature;
                     idx ++;
-                }), ...);
-            }, rawPipelines);
+                }(), ...);
+            }, sensors);
 
             return frame;
         }
@@ -54,7 +54,7 @@ namespace internal {
     };
     template<typename Params, typename MeanPipeline, size_t NumberInputs>
     struct PipelineReturnValueBuilder<UseOutlier<Params, MeanPipeline>, NumberInputs> {
-        using type = OutlierFrame<NumberInputs>;
+        using type = outlier_pipeline::Frame<NumberInputs>;
     };
 
     template<typename UsePressure, typename UseTemperature, size_t NumberSensors>
@@ -71,11 +71,11 @@ namespace internal {
 
     template<typename... RawPipelines>
     struct PipelineBuilder<UseUnpack, RawPipelines...> {
-        using type = BranchUnpackPipeline<...RawPipelines>;
+        using type = BranchUnpackPipeline<RawPipelines...>;
     };
     template<typename Params, typename MeanPipeline, typename... RawPipelines>
     struct PipelineBuilder<UseOutlier<Params, MeanPipeline>, RawPipelines...> {
-        using type = OutlierPipeline<Params, MeanPipeline, RawPipelines...>;
+        using type = outlier_pipeline::Pipeline<Params, MeanPipeline, RawPipelines...>;
     };
 };
 
@@ -106,8 +106,8 @@ private:
 
     using return_type = internal::PipelineReturnValue<UsePressure, UseTemperature, NumberSensors>;
 
-    using pressure_pipeline    = internal::PipelineBuilder<UsePressure, typename SensorParams::pressure_pipeline...>;
-    using temperature_pipeline = internal::PipelineBuilder<UsePressure, typename SensorParams::temperature_pipeline...>;
+    using pressure_pipeline    = typename internal::PipelineBuilder<UsePressure, typename SensorParams::pressure_pipeline...>::type;
+    using temperature_pipeline = typename internal::PipelineBuilder<UseTemperature, typename SensorParams::temperature_pipeline...>::type;
 
     pressure_pipeline    pressure;
     temperature_pipeline temperature;

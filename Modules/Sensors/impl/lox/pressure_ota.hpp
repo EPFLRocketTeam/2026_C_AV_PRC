@@ -11,7 +11,7 @@ using PressureOtaSensorModule = multi::Module<
     multi::PipelineParams<
         // Pressure
         multi::UseOutlier<
-            outlier::Params<
+            outlier_pipeline::Params<
                 PRESSURE_OTA_NUMBER_KEPT, 
                 PRESSURE_OTA_MIN_NUMBER,
                 PRESSURE_OTA_MIN_VALUE,
