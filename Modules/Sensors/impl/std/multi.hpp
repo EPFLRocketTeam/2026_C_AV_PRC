@@ -29,6 +29,17 @@ namespace internal {
 
         static constexpr std::size_t NumberSensors = sizeof...(Sensors);
     public:
+        bool init () {
+            bool valid = true;
+
+            std::apply([&valid](auto&... sensor_instance) {
+                ([&]{
+                    valid &= sensor_instance.poll();
+                }(), ...);
+            })
+
+            return valid;
+        }
         Frame<NumberSensors> poll () {
             Frame<NumberSensors> frame;
 

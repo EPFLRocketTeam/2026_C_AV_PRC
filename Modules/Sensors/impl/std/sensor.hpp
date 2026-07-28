@@ -8,9 +8,11 @@ struct pressure_temperature {
 };
 
 struct SampleSensor {
+    bool init () { return true; }
     pressure_temperature poll () { return { -1.0, -1.0 }; }
 };
 struct SampleDoubleSensor {
+    bool init () { return true; }
     double poll () { return -1.0; }
 };
 

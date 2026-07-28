@@ -22,6 +22,7 @@ private:
     Sensor       sensor;
     DataPipeline pipeline;
 public:
+    bool init () { return sensor.init(); }
     Sensor& getSensor () { return sensor; }
 
     void tick () {
