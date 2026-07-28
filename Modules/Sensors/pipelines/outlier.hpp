@@ -3,14 +3,14 @@
 #include <cstdint>
 #include <tuple>
 
-namespace outlier {
+namespace outlier_pipeline {
 
 template<const size_t NumberInputs>
 struct Frame {
     /* Array of values from the NumberInputs sensors */
-    std::array<double, NumberInputs> values;
+    double values[NumberInputs];
     /* Whether the sensor is an outlier */
-    std::array<bool, NumberInputs> is_outlier;
+    bool is_outlier[NumberInputs];
 
     /* Number of used data points */
     size_t number_used;
@@ -47,8 +47,8 @@ private:
     
     OutlierParams<double, InputCount, Params::number_kept> params;
 public:
-    OutlierFrame<InputCount> ingest (const std::array<double, InputCount> &values) {
-        OutlierFrame<InputCount> frame;
+    Frame<InputCount> ingest (const std::array<double, InputCount> &values) {
+        Frame<InputCount> frame;
     
         for (size_t offset = 0; offset < InputCount; offset ++) {
             frame.values[offset] = values[offset];

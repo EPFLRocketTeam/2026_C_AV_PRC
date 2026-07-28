@@ -11,7 +11,7 @@ using PressureEtaSensorModule = multi::Module<
     multi::PipelineParams<
         // Pressure
         multi::UseOutlier<
-            outlier::Params<
+            outlier_pipeline::Params<
                 PRESSURE_ETA_NUMBER_KEPT, 
                 PRESSURE_ETA_MIN_NUMBER,
                 PRESSURE_ETA_MIN_VALUE,
