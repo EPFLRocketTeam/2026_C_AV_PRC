@@ -1,26 +1,42 @@
 
 #pragma once
 #include "Modules/Sensors/sensor.hpp"
+#include "random"
 
 struct pressure_temperature {
     double pressure    = 0;
     double temperature = 0;
 };
 
+
+
 struct SampleSensor {
     using sensor_result = result<pressure_temperature, no_error>;
 
     bool init () { return true; }
     sensor_result poll () {
-        return sensor_result::success({ -1.0, -1.0 });
+    	double r = rand() / (RAND_MAX + 1.0);   // [0, 1)
+    	if (r < 0.5) {
+    		return sensor_result::success({ .0, .0 });
+    	} else {
+    		return sensor_result::error({});
+    	}
+
     }
 };
 struct SampleDoubleSensor {
     using sensor_result = result<double, no_error>;
     
     bool init () { return true; }
-    sensor_result poll () {
-        return sensor_result::success(-1.0);
+
+	sensor_result poll () {
+		double r = rand() / (RAND_MAX + 1.0);   // [0, 1)
+		if (r < 0.5) {
+			return sensor_result::success({ .0 });
+		} else {
+			return sensor_result::error({});
+		}
+
     }
 };
 

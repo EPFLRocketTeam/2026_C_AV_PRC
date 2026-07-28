@@ -44,5 +44,5 @@ void main_init() {
 
 void main_tick() {
 	fls_module.tick();
-	ota_module.tick();
+	// ota_module.tick();
 }
