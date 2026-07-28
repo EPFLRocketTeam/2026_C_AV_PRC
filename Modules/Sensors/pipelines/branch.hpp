@@ -25,10 +25,16 @@ private:
     static constexpr std::size_t NumberSetters = sizeof...(Setters);
 
 public:
-    inline auto ingest (const std::array<auto, NumberSetters> &data) {
-        std::apply([&data](auto&... setter) {
+    inline auto ingest (
+            const std::array<auto, NumberSetters> &data,
+            const std::array<bool, NumberSetters> &valid) {
+        std::apply([&data, &valid](auto&... setter) {
             size_t idx = 0;
-            (setter.ingest(data[idx ++]), ...);
+            ([&]{
+                if (valid[idx]) {
+                    setter.ingest(data[idx ++]);
+                }
+            }(), ...);
         }, setters_);
 
         return data;

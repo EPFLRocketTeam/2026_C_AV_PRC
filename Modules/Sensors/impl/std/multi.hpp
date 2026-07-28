@@ -20,38 +20,50 @@ namespace internal {
     struct Frame {
         std::array<double, NumberSensors> pressures;
         std::array<double, NumberSensors> temperatures;
+
+        std::array<bool, NumberSensors> valid;
     };
 
-    template<typename... Sensors>
+    template<typename... SensorsParams>
     struct Sensor {
     private:
-        std::tuple<Sensors...> sensors;
-
-        static constexpr std::size_t NumberSensors = sizeof...(Sensors);
+        std::tuple<
+            std::pair<
+                typename SensorsParams::sensor,
+                typename SensorsParams::error
+            >...
+        > sensors_and_errors;
+        
+        static constexpr std::size_t NumberSensors = sizeof...(SensorsParams);
     public:
         bool init () {
             bool valid = true;
 
-            std::apply([&valid](auto&... sensor_instance) {
+            std::apply([&valid](auto&... sensor_and_error_instance) {
                 ([&]{
-                    valid &= sensor_instance.poll();
+                    valid &= sensor_and_error_instance.first.poll();
                 }(), ...);
-            })
+            }, sensors_and_errors);
 
             return valid;
         }
         Frame<NumberSensors> poll () {
             Frame<NumberSensors> frame;
 
-            std::apply([&frame](auto&... pipeline_instance) {
+            std::apply([&frame](auto&... sensor_and_error_instance) {
                 std::size_t idx = 0;
                 ([&]{
-                    pressure_temperature result = pipeline_instance.poll();
-                    frame.pressures[idx] = result.pressure;
-                    frame.temperatures[idx] = result.temperature;
+                    auto result = sensor_and_error_instance.first.poll();
+                    frame.valid[idx] = result.is_success();
+                    if (frame.valid[idx]) {
+                        frame.pressures[idx] = result.get_value().pressure;
+                        frame.temperatures[idx] = result.get_value().temperature;
+                    } else {
+                        sensor_and_error_instance.second.ingest(result.get_error());
+                    }
                     idx ++;
                 }(), ...);
-            }, sensors);
+            }, sensors_and_errors);
 
             return frame;
         }
@@ -75,6 +87,8 @@ namespace internal {
     
         pressure_type    pressure;
         temperature_type temperature;
+
+        std::array<bool, NumberSensors> valid;
     };
 
     template<typename Use, typename... RawPipelines>
@@ -90,17 +104,18 @@ namespace internal {
     };
 };
 
-template<typename Sensor, typename PPipeline, typename TPipeline> 
+template<typename Sensor, typename PPipeline, typename TPipeline, typename ErrorPipeline = NoPipeline> 
 struct SensorParam {
     using sensor = Sensor;
     using pressure_pipeline = PPipeline;
     using temperature_pipeline = TPipeline;
+    using error = ErrorPipeline;
 };
 
-template<typename Sensor, typename PPipeline>
-using PressureSensorParam = SensorParam<Sensor, PPipeline, NoPipeline>;
-template<typename Sensor, typename TPipeline>
-using TemperatureSensorParam = SensorParam<Sensor, NoPipeline, TPipeline>;
+template<typename Sensor, typename PPipeline, typename ErrorPipeline = NoPipeline>
+using PressureSensorParam = SensorParam<Sensor, PPipeline, NoPipeline, ErrorPipeline>;
+template<typename Sensor, typename TPipeline, typename ErrorPipeline = NoPipeline>
+using TemperatureSensorParam = SensorParam<Sensor, NoPipeline, TPipeline, ErrorPipeline>;
 
 template<typename UsePressure, typename UseTemperature, typename ReturnPipeline = NoPipeline>
 struct PipelineParams {
@@ -128,8 +143,10 @@ public:
     void ingest (const internal::Frame<NumberSensors> &data) {
         return_type ret;
 
-        ret.pressure    = pressure.ingest(data.pressures);
-        ret.temperature = temperature.ingest(data.temperatures);
+        ret.pressure    = pressure.ingest(data.pressures, data.valid);
+        ret.temperature = temperature.ingest(data.temperatures, data.valid);
+        
+        ret.valid = data.valid;
     
         returnPipeline.ingest(ret);
     }
@@ -138,7 +155,7 @@ public:
 template<typename PollPolicy, typename Params, typename... SensorParams>
 using Module = SensorModule<
     PollPolicy,
-    internal::Sensor<typename SensorParams::sensor...>,
+    internal::Sensor<SensorParams...>,
     Pipeline<
         typename Params::use_pressure, typename Params::use_temperature, typename Params::return_pipeline,
         SensorParams...

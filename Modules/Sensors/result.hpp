@@ -4,6 +4,8 @@
 #include <utility>
 #include <type_traits>
 
+struct no_error {};
+
 template<typename SuccessType, typename ErrorType>
 struct result {
 private:
@@ -19,6 +21,9 @@ private:
         : var(std::in_place_index<1>, std::forward<Args>(args)...) {}
 
 public:
+    using success_type = SuccessType;
+    using error_type   = ErrorType;
+
     // --- Factory functions -------------------------------------------------
 
     static result success(SuccessType value) {
