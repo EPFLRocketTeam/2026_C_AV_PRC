@@ -1,0 +1,75 @@
+
+#pragma once
+#include <cstdint>
+#include <tuple>
+
+namespace outlier {
+
+template<const size_t NumberInputs>
+struct Frame {
+    /* Array of values from the NumberInputs sensors */
+    std::array<double, NumberInputs> values;
+    /* Whether the sensor is an outlier */
+    std::array<bool, NumberInputs> is_outlier;
+
+    /* Number of used data points */
+    size_t number_used;
+    /* Final value computed */
+    double value;
+};
+
+template<
+    const size_t NumberKept,
+    const size_t MinKept,
+    const double &MinValue,
+    const double &MaxValue
+>
+struct Params {
+    static constexpr size_t number_kept = NumberKept;
+    static constexpr size_t min_kept    = MinKept;
+
+    static constexpr const double &min_value = MinValue;
+    static constexpr const double &max_value = MaxValue;
+};
+
+template<
+    typename    Params,
+    typename    MeanPipeline,  // log the mean
+    typename... RawPipelines   // log the raw values given to the pipeline
+>
+struct Pipeline {
+private:
+    MeanPipeline  meanPipeline;
+
+    std::tuple<RawPipelines...> rawPipelines;
+
+    static constexpr std::size_t InputCount = sizeof...(RawPipelines);
+    
+    OutlierParams<double, InputCount, Params::number_kept> params;
+public:
+    OutlierFrame<InputCount> ingest (const std::array<double, InputCount> &values) {
+        OutlierFrame<InputCount> frame;
+    
+        for (size_t offset = 0; offset < InputCount; offset ++) {
+            frame.values[offset] = values[offset];
+        }
+
+        params.min = Params::min_value;
+        params.max = Params::max_value;
+            
+        frame.number_used = outlier(params, frame.values, frame.is_outlier, frame.value);
+
+        std::apply([&frame](auto&... pipeline_instance) {
+            std::size_t idx = 0;
+            ((pipeline_instance.ingest(frame.values[idx++])), ...);
+        }, rawPipelines);
+        
+        if (frame.number_used >= Params::min_kept) {
+            meanPipeline.ingest(frame.value);
+        }
+
+        return frame;
+    }
+};
+
+};

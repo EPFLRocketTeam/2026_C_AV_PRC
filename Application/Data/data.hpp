@@ -5,6 +5,8 @@
 #include <cstdint>
 
 #include "Application/Data/fsm.hpp"
+#include "./istore.hpp"
+#include "./propulsion/data.hpp"
 
 namespace prc {
 
@@ -28,37 +30,6 @@ struct BoardIdentity {
   BoardRole role;
 
   BoardIdentity();
-};
-
-struct PropSensors {
-  double pressure_C;
-  double pressure_C_mean;
-  double temperature_C;
-  double temperature_C_mean;
-  double pressure_OIN;
-  double pressure_OIN_mean;
-  double pressure_EIN;
-  double pressure_EIN_mean;
-  double temperature_EIN;
-  double temperature_EIN_mean;
-  double temperature_OIN;
-  double temperature_OIN_mean;
-
-  double pressure_OTA;
-  double pressure_OTA_mean;
-  double pressure_HPO;
-  double pressure_HPO_mean;
-  double temperature_OTA[4];
-  double temperature_OTA_mean[4];
-  double FLS;
-  double FLS_mean;
-
-  double pressure_ETA;
-  double pressure_ETA_mean;
-  double pressure_HPE;
-  double pressure_HPE_mean;
-
-  PropSensors();
 };
 
 struct Valves {
@@ -97,22 +68,6 @@ struct Event {
   Event();
 };
 
-// ---------------------------------------------------------------------------
-// IStore<T> — identical shape to flight_computer::IStore<T>.
-// ---------------------------------------------------------------------------
-
-template <typename T> class IStore {
-public:
-  virtual ~IStore() = default;
-
-  inline void set(const T &value) { data_ = value; };
-  inline const T &get() const { return data_; };
-  inline T *get_ref() { return &data_; };
-
-protected:
-  T data_;
-};
-
 class StateStore : public IStore<State> {
 public:
   StateStore();
@@ -127,71 +82,6 @@ public:
   BoardIdentityStore();
 
   BoardRole get_role() const;
-};
-
-class PropSensorsStore : public IStore<PropSensors> {
-public:
-  PropSensorsStore();
-
-  double get_pressure_C() const;
-  void set_pressure_C(double value);
-  double get_pressure_C_mean() const;
-  void set_pressure_C_mean(double value);
-
-  double get_temperature_C() const;
-  void set_temperature_C(double value);
-  double get_temperature_C_mean() const;
-  void set_temperature_C_mean(double value);
-
-  double get_pressure_OIN() const;
-  void set_pressure_OIN(double value);
-  double get_pressure_OIN_mean() const;
-  void set_pressure_OIN_mean(double value);
-
-  double get_pressure_EIN() const;
-  void set_pressure_EIN(double value);
-  double get_pressure_EIN_mean() const;
-  void set_pressure_EIN_mean(double value);
-
-  double get_temperature_EIN() const;
-  void set_temperature_EIN(double value);
-  double get_temperature_EIN_mean() const;
-  void set_temperature_EIN_mean(double value);
-
-  double get_temperature_OIN() const;
-  void set_temperature_OIN(double value);
-  double get_temperature_OIN_mean() const;
-  void set_temperature_OIN_mean(double value);
-
-  double get_pressure_OTA() const;
-  void set_pressure_OTA(double value);
-  double get_pressure_OTA_mean() const;
-  void set_pressure_OTA_mean(double value);
-
-  double get_pressure_HPO() const;
-  void set_pressure_HPO(double value);
-  double get_pressure_HPO_mean() const;
-  void set_pressure_HPO_mean(double value);
-
-  double get_temperature_OTA(uint8_t sensor_index) const;
-  void set_temperature_OTA(uint8_t sensor_index, double value);
-  double get_temperature_OTA_mean(uint8_t sensor_index) const;
-  void set_temperature_OTA_mean(uint8_t sensor_index, double value);
-
-  double get_FLS() const;
-  void set_FLS(double value);
-  double get_FLS_mean() const;
-  void set_FLS_mean(double value);
-
-  double get_pressure_ETA() const;
-  void set_pressure_ETA(double value);
-  double get_pressure_ETA_mean() const;
-  void set_pressure_ETA_mean(double value);
-
-  double get_pressure_HPE() const;
-  void set_pressure_HPE(double value);
-  double get_pressure_HPE_mean() const;
-  void set_pressure_HPE_mean(double value);
 };
 
 class ValvesStore : public IStore<Valves> {
@@ -242,10 +132,13 @@ struct DataDump {
   State          prc_state;
   uint32_t       prc_timestamp_ms;
   BoardIdentity  boardIdentity;
-  PropSensors    propSensors;
   Valves         valves;
   UplinkCmd      uplinkCmd;
   Event          event;
+
+  PropSensorsEngine propSensorsEngine;
+  PropSensorsEth    propSensorsEth;
+  PropSensorsLox    propSensorsLox;
 };
 
 // Aggregating singleton — mirrors flight_computer::GOATStore.
@@ -253,10 +146,13 @@ class PrcStore {
 public:
   StateStore         stateStore;
   BoardIdentityStore boardIdentityStore;
-  PropSensorsStore   propSensorsStore;
   ValvesStore        valvesStore;
   UplinkCmdStore     uplinkCmdStore;
   EventStore         eventStore;
+
+  PropSensorsStoreEngine propSensorsStoreEngine;
+  PropSensorsStoreEth    propSensorsStoreEth;
+  PropSensorsStoreLox    propSensorsStoreLox;
 
   void set(const DataDump &value);
   const DataDump &get() const;
