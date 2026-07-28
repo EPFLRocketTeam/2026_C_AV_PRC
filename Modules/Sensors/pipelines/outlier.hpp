@@ -52,7 +52,7 @@ private:
 public:
     Frame<InputCount> ingest (
             const std::array<double, InputCount> &values,
-            const std::array<double, InputCount> &valid) {
+            const std::array<bool, InputCount> &valid) {
         Frame<InputCount> frame;
     
         for (size_t offset = 0; offset < InputCount; offset ++) {

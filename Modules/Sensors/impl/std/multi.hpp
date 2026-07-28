@@ -29,12 +29,12 @@ namespace internal {
     private:
         std::tuple<
             std::pair<
-                typename SensorParams::sensor,
-                typename SensorParams::error
+                typename SensorsParams::sensor,
+                typename SensorsParams::error
             >...
         > sensors_and_errors;
         
-        static constexpr std::size_t NumberSensors = sizeof...(Sensors);
+        static constexpr std::size_t NumberSensors = sizeof...(SensorsParams);
     public:
         bool init () {
             bool valid = true;
