@@ -16,17 +16,3 @@ public:
         (ref.*Setter)(data);
     }
 };
-
-template<auto Field>
-struct PrcStorage {
-    auto& ref () const {
-        return (prc::PrcStore::get_instance().*Field);
-    }
-};
-
-#define ENGINE_SETTER_POLICY(member) StoreSetterPolicy<PrcStorage<\
-    &prc::PrcStore::propSensorsStoreEngine>, &member>
-#define ETH_SETTER_POLICY(member) StoreSetterPolicy<PrcStorage<\
-    &prc::PrcStore::propSensorsStoreEth>, &member>
-#define LOX_SETTER_POLICY(member) StoreSetterPolicy<PrcStorage<\
-    &prc::PrcStore::propSensorsStoreLox>, &member>
