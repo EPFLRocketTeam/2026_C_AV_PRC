@@ -40,25 +40,30 @@ template<
 >
 struct Pipeline {
 private:
+    using outlier_params = OutlierParams<double, InputCount, Params::number_kept>;
+
     MeanPipeline  meanPipeline;
 
     std::tuple<RawPipelines...> rawPipelines;
 
     static constexpr std::size_t InputCount = sizeof...(RawPipelines);
     
-    OutlierParams<double, InputCount, Params::number_kept> params;
+    outlier_params params;
 public:
-    Frame<InputCount> ingest (const std::array<double, InputCount> &values) {
+    Frame<InputCount> ingest (
+            const std::array<double, InputCount> &values,
+            const std::array<double, InputCount> &valid) {
         Frame<InputCount> frame;
     
         for (size_t offset = 0; offset < InputCount; offset ++) {
             frame.values[offset] = values[offset];
+            frame.is_outlier[offset] = valid[offset];
         }
 
         params.min = Params::min_value;
         params.max = Params::max_value;
 
-        frame.number_used = outlier(params, frame.values, frame.is_outlier, frame.value);
+        frame.number_used = outlier<double, InputCount, Params::number_kept, false>(params, frame.values, frame.is_outlier, frame.value);
 
         std::apply([&frame](auto&... pipeline_instance) {
             std::size_t idx = 0;
