@@ -28,7 +28,7 @@ public:
     inline auto ingest (
             const std::array<auto, NumberSetters> &data,
             const std::array<bool, NumberSetters> &valid) {
-        std::apply([&data](auto&... setter) {
+        std::apply([&data, &valid](auto&... setter) {
             size_t idx = 0;
             ([&]{
                 if (valid[idx]) {

@@ -40,13 +40,13 @@ template<
 >
 struct Pipeline {
 private:
+	static constexpr std::size_t InputCount = sizeof...(RawPipelines);
+
     using outlier_params = OutlierParams<double, InputCount, Params::number_kept>;
 
     MeanPipeline  meanPipeline;
 
     std::tuple<RawPipelines...> rawPipelines;
-
-    static constexpr std::size_t InputCount = sizeof...(RawPipelines);
     
     outlier_params params;
 public:

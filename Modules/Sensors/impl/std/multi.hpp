@@ -53,7 +53,7 @@ namespace internal {
             std::apply([&frame](auto&... sensor_and_error_instance) {
                 std::size_t idx = 0;
                 ([&]{
-                    result<pressure_temperature, auto> result = sensor_and_error_instance.first.poll();
+                    auto result = sensor_and_error_instance.first.poll();
                     frame.valid[idx] = result.is_success();
                     if (frame.valid[idx]) {
                         frame.pressures[idx] = result.get_value().pressure;
@@ -155,7 +155,7 @@ public:
 template<typename PollPolicy, typename Params, typename... SensorParams>
 using Module = SensorModule<
     PollPolicy,
-    internal::Sensor<typename SensorParams::sensor...>,
+    internal::Sensor<SensorParams...>,
     Pipeline<
         typename Params::use_pressure, typename Params::use_temperature, typename Params::return_pipeline,
         SensorParams...
