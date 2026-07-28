@@ -1,1 +1,0 @@
-../Drivers/FDC1004/Impl/FDC1004_manual_test.cpp:30:6:void FDC1004_ManualTest(I2C_HandleTypeDef*)	72	static

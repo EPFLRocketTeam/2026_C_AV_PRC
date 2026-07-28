@@ -1,1 +1,11 @@
 .vscode
+
+.settings
+Debug
+
+# TODO remove .osx.project, Debug launch, the wrong ioc
+
+# ???
+EWARM
+Middlewares
+STM32CubeIDE

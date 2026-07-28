@@ -1,6 +1,0 @@
-/home/maxime/st/stm32cubeide_1.19.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.linux64_1.0.0.202410170706/tools/arm-none-eabi/include/c++/13.3.1/cmath:438:3:constexpr float std::sqrt(float)	1
-../Drivers/LMT85/Impl/LMT85.cpp:8:1:Drivers::LMT85::LMT85Driver::LMT85Driver(Drivers::LMT85::Config)	1
-../Drivers/LMT85/Impl/LMT85.cpp:11:6:bool Drivers::LMT85::LMT85Driver::init()	1
-../Drivers/LMT85/Impl/LMT85.cpp:33:6:bool Drivers::LMT85::LMT85Driver::read(Drivers::LMT85::LMT85Data&)	6
-../Drivers/LMT85/Impl/LMT85.cpp:81:7:float Drivers::LMT85::LMT85Driver::calculate_voltage_mv(uint32_t) const	2
-../Drivers/LMT85/Impl/LMT85.cpp:88:7:float Drivers::LMT85::LMT85Driver::calculate_temperature(float) const	4

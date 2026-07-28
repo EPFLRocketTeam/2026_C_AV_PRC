@@ -1,5 +1,0 @@
-../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc_if_template.c:97:15:TEMPLATE_Init	4	static
-../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc_if_template.c:111:15:TEMPLATE_DeInit	4	static
-../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc_if_template.c:128:15:TEMPLATE_Control	16	static
-../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc_if_template.c:207:15:TEMPLATE_Receive	16	static
-../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc_if_template.c:227:15:TEMPLATE_TransmitCplt	24	static
