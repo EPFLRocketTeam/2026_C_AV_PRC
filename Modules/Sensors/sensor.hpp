@@ -1,9 +1,12 @@
 
 #pragma once
+#include "Modules/Sensors/result.hpp"
+
 #include "Modules/Sensors/policy/timer.hpp"
 #include "Modules/Sensors/policy/always.hpp"
 
 #include "Modules/Sensors/pipelines/store.hpp"
+#include "Modules/Sensors/pipelines/error.hpp"
 #include "Modules/Sensors/pipelines/branch.hpp"
 #include "Modules/Sensors/pipelines/nothing.hpp"
 #include "Modules/Sensors/pipelines/average.hpp"

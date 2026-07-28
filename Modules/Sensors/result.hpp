@@ -4,6 +4,8 @@
 #include <utility>
 #include <type_traits>
 
+struct no_error;
+
 template<typename SuccessType, typename ErrorType>
 struct result {
 private:

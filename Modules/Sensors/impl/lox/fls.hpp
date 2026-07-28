@@ -7,9 +7,11 @@
 using FLSModule = SensorModule<
     CommonTimerPolicy,
     SampleDoubleSensor,
-    average_pipeline::SimplePipeline<
-        LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_FLS),
-        FLS_WINDOW_SIZE,
-        LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_FLS_mean)
+    IfPipeline<
+        average_pipeline::SimplePipeline<
+            LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_FLS),
+            FLS_WINDOW_SIZE,
+            LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_FLS_mean)
+        >
     >
 >;

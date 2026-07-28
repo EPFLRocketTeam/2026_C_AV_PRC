@@ -36,7 +36,7 @@ namespace internal {
                 ([&]{
                     valid &= sensor_instance.poll();
                 }(), ...);
-            })
+            });
 
             return valid;
         }

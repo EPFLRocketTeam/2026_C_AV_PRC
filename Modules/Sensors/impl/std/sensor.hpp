@@ -8,12 +8,20 @@ struct pressure_temperature {
 };
 
 struct SampleSensor {
+    using sensor_result = result<pressure_temperature, no_error>;
+
     bool init () { return true; }
-    pressure_temperature poll () { return { -1.0, -1.0 }; }
+    sensor_result poll () {
+        return sensor_result::success({ -1.0, -1.0 });
+    }
 };
 struct SampleDoubleSensor {
+    using sensor_result = result<double, no_error>;
+    
     bool init () { return true; }
-    double poll () { return -1.0; }
+    sensor_result poll () {
+        return sensor_result::success(-1.0);
+    }
 };
 
 template<typename PressurePipeline, typename TemperaturePipeline>
@@ -28,34 +36,54 @@ public:
     }
 };
 
-template<typename PollPolicy, typename Sensor, typename RawPipeline, const size_t WindowSize, typename MeanPipeline>
+template<
+    typename PollPolicy,
+    typename Sensor,
+    typename RawPipeline, const size_t WindowSize, typename MeanPipeline,
+    typename ErrorPipeline = NoPipeline
+>
 using PressureModule = SensorModule<
     PollPolicy,
     Sensor,
-    SingleSensorPipeline<
-        average_pipeline::SimplePipeline<RawPipeline, WindowSize, MeanPipeline>,
-        NoPipeline
+    IfPipeline<
+        SingleSensorPipeline<
+            average_pipeline::SimplePipeline<RawPipeline, WindowSize, MeanPipeline>,
+            NoPipeline
+        >,
+        ErrorPipeline
     >
 >;
-template<typename PollPolicy, typename Sensor, typename RawPipeline, const size_t WindowSize, typename MeanPipeline>
+template<
+    typename PollPolicy,
+    typename Sensor,
+    typename RawPipeline, const size_t WindowSize, typename MeanPipeline,
+    typename ErrorPipeline = NoPipeline
+>
 using TemperatureModule = SensorModule<
     PollPolicy,
     Sensor,
-    SingleSensorPipeline<
-        NoPipeline,
-        average_pipeline::SimplePipeline<RawPipeline, WindowSize, MeanPipeline>
+    IfPipeline<
+        SingleSensorPipeline<
+            NoPipeline,
+            average_pipeline::SimplePipeline<RawPipeline, WindowSize, MeanPipeline>
+        >,
+        ErrorPipeline
     >
 >;
 
 template<typename PollPolicy, typename Sensor,
     typename PRawPipeline, const size_t PWindowSize, typename PMeanPipeline,
-    typename TRawPipeline, const size_t TWindowSize, typename TMeanPipeline>
+    typename TRawPipeline, const size_t TWindowSize, typename TMeanPipeline,
+    typename ErrorPipeline = NoPipeline>
 using BothModule = SensorModule<
     PollPolicy,
     Sensor,
-    SingleSensorPipeline<
-        average_pipeline::SimplePipeline<PRawPipeline, PWindowSize, PMeanPipeline>,
-        average_pipeline::SimplePipeline<TRawPipeline, TWindowSize, TMeanPipeline>
+    IfPipeline<
+        SingleSensorPipeline<
+            average_pipeline::SimplePipeline<PRawPipeline, PWindowSize, PMeanPipeline>,
+            average_pipeline::SimplePipeline<TRawPipeline, TWindowSize, TMeanPipeline>
+        >,
+        ErrorPipeline
     >
 >;
-    
+

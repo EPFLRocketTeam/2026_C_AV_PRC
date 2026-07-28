@@ -57,7 +57,7 @@ public:
 
         params.min = Params::min_value;
         params.max = Params::max_value;
-            
+
         frame.number_used = outlier(params, frame.values, frame.is_outlier, frame.value);
 
         std::apply([&frame](auto&... pipeline_instance) {
