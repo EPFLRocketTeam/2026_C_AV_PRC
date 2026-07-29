@@ -61,13 +61,27 @@ struct SensorConfig {
     float    pressure_full_scale_bar = 100.0f;
 };
 
-struct Pte7300Measurement {
+struct pte7300_pressure_frame {
     int16_t pressure_raw;
+    float   pressure_bar;
+    float   pressure_psi;
+
+    uint8_t buf[2];
+};
+struct pte7300_temperature_frame {
     int16_t bridge_temperature_raw;
+    float   temperature_c;
+
+    uint8_t buf[2];
+};
+struct pte7300_status_frame {
     int16_t status_raw;
-    float   pressure_bar;    // computed from pressure_raw, see k_pte7300_* constants
-    float   pressure_psi;    // pressure_bar converted to psi
-    float   temperature_c;   // computed from bridge_temperature_raw
-    uint8_t raw_bytes[7]; // pre-parse frame bytes, for protocol debugging
-    uint8_t raw_len;      // valid bytes in raw_bytes (6, or 7 with CRC)
+    
+    uint8_t buf[2];
+};
+
+struct pte7300_measurement {
+    pte7300_pressure_frame    pressure;
+    pte7300_temperature_frame temperature;
+    pte7300_status_frame      status;
 };

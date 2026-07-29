@@ -121,7 +121,7 @@ Status SensataPte7300::write_command(uint16_t cmd)
 // little-endian register reads.
 // ---------------------------------------------------------------------------
 
-Result<Pte7300Measurement> SensataPte7300::read_measurement_raw()
+Result<pte7300_measurement> SensataPte7300::read_measurement_raw()
 {
     last_step_ = Pte7300Step::MuxSelect;
     Status s = ensure_mux_channel_selected();
@@ -146,64 +146,83 @@ Result<Pte7300Measurement> SensataPte7300::read_measurement_raw()
     // if (s != Status::Ok) return {s, {}};
     // HAL_Delay(k_pte7300_start_delay_ms);
 
-    last_step_ = Pte7300Step::ReadDspT;
-    uint8_t tBuf[2] = {};
-    s = read_register(k_pte7300_reg_dsp_t, tBuf, sizeof(tBuf));
-    if (s != Status::Ok) return {s, {}};
+    const auto temperature = read_temperature();
+    if (temperature.status != Status::Ok) return {temperature.status, {}};
+    const auto pressure = read_pressure();
+    if (pressure.status != Status::Ok) return {pressure.status, {}};
+    const auto status = read_status();
+    if (status.status != Status::Ok) return {status.status, {}};
 
-    last_step_ = Pte7300Step::ReadDspS;
-    uint8_t pBuf[2] = {};
-    s = read_register(k_pte7300_reg_dsp_s, pBuf, sizeof(pBuf));
-    if (s != Status::Ok) return {s, {}};
+    pte7300_measurement frame;
+    frame.temperature = temperature.value;
+    frame.pressure = pressure.value;
+    frame.status = status.value;
 
-    last_step_ = Pte7300Step::ReadStatus;
-    uint8_t stBuf[2] = {};
-    s = read_register(k_pte7300_reg_status, stBuf, sizeof(stBuf));
-    if (s != Status::Ok) return {s, {}};
-
-    last_step_ = Pte7300Step::None; // full success
-
-    // Little-endian: low byte first, high byte second.
-    Pte7300Measurement m;
-    m.bridge_temperature_raw = static_cast<int16_t>(
-        (static_cast<uint16_t>(tBuf[1]) << 8) | tBuf[0]);
-    m.pressure_raw = static_cast<int16_t>(
-        (static_cast<uint16_t>(pBuf[1]) << 8) | pBuf[0]);
-    m.status_raw = static_cast<int16_t>(
-        (static_cast<uint16_t>(stBuf[1]) << 8) | stBuf[0]);
-
-    m.pressure_bar = (static_cast<float>(m.pressure_raw) - k_pte7300_pressure_counts_min)
-        * config_.pressure_full_scale_bar
-        / (k_pte7300_pressure_counts_max - k_pte7300_pressure_counts_min);
-    m.pressure_psi = m.pressure_bar * k_bar_to_psi;
-    m.temperature_c = static_cast<float>(m.bridge_temperature_raw) * k_pte7300_temp_scale
-        + k_pte7300_temp_offset;
-
-    m.raw_len = 6;
-    m.raw_bytes[0] = tBuf[0];  m.raw_bytes[1] = tBuf[1];
-    m.raw_bytes[2] = pBuf[0];  m.raw_bytes[3] = pBuf[1];
-    m.raw_bytes[4] = stBuf[0]; m.raw_bytes[5] = stBuf[1];
-
-    return {Status::Ok, m};
+    return {Status::Ok, frame};
 }
 
 // Individual reads delegate to read_measurement_raw to avoid a second trigger.
-Result<int16_t> SensataPte7300::read_pressure_raw()
+Result<pte7300_pressure_frame> SensataPte7300::read_pressure()
 {
-    auto r = read_measurement_raw();
-    return {r.status, r.value.pressure_raw};
+    last_step_ = Pte7300Step::MuxSelect;
+    Status s = ensure_mux_channel_selected();
+    if (s != Status::Ok) return {s, {}};
+
+    pte7300_pressure_frame frame;
+
+    last_step_ = Pte7300Step::ReadDspS;
+    Status stat = read_register(k_pte7300_reg_dsp_s, frame.buf, sizeof(frame.buf));
+    if (stat != Status::Ok) return {stat, {}};
+    last_step_ = Pte7300Step::None;
+    
+    frame.pressure_raw = static_cast<int16_t>(
+        (static_cast<uint16_t>(frame.buf[1]) << 8) | frame.buf[0]);
+    frame.pressure_bar = (static_cast<float>(frame.pressure_raw) - k_pte7300_pressure_counts_min)
+        * config_.pressure_full_scale_bar
+        / (k_pte7300_pressure_counts_max - k_pte7300_pressure_counts_min);
+    frame.pressure_psi = frame.pressure_bar * k_bar_to_psi;
+
+    return {Status::Ok, frame};
 }
 
-Result<int16_t> SensataPte7300::read_bridge_temperature_raw()
+Result<pte7300_temperature_frame> SensataPte7300::read_temperature()
 {
-    auto r = read_measurement_raw();
-    return {r.status, r.value.bridge_temperature_raw};
+    last_step_ = Pte7300Step::MuxSelect;
+    Status s = ensure_mux_channel_selected();
+    if (s != Status::Ok) return {s, {}};
+    
+    pte7300_temperature_frame frame;
+
+    last_step_ = Pte7300Step::ReadDspT;
+    Status stat = read_register(k_pte7300_reg_dsp_t, frame.buf, sizeof(frame.buf));
+    if (stat != Status::Ok) return {stat, {}};
+    last_step_ = Pte7300Step::None;
+
+    frame.bridge_temperature_raw = static_cast<int16_t>(
+        (static_cast<uint16_t>(frame.buf[1]) << 8) | frame.buf[0]);
+    frame.temperature_c = static_cast<float>(frame.bridge_temperature_raw) * k_pte7300_temp_scale
+        + k_pte7300_temp_offset;
+
+    return {Status::Ok, frame};
 }
 
-Result<int16_t> SensataPte7300::read_status_raw()
+Result<pte7300_status_frame> SensataPte7300::read_status()
 {
-    auto r = read_measurement_raw();
-    return {r.status, r.value.status_raw};
+    last_step_ = Pte7300Step::MuxSelect;
+    Status s = ensure_mux_channel_selected();
+    if (s != Status::Ok) return {s, {}};
+    
+    pte7300_status_frame frame;
+
+    last_step_ = Pte7300Step::ReadDspS;
+    Status stat = read_register(k_pte7300_reg_status, frame.buf, sizeof(frame.buf));
+    if (stat != Status::Ok) return {stat, {}};
+    last_step_ = Pte7300Step::None;
+    
+    frame.status_raw = static_cast<int16_t>(
+        (static_cast<uint16_t>(frame.buf[1]) << 8) | frame.buf[0]);
+
+    return {Status::Ok, frame};
 }
 
 // CONFIRMED: SERIAL register is 2 little-endian 16-bit words (4 bytes).

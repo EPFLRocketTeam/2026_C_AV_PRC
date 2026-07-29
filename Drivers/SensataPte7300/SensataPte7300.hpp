@@ -71,11 +71,12 @@ public:
     Status          disable_mux_channels();
     Result<uint8_t> read_mux_control_register();
 
-    Result<int16_t>            read_pressure_raw();
-    Result<int16_t>            read_bridge_temperature_raw();
-    Result<int16_t>            read_status_raw();
-    Result<uint32_t>           read_device_serial();
-    Result<Pte7300Measurement> read_measurement_raw();
+    Result<pte7300_pressure_frame>    read_pressure();
+    Result<pte7300_temperature_frame> read_temperature();
+    Result<pte7300_status_frame>      read_status();
+
+    Result<uint32_t>            read_device_serial();
+    Result<pte7300_measurement> read_measurement_raw();
 
     // Which step the most recent read_measurement_raw()/read_device_serial()
     // call failed at (Pte7300Step::None if the last call succeeded).

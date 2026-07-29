@@ -187,26 +187,17 @@ void run_pte7300_hardware_test()
 
     if (meas.status == Status::Ok) {
         LOG("  pressure               = %.3f bar (%.2f psi)  (raw=%d, 0x%04X)",
-            static_cast<double>(meas.value.pressure_bar),
-            static_cast<double>(meas.value.pressure_psi),
-            static_cast<int>(meas.value.pressure_raw),
-            static_cast<uint16_t>(meas.value.pressure_raw));
+            static_cast<double>(meas.value.pressure.pressure_bar),
+            static_cast<double>(meas.value.pressure.pressure_psi),
+            static_cast<int>(meas.value.pressure.pressure_raw),
+            static_cast<uint16_t>(meas.value.pressure.pressure_raw));
         LOG("  bridge_temperature_raw = %d (0x%04X)",
-            static_cast<int>(meas.value.bridge_temperature_raw),
-            static_cast<uint16_t>(meas.value.bridge_temperature_raw));
+            static_cast<int>(meas.value.temperature.bridge_temperature_raw),
+            static_cast<uint16_t>(meas.value.temperature.bridge_temperature_raw));
         LOG("  status_raw             = %d (0x%04X)",
-            static_cast<int>(meas.value.status_raw),
-            static_cast<uint16_t>(meas.value.status_raw));
-        LOG("  temperature            = %.2f C", static_cast<double>(meas.value.temperature_c));
-
-        {
-            char hexbuf[32] = {0};
-            int  pos = 0;
-            for (uint8_t i = 0; i < meas.value.raw_len && pos < (int)sizeof(hexbuf) - 3; i++) {
-                pos += snprintf(hexbuf + pos, sizeof(hexbuf) - pos, "%02X ", meas.value.raw_bytes[i]);
-            }
-            LOG("  raw frame (%u bytes) = %s", meas.value.raw_len, hexbuf);
-        }
+            static_cast<int>(meas.value.status.status_raw),
+            static_cast<uint16_t>(meas.value.status.status_raw));
+        LOG("  temperature            = %.2f C", static_cast<double>(meas.value.temperature.temperature_c));
 
     } else if (meas.status == Status::CrcError) {
         LOG("  CRC failed — retry with k_test_use_crc=false to see raw bytes");
@@ -258,9 +249,9 @@ void pte7300_print_data()
     auto meas = drv.read_measurement_raw();
     if (meas.status == Status::Ok) {
         LOG("pressure=%.3f bar (%.2f psi)  temperature=%.2f C",
-            static_cast<double>(meas.value.pressure_bar),
-            static_cast<double>(meas.value.pressure_psi),
-            static_cast<double>(meas.value.temperature_c));
+            static_cast<double>(meas.value.pressure.pressure_bar),
+            static_cast<double>(meas.value.pressure.pressure_psi),
+            static_cast<double>(meas.value.temperature.temperature_c));
     } else {
         LOG("read failed: %s (step=%s)", status_str(meas.status), step_str(drv.last_step()));
     }
