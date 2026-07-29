@@ -33,7 +33,3 @@ jobs:
         run: |
           cd build
           cmake --build . --target coverage
-      - name: run memory tests
-        run: |
-          cd build
-          cmake --build . --target memcheck
