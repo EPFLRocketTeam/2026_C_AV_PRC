@@ -6,11 +6,9 @@
 
 #include "Modules/Sensors/drivers/SensataSensor.hpp"
 
-static const char* CHAMBER_NAME = "chamber";
-
 using ChamberModule = BothModule<
     CommonTimerPolicy,
-    sensata::BothSensata<sensata::SensataParams<0>>,
+    sensata::BothSensata<sensata::SensataParams<SENSATA_CHANNEL_L1>>,
 
     ENGINE_SETTER_POLICY(prc::PropSensorsStoreEngine::set_pressure_C),
     PRESSURE_C_WINDOW_SIZE,

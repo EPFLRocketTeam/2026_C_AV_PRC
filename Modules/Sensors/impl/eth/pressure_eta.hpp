@@ -6,6 +6,8 @@
 #include "Modules/Sensors/impl/eth/consts.hpp"
 #include "Modules/Sensors/impl/std/multi.hpp"
 
+#include "Modules/Sensors/drivers/SensataSensor.hpp"
+
 using PressureEtaSensorModule = multi::Module<
     CommonTimerPolicy,
     multi::PipelineParams<
@@ -29,7 +31,19 @@ using PressureEtaSensorModule = multi::Module<
     >,
 
     // Use only pressure sensors
-    multi::PressureSensorParam<SampleSensor, ETH_SETTER_POLICY(prc::PropSensorsStoreEth::set_pressure_ETA1)>,
-    multi::PressureSensorParam<SampleSensor, ETH_SETTER_POLICY(prc::PropSensorsStoreEth::set_pressure_ETA2)>,
-    multi::PressureSensorParam<SampleSensor, ETH_SETTER_POLICY(prc::PropSensorsStoreEth::set_pressure_ETA3)>
+    multi::PressureSensorParam<
+        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L1>>,
+        ETH_SETTER_POLICY(prc::PropSensorsStoreEth::set_pressure_ETA1),
+        sensata::SensataErrorPipeline<ETA1_NAME>
+    >,
+    multi::PressureSensorParam<
+        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L2>>,
+        ETH_SETTER_POLICY(prc::PropSensorsStoreEth::set_pressure_ETA2),
+        sensata::SensataErrorPipeline<ETA2_NAME>
+    >,
+    multi::PressureSensorParam<
+        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L3>>,
+        ETH_SETTER_POLICY(prc::PropSensorsStoreEth::set_pressure_ETA3),
+        sensata::SensataErrorPipeline<ETA3_NAME>
+    >
 >;
