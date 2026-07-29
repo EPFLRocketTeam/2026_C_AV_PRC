@@ -24,6 +24,7 @@ Status hal_to_status(HAL_StatusTypeDef s)
 // SensataPte7300
 // ===========================================================================
 
+SensataPte7300::SensataPte7300() {}
 SensataPte7300::SensataPte7300(mux::Pca9547Mux* mux, I2C_HandleTypeDef* hi2c, SensorConfig config)
     : mux_(mux),
       config_(config),

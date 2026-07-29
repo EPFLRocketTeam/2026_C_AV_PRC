@@ -48,13 +48,15 @@ static constexpr float    k_test_pressure_full_scale_bar = 100.0f;
 
 extern "C" I2C_HandleTypeDef hi2c1;
 
-static Pca9547Mux testMux(&hi2c1, k_test_mux_address, 100);
+namespace {
+    static Pca9547Mux testMux(&hi2c1, k_test_mux_address, 100);
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-static const char* status_str(Status s)
+const char* sensata::status_str(Status s)
 {
     switch (s) {
         case Status::Ok:                return "Ok";
@@ -71,7 +73,7 @@ static const char* status_str(Status s)
     }
 }
 
-static const char* step_str(Pte7300Step step)
+const char* sensata::step_str(Pte7300Step step)
 {
     switch (step) {
         case Pte7300Step::None:        return "None";
@@ -104,7 +106,6 @@ static void log_mux_register(SensataPte7300& drv)
 void run_pte7300_hardware_test()
 {
     SensorConfig cfg;
-    cfg.mux_address_7bit    = k_test_mux_address;
     cfg.mux_channel         = k_test_sensor_channel;
     cfg.sensor_address_7bit = k_test_sensor_address;
     cfg.i2c_timeout_ms      = 10;
@@ -237,7 +238,6 @@ void run_pte7300_hardware_test()
 void pte7300_print_data()
 {
     SensorConfig cfg;
-    cfg.mux_address_7bit        = k_test_mux_address;
     cfg.mux_channel              = k_test_sensor_channel;
     cfg.sensor_address_7bit      = k_test_sensor_address;
     cfg.i2c_timeout_ms           = 10;

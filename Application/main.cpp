@@ -8,49 +8,36 @@ extern "C" {
 #include "Data/propulsion/data.hpp"
 #include <stdio.h>
 #include "Modules/Sensors/impl/lox/pressure_ota.hpp"
+#include "Modules/Sensors/impl/engine/chamber.hpp"
 
 #include "Drivers/SensataPte7300/SensataPte7300HardwareTest.hpp"
 
 static FLSModule fls_module;
 static PressureOtaSensorModule ota_module;
 
+static ChamberModule chamber;
 
-
-void prc::PropSensorsStoreLox::set_FLS(double fls) {
-	printf("Set new FLS value of %lf\r\n", fls);
+void prc::PropSensorsStoreEngine::set_pressure_C(double pressure_C) {
+	printf("p_C=%lf\r\n", pressure_C);
 }
-
-void prc::PropSensorsStoreLox::set_FLS_mean(double fls_mean) {
-	printf("Set new FLS_mean value of %lf\r\n", fls_mean);
-
+void prc::PropSensorsStoreEngine::set_pressure_C_mean(double pressure_C_mean) {
+	printf("p_C_mean=%lf\r\n", pressure_C_mean);
 }
-
-void prc::PropSensorsStoreLox::set_pressure_OTA1(double ota) {
-	printf("Set new OTA1_pressure value of %lf\r\n", ota);
+void prc::PropSensorsStoreEngine::set_temperature_C(double temperature_C) {
+	printf("t_C=%lf\r\n", temperature_C);
 }
-
-void prc::PropSensorsStoreLox::set_pressure_OTA2(double ota) {
-	printf("Set new OTA2_pressure value of %lf\r\n", ota);
+void prc::PropSensorsStoreEngine::set_temperature_C_mean(double temperature_C_mean) {
+	printf("t_C_mean=%lf\r\n", temperature_C_mean);
 }
-
-void prc::PropSensorsStoreLox::set_pressure_OTA3(double ota) {
-	printf("Set new OTA3_pressure value of %lf\r\n", ota);
-}
-
-void prc::PropSensorsStoreLox::set_pressure_OTA_mean(double ota) {
-	printf("Set new OTA_mean_pressure value of %lf\r\n", ota);
-}
-
 
 void main_init() {
-
+	chamber.init();
 }
 
 void main_tick() {
-	uint32_t tickStart = HAL_GetTick();
-	pte7300_print_data();
-	uint32_t tickEnd = HAL_GetTick();
-	HAL_Delay(1000);
+	printf("\r\n");
+	chamber.tick();
+	HAL_Delay(10);
 	// fls_module.tick();
 	// ota_module.tick();
 }

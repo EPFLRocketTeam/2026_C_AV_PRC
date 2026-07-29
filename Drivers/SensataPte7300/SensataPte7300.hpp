@@ -61,6 +61,7 @@ static constexpr float k_bar_to_psi = 14.5037738f;
 
 class SensataPte7300 {
 public:
+    SensataPte7300();
     SensataPte7300(mux::Pca9547Mux* mux, I2C_HandleTypeDef* hi2c, SensorConfig config);
 
     Status init();

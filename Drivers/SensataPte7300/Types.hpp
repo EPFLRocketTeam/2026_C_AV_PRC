@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <cstddef>
 
+namespace sensata {
+
 // ---------------------------------------------------------------------------
 // Common driver types
 // ---------------------------------------------------------------------------
@@ -40,11 +42,17 @@ enum class Pte7300Step : uint8_t {
 };
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const char* status_str(Status s);
+const char* step_str(Pte7300Step step);
+
+// ---------------------------------------------------------------------------
 // Driver configuration
 // ---------------------------------------------------------------------------
 
 struct SensorConfig {
-    uint8_t  mux_address_7bit        = 0x70; // PCA9547 default if A2=A1=A0=0
     uint8_t  mux_channel             = 0;    // 0..7
     uint8_t  sensor_address_7bit     = 0x6C; // PTE7300 7-bit address (excluding CRC)
     // CRC-mode framing (address|1, CRC4 header + CRC8 payload) is not yet
@@ -84,4 +92,6 @@ struct pte7300_measurement {
     pte7300_pressure_frame    pressure;
     pte7300_temperature_frame temperature;
     pte7300_status_frame      status;
+};
+
 };
