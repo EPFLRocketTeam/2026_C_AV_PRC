@@ -22,6 +22,9 @@
 #include "../SensataPte7300HardwareTest.hpp"
 #include <cstdio>
 
+using namespace sensata;
+using namespace sensata::mux;
+
 // ---------------------------------------------------------------------------
 // Test configuration — adapt to your board wiring
 // ---------------------------------------------------------------------------
@@ -45,11 +48,15 @@ static constexpr float    k_test_pressure_full_scale_bar = 100.0f;
 
 extern "C" I2C_HandleTypeDef hi2c1;
 
+namespace {
+    static Pca9547Mux testMux(&hi2c1, k_test_mux_address, 100);
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-static const char* status_str(Status s)
+const char* sensata::status_str(Status s)
 {
     switch (s) {
         case Status::Ok:                return "Ok";
@@ -66,7 +73,7 @@ static const char* status_str(Status s)
     }
 }
 
-static const char* step_str(Pte7300Step step)
+const char* sensata::step_str(Pte7300Step step)
 {
     switch (step) {
         case Pte7300Step::None:        return "None";
@@ -99,14 +106,13 @@ static void log_mux_register(SensataPte7300& drv)
 void run_pte7300_hardware_test()
 {
     SensorConfig cfg;
-    cfg.mux_address_7bit    = k_test_mux_address;
     cfg.mux_channel         = k_test_sensor_channel;
     cfg.sensor_address_7bit = k_test_sensor_address;
     cfg.i2c_timeout_ms      = 10;
     cfg.use_crc             = k_test_use_crc;
     cfg.pressure_full_scale_bar = k_test_pressure_full_scale_bar;
 
-    SensataPte7300 drv(&hi2c1, cfg);
+    SensataPte7300 drv(&testMux, &hi2c1, cfg);
 
     LOG("=== PTE7300 hardware test START ===");
     LOG("    MUX  addr=0x%02X  channel=%d", k_test_mux_address, k_test_sensor_channel);
@@ -182,26 +188,17 @@ void run_pte7300_hardware_test()
 
     if (meas.status == Status::Ok) {
         LOG("  pressure               = %.3f bar (%.2f psi)  (raw=%d, 0x%04X)",
-            static_cast<double>(meas.value.pressure_bar),
-            static_cast<double>(meas.value.pressure_psi),
-            static_cast<int>(meas.value.pressure_raw),
-            static_cast<uint16_t>(meas.value.pressure_raw));
+            static_cast<double>(meas.value.pressure.pressure_bar),
+            static_cast<double>(meas.value.pressure.pressure_psi),
+            static_cast<int>(meas.value.pressure.pressure_raw),
+            static_cast<uint16_t>(meas.value.pressure.pressure_raw));
         LOG("  bridge_temperature_raw = %d (0x%04X)",
-            static_cast<int>(meas.value.bridge_temperature_raw),
-            static_cast<uint16_t>(meas.value.bridge_temperature_raw));
+            static_cast<int>(meas.value.temperature.bridge_temperature_raw),
+            static_cast<uint16_t>(meas.value.temperature.bridge_temperature_raw));
         LOG("  status_raw             = %d (0x%04X)",
-            static_cast<int>(meas.value.status_raw),
-            static_cast<uint16_t>(meas.value.status_raw));
-        LOG("  temperature            = %.2f C", static_cast<double>(meas.value.temperature_c));
-
-        {
-            char hexbuf[32] = {0};
-            int  pos = 0;
-            for (uint8_t i = 0; i < meas.value.raw_len && pos < (int)sizeof(hexbuf) - 3; i++) {
-                pos += snprintf(hexbuf + pos, sizeof(hexbuf) - pos, "%02X ", meas.value.raw_bytes[i]);
-            }
-            LOG("  raw frame (%u bytes) = %s", meas.value.raw_len, hexbuf);
-        }
+            static_cast<int>(meas.value.status.status_raw),
+            static_cast<uint16_t>(meas.value.status.status_raw));
+        LOG("  temperature            = %.2f C", static_cast<double>(meas.value.temperature.temperature_c));
 
     } else if (meas.status == Status::CrcError) {
         LOG("  CRC failed — retry with k_test_use_crc=false to see raw bytes");
@@ -241,21 +238,20 @@ void run_pte7300_hardware_test()
 void pte7300_print_data()
 {
     SensorConfig cfg;
-    cfg.mux_address_7bit        = k_test_mux_address;
     cfg.mux_channel              = k_test_sensor_channel;
     cfg.sensor_address_7bit      = k_test_sensor_address;
     cfg.i2c_timeout_ms           = 10;
     cfg.use_crc                  = k_test_use_crc;
     cfg.pressure_full_scale_bar  = k_test_pressure_full_scale_bar;
 
-    SensataPte7300 drv(&hi2c1, cfg);
+    SensataPte7300 drv(&testMux, &hi2c1, cfg);
 
     auto meas = drv.read_measurement_raw();
     if (meas.status == Status::Ok) {
         LOG("pressure=%.3f bar (%.2f psi)  temperature=%.2f C",
-            static_cast<double>(meas.value.pressure_bar),
-            static_cast<double>(meas.value.pressure_psi),
-            static_cast<double>(meas.value.temperature_c));
+            static_cast<double>(meas.value.pressure.pressure_bar),
+            static_cast<double>(meas.value.pressure.pressure_psi),
+            static_cast<double>(meas.value.temperature.temperature_c));
     } else {
         LOG("read failed: %s (step=%s)", status_str(meas.status), step_str(drv.last_step()));
     }

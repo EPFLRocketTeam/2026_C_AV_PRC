@@ -6,6 +6,8 @@
 #include "Modules/Sensors/impl/lox/consts.hpp"
 #include "Modules/Sensors/impl/std/multi.hpp"
 
+#include "Modules/Sensors/drivers/SensataSensor.hpp"
+
 using PressureOtaSensorModule = multi::Module<
     CommonTimerPolicy,
     multi::PipelineParams<
@@ -29,7 +31,19 @@ using PressureOtaSensorModule = multi::Module<
     >,
 
     // Use only pressure sensors
-    multi::PressureSensorParam<SampleSensor, LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA1)>,
-    multi::PressureSensorParam<SampleSensor, LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA2)>,
-    multi::PressureSensorParam<SampleSensor, LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA3)>
+    multi::PressureSensorParam<
+        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L1>>,
+        LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA1),
+        sensata::SensataErrorPipeline<OTA1_NAME>
+    >,
+    multi::PressureSensorParam<
+        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L2>>,
+        LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA2),
+        sensata::SensataErrorPipeline<OTA2_NAME>
+    >,
+    multi::PressureSensorParam<
+        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L3>>,
+        LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA3),
+        sensata::SensataErrorPipeline<OTA3_NAME>
+    >
 >;
