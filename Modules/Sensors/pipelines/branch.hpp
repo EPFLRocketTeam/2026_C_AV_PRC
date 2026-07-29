@@ -10,7 +10,7 @@ private:
     std::tuple<Setters...> setters_;
 
 public:
-    inline void ingest(const auto &data) {
+    inline void ingest(const auto &data) noexcept {
         std::apply([&data](auto&... setter) {
             (setter.ingest(data), ...);
         }, setters_);
@@ -27,13 +27,14 @@ private:
 public:
     inline auto ingest (
             const std::array<auto, NumberSetters> &data,
-            const std::array<bool, NumberSetters> &valid) {
+            const std::array<bool, NumberSetters> &valid) noexcept {
         std::apply([&data, &valid](auto&... setter) {
             size_t idx = 0;
             ([&]{
                 if (valid[idx]) {
-                    setter.ingest(data[idx ++]);
+                    setter.ingest(data[idx]);
                 }
+                idx ++;
             }(), ...);
         }, setters_);
 

@@ -1,6 +1,7 @@
 
 #pragma once
 #include <cstdint>
+#include <cstdio>
 #include <tuple>
 #include <sigutils/outlier.hpp>
 
@@ -52,12 +53,12 @@ private:
 public:
     Frame<InputCount> ingest (
             const std::array<double, InputCount> &values,
-            const std::array<bool, InputCount> &valid) {
+            const std::array<bool, InputCount> &valid) noexcept {
         Frame<InputCount> frame;
     
         for (size_t offset = 0; offset < InputCount; offset ++) {
             frame.values[offset] = values[offset];
-            frame.is_outlier[offset] = valid[offset];
+            frame.is_outlier[offset] = !valid[offset];
         }
 
         params.min = Params::min_value;
@@ -65,10 +66,17 @@ public:
 
         frame.number_used = outlier<double, InputCount, Params::number_kept, false>(params, frame.values, frame.is_outlier, frame.value);
 
-        std::apply([&frame](auto&... pipeline_instance) {
+        std::apply([&frame, &valid](auto&... pipeline_instance){
             std::size_t idx = 0;
-            ((pipeline_instance.ingest(frame.values[idx++])), ...);
+            ([&]{
+                printf("Sensor %d: valid=%d, outlier=%d, value=%f\n", (int) idx, (int) valid[idx], (int) frame.is_outlier[idx], (float) frame.values[idx]);
+                if (valid[idx]) {
+                    pipeline_instance.ingest(frame.values[idx]);
+                }
+                idx ++;
+            }(), ...);
         }, rawPipelines);
+        printf("number_used=%d, value=%f\n", (int) frame.number_used, (float) frame.value);
         
         if (frame.number_used >= Params::min_kept) {
             meanPipeline.ingest(frame.value);
