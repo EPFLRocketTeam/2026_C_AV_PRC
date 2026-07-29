@@ -2,10 +2,14 @@ extern "C" {
 #include "main_app.h"
 }
 
+#include "stm32h7xx_hal.h"
+
 #include "Modules/Sensors/impl/lox/fls.hpp"
 #include "Data/propulsion/data.hpp"
 #include <stdio.h>
 #include "Modules/Sensors/impl/lox/pressure_ota.hpp"
+
+#include "Drivers/SensataPte7300/SensataPte7300HardwareTest.hpp"
 
 static FLSModule fls_module;
 static PressureOtaSensorModule ota_module;
@@ -43,6 +47,10 @@ void main_init() {
 }
 
 void main_tick() {
-	fls_module.tick();
+	uint32_t tickStart = HAL_GetTick();
+	pte7300_print_data();
+	uint32_t tickEnd = HAL_GetTick();
+	HAL_Delay(1000);
+	// fls_module.tick();
 	// ota_module.tick();
 }

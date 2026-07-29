@@ -1,79 +1,31 @@
 #include "../SensataPte7300.hpp"
 
+namespace sensata {
+
+namespace {
+
 // STM32 HAL convention: DevAddress is the 7-bit address shifted left by 1.
 // The R/W bit is appended internally by the peripheral.
-static constexpr uint16_t to_hal_addr(uint8_t addr_7bit)
+constexpr uint16_t to_hal_addr(uint8_t addr_7bit)
 {
     return static_cast<uint16_t>(addr_7bit) << 1;
 }
 
-static Status hal_to_status(HAL_StatusTypeDef s)
+Status hal_to_status(HAL_StatusTypeDef s)
 {
     if (s == HAL_OK)      return Status::Ok;
     if (s == HAL_TIMEOUT) return Status::Timeout;
     return Status::I2cError;
 }
 
-// ===========================================================================
-// Pca9547Mux  (fully confirmed — NXP PCA9547 datasheet Rev.4)
-// ===========================================================================
-
-Pca9547Mux::Pca9547Mux(I2C_HandleTypeDef* hi2c, uint8_t address_7bit, uint32_t timeout_ms)
-    : hi2c_(hi2c), address_7bit_(address_7bit), timeout_ms_(timeout_ms)
-{}
-
-Status Pca9547Mux::probe()
-{
-    // Reading the control register is the canonical probe for PCA9547.
-    return read_control_register().status;
-}
-
-Status Pca9547Mux::select_channel(uint8_t channel)
-{
-    if (channel > k_pca9547_max_channel) return Status::InvalidChannel;
-    return write_control_byte(pca9547_channel_control_byte(channel));
-}
-
-Status Pca9547Mux::select_channel_verified(uint8_t channel)
-{
-    Status s = select_channel(channel);
-    if (s != Status::Ok) return s;
-
-    auto r = read_control_register();
-    if (r.status != Status::Ok) return r.status;
-
-    if (r.value != pca9547_channel_control_byte(channel)) {
-        return Status::MuxChannelMismatch;
-    }
-    return Status::Ok;
-}
-
-Status Pca9547Mux::disable_all_channels()
-{
-    return write_control_byte(k_pca9547_disable_all);
-}
-
-Result<uint8_t> Pca9547Mux::read_control_register()
-{
-    uint8_t byte = 0;
-    auto s = HAL_I2C_Master_Receive(
-        hi2c_, to_hal_addr(address_7bit_), &byte, 1, timeout_ms_);
-    if (s == HAL_OK) return {Status::Ok, byte};
-    return {hal_to_status(s), 0};
-}
-
-Status Pca9547Mux::write_control_byte(uint8_t byte)
-{
-    return hal_to_status(HAL_I2C_Master_Transmit(
-        hi2c_, to_hal_addr(address_7bit_), &byte, 1, timeout_ms_));
-}
+};
 
 // ===========================================================================
 // SensataPte7300
 // ===========================================================================
 
-SensataPte7300::SensataPte7300(I2C_HandleTypeDef* hi2c, SensorConfig config)
-    : mux_(hi2c, config.mux_address_7bit, config.i2c_timeout_ms),
+SensataPte7300::SensataPte7300(mux::Pca9547Mux* mux, I2C_HandleTypeDef* hi2c, SensorConfig config)
+    : mux_(mux),
       config_(config),
       hi2c_(hi2c)
 {}
@@ -87,7 +39,7 @@ Status SensataPte7300::init()
 
 Status SensataPte7300::probe_mux()
 {
-    Status s = mux_.probe();
+    Status s = mux_->probe();
     if (s == Status::I2cError) return Status::MuxNotFound;
     return s;
 }
@@ -110,17 +62,17 @@ Status SensataPte7300::probe_sensor()
 
 Status SensataPte7300::select_channel(uint8_t channel)
 {
-    return mux_.select_channel(channel);
+    return mux_->select_channel_cached(channel);
 }
 
 Status SensataPte7300::disable_mux_channels()
 {
-    return mux_.disable_all_channels();
+    return mux_->disable_all_channels();
 }
 
 Result<uint8_t> SensataPte7300::read_mux_control_register()
 {
-    return mux_.read_control_register();
+    return mux_->read_control_register();
 }
 
 // ---------------------------------------------------------------------------
@@ -132,7 +84,7 @@ Status SensataPte7300::ensure_mux_channel_selected()
     // Verified select: confirms the mux actually latched the requested
     // channel (via readback) before any downstream I2C activity is
     // attempted, rather than just trusting that the write was ACKed.
-    return mux_.select_channel_verified(config_.mux_channel);
+    return mux_->select_channel_cached(config_.mux_channel);
 }
 
 // CONFIRMED register protocol — see header. Two separate I2C transactions:
@@ -279,3 +231,5 @@ Result<uint32_t> SensataPte7300::read_device_serial()
 
     return {Status::Ok, serial};
 }
+
+}; // namespace sensata

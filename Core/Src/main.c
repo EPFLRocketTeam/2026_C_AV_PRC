@@ -88,14 +88,15 @@ int _write(int file, char *ptr, int len) {
     // Wait until USB is ready, but never wedge: if the CDC endpoint stays
     // busy (host not draining, missed completion), drop the output instead
     // of spinning forever.
-    uint32_t start = HAL_GetTick();
+
+#ifndef ENABLE_LOG
+	uint32_t start = HAL_GetTick();
     while (CDC_Transmit_HS((uint8_t*)ptr, len) == USBD_BUSY) {
         if (HAL_GetTick() - start > 100) {
             break;
         }
     }
-
-#ifdef ENABLE_LOG
+#else
     // Relay the same bytes over CAN to FC, tagged with this board's role
     // (see Application/FlightControl/prc_can.cpp). Local VCP output above
     // is unaffected either way -- this is purely additive.

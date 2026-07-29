@@ -22,6 +22,9 @@
 #include "../SensataPte7300HardwareTest.hpp"
 #include <cstdio>
 
+using namespace sensata;
+using namespace sensata::mux;
+
 // ---------------------------------------------------------------------------
 // Test configuration — adapt to your board wiring
 // ---------------------------------------------------------------------------
@@ -44,6 +47,8 @@ static constexpr float    k_test_pressure_full_scale_bar = 100.0f;
 // ---------------------------------------------------------------------------
 
 extern "C" I2C_HandleTypeDef hi2c1;
+
+static Pca9547Mux testMux(&hi2c1, k_test_mux_address, 100);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -106,7 +111,7 @@ void run_pte7300_hardware_test()
     cfg.use_crc             = k_test_use_crc;
     cfg.pressure_full_scale_bar = k_test_pressure_full_scale_bar;
 
-    SensataPte7300 drv(&hi2c1, cfg);
+    SensataPte7300 drv(&testMux, &hi2c1, cfg);
 
     LOG("=== PTE7300 hardware test START ===");
     LOG("    MUX  addr=0x%02X  channel=%d", k_test_mux_address, k_test_sensor_channel);
@@ -248,7 +253,7 @@ void pte7300_print_data()
     cfg.use_crc                  = k_test_use_crc;
     cfg.pressure_full_scale_bar  = k_test_pressure_full_scale_bar;
 
-    SensataPte7300 drv(&hi2c1, cfg);
+    SensataPte7300 drv(&testMux, &hi2c1, cfg);
 
     auto meas = drv.read_measurement_raw();
     if (meas.status == Status::Ok) {
