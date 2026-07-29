@@ -31,7 +31,6 @@ Status Pca9547Mux::probe()
 
 Status Pca9547Mux::select_channel(uint8_t channel)
 {
-    printf("Try channel selection.\r\n");
     if (channel > k_pca9547_max_channel) return Status::InvalidChannel;
     return write_control_byte(pca9547_channel_control_byte(channel));
 }
