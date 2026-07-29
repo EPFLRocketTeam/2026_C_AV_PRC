@@ -1,6 +1,7 @@
 
 #pragma once
 #include "Modules/Sensors/sensor.hpp"
+#include "Application/Data/data.hpp"
 
 const size_t DEFAULT_NUMBER_TICKS = 10;
 

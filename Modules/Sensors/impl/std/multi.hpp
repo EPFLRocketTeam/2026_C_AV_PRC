@@ -3,6 +3,7 @@
 
 #include "Modules/Sensors/impl/std/sensor.hpp"
 #include <cstdint>
+#include <cstdio>
 #include <tuple>
 
 namespace multi {
@@ -36,21 +37,21 @@ namespace internal {
         
         static constexpr std::size_t NumberSensors = sizeof...(SensorsParams);
     public:
-        bool init () {
+        bool init () noexcept {
             bool valid = true;
 
-            std::apply([&valid](auto&... sensor_and_error_instance) {
+            std::apply([&valid](auto&... sensor_and_error_instance){
                 ([&]{
-                    valid &= sensor_and_error_instance.first.poll();
+                    valid &= sensor_and_error_instance.first.init();
                 }(), ...);
             }, sensors_and_errors);
 
             return valid;
         }
-        Frame<NumberSensors> poll () {
+        Frame<NumberSensors> poll () noexcept {
             Frame<NumberSensors> frame;
 
-            std::apply([&frame](auto&... sensor_and_error_instance) {
+            std::apply([&frame](auto&... sensor_and_error_instance){
                 std::size_t idx = 0;
                 ([&]{
                     auto result = sensor_and_error_instance.first.poll();
@@ -140,7 +141,7 @@ private:
 
     ReturnPipeline returnPipeline;
 public:
-    void ingest (const internal::Frame<NumberSensors> &data) {
+    void ingest (const internal::Frame<NumberSensors> &data) noexcept {
         return_type ret;
 
         ret.pressure    = pressure.ingest(data.pressures, data.valid);

@@ -8,7 +8,7 @@ private:
     Success success;
     Error   error;
 public:
-    void ingest (const result<auto, auto> &data) {
+    void ingest (const result<auto, auto> &data) noexcept {
         if (data.is_success()) {
             success.ingest(data.get_value());
         } else {

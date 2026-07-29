@@ -16,7 +16,7 @@ namespace average_pipeline {
 
         RunningAverage<double, WindowSize> runningAverage;
     public:
-        void ingest (const double &value) {
+        void ingest (const double &value) noexcept {
             setter.ingest(value);
 
             runningAverage.push(value);

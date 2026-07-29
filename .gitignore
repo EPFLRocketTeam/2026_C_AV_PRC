@@ -2,6 +2,7 @@
 
 .settings
 Debug
+build
 
 # TODO remove .osx.project, Debug launch, the wrong ioc
 
