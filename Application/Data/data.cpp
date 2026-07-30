@@ -11,7 +11,7 @@ const DataDump &PrcStore::get() const {
   data_.prc_timestamp_ms  = HAL_GetTick();
   data_.boardIdentity     = boardIdentityStore.get();
   data_.valves            = valvesStore.get();
-  data_.uplinkCmd         = uplinkCmdStore.get();
+  data_.intranetCmd         = intranetCmdStore.get();
   data_.event             = eventStore.get();
   return data_;
 }
@@ -20,7 +20,7 @@ void PrcStore::set(const DataDump &value) {
   stateStore.set(value.prc_state);
   boardIdentityStore.set(value.boardIdentity);
   valvesStore.set(value.valves);
-  uplinkCmdStore.set(value.uplinkCmd);
+  intranetCmdStore.set(value.intranetCmd);
   eventStore.set(value.event);
 }
 

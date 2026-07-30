@@ -47,14 +47,15 @@ struct Valves {
 // ---------------------------------------------------------------------------
 // Command received from the Flight Computer over the CAN link
 // (2026_C_AV_PRC <-> 2026_C_AV_FC, see CANBUS_TEST_* in Core/Src/main.c).
-// Mirrors FC's UplinkCmd struct shape for consistency across the two repos.
+// Mirrors FC's UplinkCmd struct shape (same fields; named after the PRC<->FC
+// intranet here, since on this board the command arrives over that link).
 // ---------------------------------------------------------------------------
 
-struct UplinkCmd {
+struct IntranetCmd {
   uint8_t id;
   uint8_t value;
 
-  UplinkCmd();
+  IntranetCmd();
 };
 
 // ---------------------------------------------------------------------------
@@ -110,9 +111,9 @@ public:
   void set_valve_prb_main_fuel(bool value);
 };
 
-class UplinkCmdStore : public IStore<UplinkCmd> {
+class IntranetCmdStore : public IStore<IntranetCmd> {
 public:
-  UplinkCmdStore();
+  IntranetCmdStore();
 
   uint8_t get_id() const;
   void set_id(uint8_t value);
@@ -133,7 +134,7 @@ struct DataDump {
   uint32_t       prc_timestamp_ms;
   BoardIdentity  boardIdentity;
   Valves         valves;
-  UplinkCmd      uplinkCmd;
+  IntranetCmd      intranetCmd;
   Event          event;
 
   PropSensorsEngine propSensorsEngine;
@@ -147,7 +148,7 @@ public:
   StateStore         stateStore;
   BoardIdentityStore boardIdentityStore;
   ValvesStore        valvesStore;
-  UplinkCmdStore     uplinkCmdStore;
+  IntranetCmdStore     intranetCmdStore;
   EventStore         eventStore;
 
   PropSensorsStoreEngine propSensorsStoreEngine;

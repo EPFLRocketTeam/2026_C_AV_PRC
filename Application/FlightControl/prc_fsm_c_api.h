@@ -21,7 +21,7 @@ extern "C" {
 void Prc_Fsm_Init(void);
 
 // Call once per main-loop iteration. Refreshes this tick's Event flags from
-// sensor/uplink-command stores, advances the FSM, applies valve actions for
+// sensor/intranet-command stores, advances the FSM, applies valve actions for
 // the resulting state, and republishes the new state.
 void Prc_Fsm_Tick(void);
 

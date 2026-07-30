@@ -4,7 +4,7 @@
 #include <cstring>
 
 #include "Application/Data/data.hpp"
-#include "Application/FlightControl/uplink_cmd.hpp"
+#include "Application/FlightControl/intranet_cmd.hpp"
 #include "Drivers/Valve/ValveList.hpp"
 #include "log_aggregator/chunker.hpp"
 #include "prc_intranet/const.hpp"
@@ -17,10 +17,10 @@ namespace pi = prc_intranet;
 namespace {
 
 void SetCmd(uint8_t id, uint8_t value = 0) {
-  UplinkCmd cmd;
+  IntranetCmd cmd;
   cmd.id = id;
   cmd.value = value;
-  PrcStore::get_instance().uplinkCmdStore.set(cmd);
+  PrcStore::get_instance().intranetCmdStore.set(cmd);
 }
 
 BoardRole CurrentRole() {
