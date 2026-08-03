@@ -3,6 +3,8 @@
 namespace Drivers {
 namespace PT1000 {
 
+PT1000Driver::PT1000Driver() : config_{}, sensor_id_(0) {}
+
 PT1000Driver::PT1000Driver(Config config, uint8_t sensor_id)
     : config_(config), sensor_id_(sensor_id) {}
 

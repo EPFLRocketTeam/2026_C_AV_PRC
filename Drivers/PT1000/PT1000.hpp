@@ -46,6 +46,8 @@ namespace PT1000 {
 
     class PT1000Driver {
     public:
+        PT1000Driver();
+
         /**
          * @brief Construct a PT1000 driver for a single sensor.
          * @param config  ADC handle, channel, reference resistor, resolution.
