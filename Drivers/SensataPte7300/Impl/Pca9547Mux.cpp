@@ -51,7 +51,7 @@ Status Pca9547Mux::select_channel_verified(uint8_t channel)
 
 Status Pca9547Mux::select_channel_cached(uint8_t channel)
 {
-    if (channel > k_pca9547_max_channel) return Status::InvalidChannel;
+  if (channel > k_pca9547_max_channel) return Status::InvalidChannel;
 
     if (cached_channel_ == channel) {
         return Status::Ok; // trust the cache -- no I2C traffic

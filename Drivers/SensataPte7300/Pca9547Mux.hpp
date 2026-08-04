@@ -8,6 +8,11 @@
 
 namespace sensata::mux {
 
+inline constexpr uint8_t k_pca9547_default_address_7bit = 0x70; // A2=A1=A0=0
+inline constexpr uint8_t k_pca9547_enable_bit           = 0x08; // control reg bit 3 (unused under current bitmask hypothesis)
+inline constexpr uint8_t k_pca9547_disable_all          = 0x00;
+inline constexpr uint8_t k_pca9547_max_channel          = 7;
+
 // ---------------------------------------------------------------------------
 // PCA9547 constants
 // ---------------------------------------------------------------------------
@@ -27,14 +32,9 @@ namespace sensata::mux {
 // comment block and the class banner below when resolved.
 inline constexpr uint8_t pca9547_channel_control_byte(uint8_t channel)
 {
-    return static_cast<uint8_t>(1u << (channel & 0x07));
-    // return static_cast<uint8_t>(k_pca9547_enable_bit | (channel & 0x07));
+	// return static_cast<uint8_t>(1u << (channel & 0x07));
+    return static_cast<uint8_t>(k_pca9547_enable_bit | (channel & 0x07));
 }
-
-inline constexpr uint8_t k_pca9547_default_address_7bit = 0x70; // A2=A1=A0=0
-inline constexpr uint8_t k_pca9547_enable_bit           = 0x08; // control reg bit 3 (unused under current bitmask hypothesis)
-inline constexpr uint8_t k_pca9547_disable_all          = 0x00;
-inline constexpr uint8_t k_pca9547_max_channel          = 7;
 
 // ===========================================================================
 // Pca9547Mux
