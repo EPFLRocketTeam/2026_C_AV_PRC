@@ -2,7 +2,6 @@
 #include "Application/FlightControl/prc_fsm_c_api.h"
 
 #include "Application/Control/rst_controller.hpp"
-#include "Application/FlightControl/intranet_cmd.hpp"
 #include "Drivers/PrcBoardId/PrcBoardId.hpp"
 #include "Drivers/Valve/ValveList.hpp"
 #include "Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include/prc_intranet/const.hpp"
