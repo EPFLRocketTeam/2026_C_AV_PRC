@@ -11,7 +11,6 @@ namespace pt1000 {
 
     template<
         uint32_t AdcChannel,
-        uint8_t  SensorId,
 
         const float&       RRefOhms = DefaultRRefOhms,
         uint32_t            AdcMax   = DefaultAdcMax,
@@ -19,7 +18,6 @@ namespace pt1000 {
     >
     struct PT1000Params {
         static constexpr uint32_t adc_channel = AdcChannel;
-        static constexpr uint8_t  sensor_id   = SensorId;
         static constexpr float    r_ref_ohms  = RRefOhms;
         static constexpr uint32_t adc_max     = AdcMax;
 
@@ -48,7 +46,7 @@ namespace pt1000 {
         Drivers::PT1000::PT1000Driver sensor;
     public:
         bool init () {
-            sensor = Drivers::PT1000::PT1000Driver(createConfig(), Params::sensor_id);
+            sensor = Drivers::PT1000::PT1000Driver(createConfig());
             return sensor.init();
         }
 

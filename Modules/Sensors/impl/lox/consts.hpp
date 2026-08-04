@@ -22,10 +22,6 @@ const size_t PRESSURE_OTA_MIN_NUMBER  = 1;
 static const char* OTA1_NAME = "ota1";
 static const char* OTA2_NAME = "ota2";
 static const char* OTA3_NAME = "ota3";
+static const char* OTA4_NAME = "ota4";
 static const char* HPO_NAME  = "hpo";
-
-static const char* TOTA1_NAME = "tota1";
-static const char* TOTA2_NAME = "tota2";
-static const char* TOTA3_NAME = "tota3";
-static const char* TOTA4_NAME = "tota4";
 

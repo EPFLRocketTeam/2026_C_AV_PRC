@@ -20,7 +20,7 @@ using OxidizerInModule = PressureModule<
 
 using TemperatureOinModule = TemperatureModule<
     CommonTimerPolicy,
-    pt1000::PT1000Sensor<pt1000::PT1000Params<PT1000_CHANNEL_T_OIN, 6>>,
+    pt1000::PT1000Sensor<pt1000::PT1000Params<PT1000_CHANNEL_T_OIN>>,
 
     ENGINE_SETTER_POLICY(prc::PropSensorsStoreEngine::set_temperature_OIN),
     TEMPERATURE_OIN_WINDOW_SIZE,

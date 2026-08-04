@@ -13,11 +13,11 @@
 #define CREATE_TEMPERATURE_OTA_MODULE(Id, AdcChannel) \
     using TemperatureOtaSensorModule##Id = TemperatureModule< \
     CommonTimerPolicy, \
-    pt1000::PT1000Sensor<pt1000::PT1000Params<AdcChannel, Id>>, \
+    pt1000::PT1000Sensor<pt1000::PT1000Params<AdcChannel>>, \
     LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_temperature_OTA##Id), \
     TEMPERATURE_OTA_WINDOW_SIZE, \
     LOX_SETTER_POLICY(prc::PropSensorsStoreLox::CONCAT(CONCAT(set_temperature_OTA, Id), _mean)), \
-    pt1000::PT1000ErrorPipeline<CONCAT(CONCAT(TOTA, Id), _NAME)> \
+    pt1000::PT1000ErrorPipeline<CONCAT(CONCAT(OTA, Id), _NAME)> \
 >;
 
 CREATE_TEMPERATURE_OTA_MODULE(1, ADC_CHANNEL_10);

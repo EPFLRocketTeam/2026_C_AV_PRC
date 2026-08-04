@@ -20,7 +20,7 @@ using EthanolInModule = PressureModule<
 
 using TemperatureEinModule = TemperatureModule<
     CommonTimerPolicy,
-    pt1000::PT1000Sensor<pt1000::PT1000Params<PT1000_CHANNEL_T_EIN, 5>>,
+    pt1000::PT1000Sensor<pt1000::PT1000Params<PT1000_CHANNEL_T_EIN>>,
 
     ENGINE_SETTER_POLICY(prc::PropSensorsStoreEngine::set_temperature_EIN),
     TEMPERATURE_EIN_WINDOW_SIZE,

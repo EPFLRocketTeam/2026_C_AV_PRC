@@ -3,10 +3,10 @@
 namespace Drivers {
 namespace PT1000 {
 
-PT1000Driver::PT1000Driver() : config_{}, sensor_id_(0) {}
+PT1000Driver::PT1000Driver() : config_{} {}
 
-PT1000Driver::PT1000Driver(Config config, uint8_t sensor_id)
-    : config_(config), sensor_id_(sensor_id) {}
+PT1000Driver::PT1000Driver(Config config)
+    : config_(config) {}
 
 bool PT1000Driver::init() {
     if (config_.hadc == nullptr) {
@@ -20,7 +20,6 @@ bool PT1000Driver::init() {
 
 bool PT1000Driver::read(PT1000Data& out) {
     out.valid     = false;
-    out.sensor_id = sensor_id_;
     out.raw_adc   = 0;
 
     if (config_.hadc == nullptr) {

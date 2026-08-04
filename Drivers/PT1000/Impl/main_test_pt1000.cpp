@@ -63,10 +63,10 @@ int manual_test_pt1000() {
     };
 
     PT1000Driver sensors[NUM_SENSORS] = {
-        PT1000Driver(configs[0], 1),
-        PT1000Driver(configs[1], 2),
-        PT1000Driver(configs[2], 3),
-        PT1000Driver(configs[3], 4),
+        PT1000Driver(configs[0]),
+        PT1000Driver(configs[1]),
+        PT1000Driver(configs[2]),
+        PT1000Driver(configs[3]),
     };
 
     // Initialize all sensors
@@ -84,7 +84,7 @@ int manual_test_pt1000() {
             PT1000Data data;
             if (sensors[i].read(data)) {
                 printf("[PT1000-%u] ADC: %lu | R: %.1f Ohm | T: %.2f C\r\n",
-                       data.sensor_id,
+                       i + 1,
                        (unsigned long)data.raw_adc,
                        data.resistance,
                        data.temperature);

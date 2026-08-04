@@ -18,6 +18,9 @@ const uint8_t SENSATA_CHANNEL_L4 = 6;
 /* Channel Index of sensata SENS5 */
 const uint8_t SENSATA_CHANNEL_L5 = 5;
 
+#define PT1000_CHANNEL_T_EIN ADC_CHANNEL_2 // TODO: placeholder, confirm real ADC channel from schematic/.ioc
+#define PT1000_CHANNEL_T_OIN ADC_CHANNEL_3 // TODO: placeholder, confirm real ADC channel from schematic/.ioc
+
 using CommonTimerPolicy = TimerPollPolicy<DEFAULT_NUMBER_TICKS>;
 
 template<auto Field>
