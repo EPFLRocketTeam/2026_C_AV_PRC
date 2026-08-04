@@ -25,7 +25,6 @@ namespace PT1000 {
         float    resistance;       // Measured resistance in Ohms
         float    temperature;      // Temperature in degrees Celsius
         uint32_t raw_adc;          // Raw ADC reading
-        uint8_t  sensor_id;        // Sensor index (1-4)
         bool     valid;            // true if the reading is valid
     };
 
@@ -46,12 +45,13 @@ namespace PT1000 {
 
     class PT1000Driver {
     public:
+        PT1000Driver();
+
         /**
          * @brief Construct a PT1000 driver for a single sensor.
          * @param config  ADC handle, channel, reference resistor, resolution.
-         * @param sensor_id  Sensor index (1-4).
          */
-        PT1000Driver(Config config, uint8_t sensor_id);
+        explicit PT1000Driver(Config config);
 
         /**
          * @brief Initialize the ADC peripheral for this sensor.
@@ -92,7 +92,6 @@ namespace PT1000 {
 
     private:
         Config  config_;
-        uint8_t sensor_id_;
     };
 
 } // namespace PT1000

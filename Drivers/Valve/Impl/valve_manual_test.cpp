@@ -33,7 +33,7 @@ static void exercise_ball_valve_positions()
         return;
     }
 
-    static const float percentages[] = { 0.0f, 25.0f, 50.0f, 75.0f, 100.0f, 50.0f, 0.0f };
+    static const float percentages[] = { 0.0f, 25.0f, 50.0f, 75.0f, 100.0f };
 
     for (float percent_open : percentages) {
         printf("[Valve] %s: set_position(%.0f%%)\r\n", ball_valve->name(), percent_open);

@@ -5,18 +5,26 @@
 #include "Modules/Sensors/impl/std/sensor.hpp"
 
 #include "Modules/Sensors/drivers/SensataSensor.hpp"
+#include "Modules/Sensors/drivers/PT1000Sensor.hpp"
 
-using OxidizerInModule = BothModule<
+using OxidizerInModule = PressureModule<
     CommonTimerPolicy,
-    sensata::BothSensata<sensata::SensataParams<SENSATA_CHANNEL_L3>>,
+    sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L3>>,
 
     ENGINE_SETTER_POLICY(prc::PropSensorsStoreEngine::set_pressure_OIN),
     PRESSURE_OIN_WINDOW_SIZE,
     ENGINE_SETTER_POLICY(prc::PropSensorsStoreEngine::set_pressure_OIN_mean),
-    
+
+    sensata::SensataErrorPipeline<OIN_NAME>
+>;
+
+using TemperatureOinModule = TemperatureModule<
+    CommonTimerPolicy,
+    pt1000::PT1000Sensor<pt1000::PT1000Params<PT1000_CHANNEL_T_OIN>>,
+
     ENGINE_SETTER_POLICY(prc::PropSensorsStoreEngine::set_temperature_OIN),
     TEMPERATURE_OIN_WINDOW_SIZE,
     ENGINE_SETTER_POLICY(prc::PropSensorsStoreEngine::set_temperature_OIN_mean),
 
-    sensata::SensataErrorPipeline<OIN_NAME>
+    pt1000::PT1000ErrorPipeline<TOIN_NAME>
 >;
