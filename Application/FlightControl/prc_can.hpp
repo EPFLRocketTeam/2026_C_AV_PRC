@@ -15,7 +15,7 @@
 // Comment this out to fully disable CAN log forwarding (Prc_Log_Forward
 // becomes a no-op at the call site in main.c's _write()). Local VCP
 // output is unaffected either way.
-#define ENABLE_LOG
+// #define ENABLE_LOG
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,4 +1,4 @@
-
+#pragma once
 #include "Drivers/SensataPte7300/SensataPte7300.hpp"
 #include "Modules/Sensors/impl/std/sensor.hpp"
 

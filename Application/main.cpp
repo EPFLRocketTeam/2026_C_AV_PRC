@@ -37,7 +37,7 @@ void main_init() {
 void main_tick() {
 	printf("\r\n");
 	chamber.tick();
-	HAL_Delay(10);
+	//HAL_Delay(1000);
 	// fls_module.tick();
 	// ota_module.tick();
 }
