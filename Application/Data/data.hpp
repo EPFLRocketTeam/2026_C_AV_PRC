@@ -8,6 +8,7 @@
 #include "./istore.hpp"
 #include "./propulsion/data.hpp"
 
+
 namespace prc {
 
 // ---------------------------------------------------------------------------
@@ -52,7 +53,7 @@ struct Valves {
 // ---------------------------------------------------------------------------
 
 struct IntranetCmd {
-  uint8_t id;
+  uint16_t id;
   uint8_t value;
 
   IntranetCmd();
@@ -115,8 +116,8 @@ class IntranetCmdStore : public IStore<IntranetCmd> {
 public:
   IntranetCmdStore();
 
-  uint8_t get_id() const;
-  void set_id(uint8_t value);
+  uint16_t get_id() const;
+  void set_id(uint16_t value);
 
   uint8_t get_value() const;
   void set_value(uint8_t value);

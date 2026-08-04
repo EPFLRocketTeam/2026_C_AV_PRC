@@ -10,15 +10,6 @@
 
 namespace prc {
 
-enum IntranetCmdId : uint8_t {
-  kCmdNone          = 0,
-  kCmdPressurizeOn  = 1,
-  kCmdPressurizeOff = 2,
-  kCmdPassivate     = 3,
-  kCmdAbort         = 4,
-  kCmdReset         = 5,
-};
-
 } // namespace prc
 
 #endif // APP_PRC_INTRANET_CMD_H

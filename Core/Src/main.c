@@ -257,6 +257,8 @@ int main(void)
 
   HAL_Delay(1000);
 
+
+
   static uint32_t lastPeriodicTick = 0;
   while (1)
   {
