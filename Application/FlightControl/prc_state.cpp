@@ -2,9 +2,9 @@
 #include "Application/FlightControl/prc_fsm_c_api.h"
 
 #include "Application/Control/rst_controller.hpp"
-#include "Application/FlightControl/uplink_cmd.hpp"
 #include "Drivers/PrcBoardId/PrcBoardId.hpp"
 #include "Drivers/Valve/ValveList.hpp"
+#include "Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include/prc_intranet/const.hpp"
 
 #include "stm32h7xx_hal.h"
 
@@ -77,14 +77,14 @@ State PrcState::getCurrentState() { return currentState; }
 
 // ---------------------------------------------------------------------------
 // fromXxx() — ported from DPRComputer::update()'s per-case logic
-// (previous vehicle's DPRComputer.cpp). Command decode (uplinkCmd.id == N)
+// (previous vehicle's DPRComputer.cpp). Command decode (intranetCmd.id == N)
 // is the same placeholder scheme used before this port — TODO: replace
 // once the real CAN command dictionary (DPR_LOX_PRESSURIZE=0x130 etc.) is
-// decoded into UplinkCmd by the CAN RX layer.
+// decoded into IntranetCmd by the CAN RX layer.
 // ---------------------------------------------------------------------------
 
 State PrcState::fromManual(DataDump const &dump) {
-  if (dump.uplinkCmd.id == kCmdPressurizeOn) {
+  if (dump.intranetCmd.id == (uint16_t)prc_intranet::constants::MessageId::dpr_eth_pressurize && dump.intranetCmd.value == 1) {
     return State::INITIALIZE_PRESSURIZE_ON;
   }
   return currentState;
@@ -101,7 +101,7 @@ State PrcState::fromInitializePressurizeOn(DataDump const &dump) {
 }
 
 State PrcState::fromPressurizeOn(DataDump const &dump) {
-  if (dump.uplinkCmd.id == kCmdAbort) {
+  if (dump.intranetCmd.id == (uint16_t)prc_intranet::constants::MessageId::dpr_eth_pressurize) {
     return State::ABORT_ON_GROUND;
   }
 
@@ -126,10 +126,10 @@ State PrcState::fromInitializeRegulate(DataDump const &dump) {
 }
 
 State PrcState::fromRegulate(DataDump const &dump) {
-  if (dump.uplinkCmd.id == kCmdAbort) {
+  if (dump.intranetCmd.id == (uint16_t)prc_intranet::constants::MessageId::dpr_eth_pressurize) {
     return State::ABORT_ON_GROUND;
   }
-  if (dump.uplinkCmd.id == kCmdPressurizeOff) {
+  if (dump.intranetCmd.id == (uint16_t)prc_intranet::constants::MessageId::dpr_eth_pressurize && dump.intranetCmd.value == 0) {
     return State::PRESSURIZE_OFF;
   }
   return currentState;
@@ -140,11 +140,11 @@ State PrcState::fromPressurizeOff(DataDump const &dump) {
   // ABORT_IN_FLIGHT, not ABORT_ON_GROUND (unlike PRESSURIZE_ON/REGULATE) --
   // intentional, matches the old code's PRESSURIZATION_OFF having no ABORT
   // branch at all plus the diagram's asymmetric abort targets.
-  if (dump.uplinkCmd.id == kCmdAbort) {
+  if (dump.intranetCmd.id == (uint16_t)prc_intranet::constants::MessageId::dpr_eth_pressurize) {
     return State::ABORT_IN_FLIGHT;
   }
 
-  if (dump.uplinkCmd.id == kCmdPassivate) {
+  if (dump.intranetCmd.id == (uint16_t)prc_intranet::constants::MessageId::dpr_eth_passivate) {
     return State::INITIALIZE_PASSIVATE;
   }
 
@@ -173,14 +173,14 @@ State PrcState::fromPassivate(DataDump const &dump) {
 }
 
 State PrcState::fromAbortOnGround(DataDump const &dump) {
-  if (dump.uplinkCmd.id == kCmdReset) {
+  if (dump.intranetCmd.id == (uint16_t)prc_intranet::constants::MessageId::dpr_eth_reset) {
     return State::MANUAL;
   }
   return currentState;
 }
 
 State PrcState::fromAbortInFlight(DataDump const &dump) {
-  if (dump.uplinkCmd.id == kCmdReset) {
+  if (dump.intranetCmd.id == (uint16_t)prc_intranet::constants::MessageId::dpr_eth_reset) {
     return State::MANUAL;
   }
   return currentState;
@@ -461,7 +461,7 @@ void Prc_Fsm_Init(void) {
   // everyday set_role() setter.
   BoardRole role = Prc_DetectBoardRole();
   BoardIdentity identity;
-  identity.role = role;
+  identity.role = BoardRole::DprLox;
   PrcStore::get_instance().boardIdentityStore.set(identity);
 
   printf("[PRC FSM] init: board role=%s\r\n", RoleToString(role));

@@ -11,6 +11,7 @@ extern "C" {
 #include "Modules/Sensors/impl/engine/chamber.hpp"
 
 #include "Drivers/SensataPte7300/SensataPte7300HardwareTest.hpp"
+#include "../../Drivers/Valve/valve_manual_test.hpp"
 
 static FLSModule fls_module;
 static PressureOtaSensorModule ota_module;
@@ -31,6 +32,9 @@ void prc::PropSensorsStoreEngine::set_temperature_C_mean(double temperature_C_me
 }
 
 void main_init() {
+
+	Valve_ManualTest();
+
 	chamber.init();
 }
 

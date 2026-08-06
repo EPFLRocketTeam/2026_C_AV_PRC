@@ -4,23 +4,24 @@
 #include <cstring>
 
 #include "Application/Data/data.hpp"
-#include "Application/FlightControl/uplink_cmd.hpp"
+// #include "Application/FlightControl/intranet_cmd.hpp"
 #include "Drivers/Valve/ValveList.hpp"
 #include "log_aggregator/chunker.hpp"
 #include "prc_intranet/const.hpp"
 #include "prc_intranet/dispatch.hpp"
 #include "prc_intranet/transmit.hpp"
+#include "Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include/prc_intranet/const.hpp"
 
 using namespace prc;
 namespace pi = prc_intranet;
 
 namespace {
 
-void SetCmd(uint8_t id, uint8_t value = 0) {
-  UplinkCmd cmd;
+void SetCmd(uint16_t id, uint8_t value = 0) {
+  IntranetCmd cmd;
   cmd.id = id;
   cmd.value = value;
-  PrcStore::get_instance().uplinkCmdStore.set(cmd);
+  PrcStore::get_instance().intranetCmdStore.set(cmd);
 }
 
 BoardRole CurrentRole() {
@@ -32,7 +33,7 @@ BoardRole CurrentRole() {
 // Unknown before this ever runs).
 void OnBroadcastAbort(void*, pi::payload::safety_key key) noexcept {
   if (key.safety_key == pi::constants::SAFETY_KEY_BROADCAST_ABORT) {
-    SetCmd(kCmdAbort);
+	  SetCmd((uint16_t)prc_intranet::constants::MessageId::broadcast_abort);
   }
 }
 
@@ -45,20 +46,20 @@ void OnBroadcastAbort(void*, pi::payload::safety_key key) noexcept {
 
 void OnDprEthAbort(void*, pi::payload::safety_key key) noexcept {
   if (CurrentRole() != BoardRole::DprEth) return;
-  if (key.safety_key == pi::constants::SAFETY_KEY_DPR_ETH_ABORT) SetCmd(kCmdAbort);
+  if (key.safety_key == pi::constants::SAFETY_KEY_DPR_ETH_ABORT) SetCmd((uint16_t)prc_intranet::constants::MessageId::dpr_eth_abort);
 }
 void OnDprEthPassivate(void*, pi::payload::safety_key key) noexcept {
   if (CurrentRole() != BoardRole::DprEth) return;
-  if (key.safety_key == pi::constants::SAFETY_KEY_DPR_ETH_PASSIVATE) SetCmd(kCmdPassivate);
+  if (key.safety_key == pi::constants::SAFETY_KEY_DPR_ETH_PASSIVATE) SetCmd((uint16_t)prc_intranet::constants::MessageId::dpr_eth_passivate);
 }
 void OnDprEthPressurize(void*, pi::payload::on_off cmd) noexcept {
   if (CurrentRole() != BoardRole::DprEth) return;
-  if (cmd.state == pi::constants::CMD_ON) SetCmd(kCmdPressurizeOn);
-  else if (cmd.state == pi::constants::CMD_OFF) SetCmd(kCmdPressurizeOff);
+  if (cmd.state == pi::constants::CMD_ON) SetCmd((uint16_t)prc_intranet::constants::MessageId::dpr_eth_pressurize, 1);
+  else if (cmd.state == pi::constants::CMD_OFF) SetCmd((uint16_t)prc_intranet::constants::MessageId::dpr_eth_pressurize, 0);
 }
 void OnDprEthReset(void*, pi::payload::reset r) noexcept {
   if (CurrentRole() != BoardRole::DprEth) return;
-  if (r.magic == pi::constants::RESET_MAGIC) SetCmd(kCmdReset);
+  if (r.magic == pi::constants::RESET_MAGIC) SetCmd((uint16_t)prc_intranet::constants::MessageId::dpr_eth_reset);
 }
 // Bench-test hookup: Sol3/Sol4 are this board's spare solenoid channels
 // (see ValveList.hpp), temporarily repurposed as "LOX main"/"Ethanol main"
@@ -87,20 +88,20 @@ void OnDprEthCmdValves(void*, pi::payload::cmd_valves cmd) noexcept {
 
 void OnDprLoxAbort(void*, pi::payload::safety_key key) noexcept {
   if (CurrentRole() != BoardRole::DprLox) return;
-  if (key.safety_key == pi::constants::SAFETY_KEY_DPR_LOX_ABORT) SetCmd(kCmdAbort);
+  if (key.safety_key == pi::constants::SAFETY_KEY_DPR_LOX_ABORT) SetCmd((uint16_t)prc_intranet::constants::MessageId::dpr_lox_abort);
 }
 void OnDprLoxPassivate(void*, pi::payload::safety_key key) noexcept {
   if (CurrentRole() != BoardRole::DprLox) return;
-  if (key.safety_key == pi::constants::SAFETY_KEY_DPR_LOX_PASSIVATE) SetCmd(kCmdPassivate);
+  if (key.safety_key == pi::constants::SAFETY_KEY_DPR_LOX_PASSIVATE) SetCmd((uint16_t)prc_intranet::constants::MessageId::dpr_lox_passivate);
 }
 void OnDprLoxPressurize(void*, pi::payload::on_off cmd) noexcept {
   if (CurrentRole() != BoardRole::DprLox) return;
-  if (cmd.state == pi::constants::CMD_ON) SetCmd(kCmdPressurizeOn);
-  else if (cmd.state == pi::constants::CMD_OFF) SetCmd(kCmdPressurizeOff);
+  if (cmd.state == pi::constants::CMD_ON) SetCmd((uint16_t)prc_intranet::constants::MessageId::dpr_lox_pressurize, 1);
+  else if (cmd.state == pi::constants::CMD_OFF) SetCmd((uint16_t)prc_intranet::constants::MessageId::dpr_lox_pressurize, 0);
 }
 void OnDprLoxReset(void*, pi::payload::reset r) noexcept {
   if (CurrentRole() != BoardRole::DprLox) return;
-  if (r.magic == pi::constants::RESET_MAGIC) SetCmd(kCmdReset);
+  if (r.magic == pi::constants::RESET_MAGIC) SetCmd((uint16_t)prc_intranet::constants::MessageId::dpr_lox_reset);
 }
 void OnDprLoxCmdValves(void*, pi::payload::cmd_valves cmd) noexcept {
   if (CurrentRole() != BoardRole::DprLox) return;

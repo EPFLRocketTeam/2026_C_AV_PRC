@@ -1,8 +1,8 @@
 //    FILE: prc_can.hpp
 // PURPOSE: Decodes received FDCAN messages (dictionary defined in the
 //          prc_intranet submodule's message_list.hpp) addressed to this
-//          board's DPR node into UplinkCmd, consumed by PrcState::fromXxx()
-//          (see uplink_cmd.hpp). Called from main.c's RX poll loop via the
+//          board's DPR node into IntranetCmd, consumed by PrcState::fromXxx()
+//          (see intranet_cmd.hpp). Called from main.c's RX poll loop via the
 //          extern "C" shim below.
 
 #ifndef APP_PRC_CAN_H
