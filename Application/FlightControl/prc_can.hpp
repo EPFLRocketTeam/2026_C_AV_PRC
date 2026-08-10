@@ -15,7 +15,7 @@
 // Comment this out to fully disable CAN log forwarding (Prc_Log_Forward
 // becomes a no-op at the call site in main.c's _write()). Local VCP
 // output is unaffected either way.
-// #define ENABLE_LOG
+#define ENABLE_LOG
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,10 +51,10 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan);
 
 // Forwards `length` raw bytes from a local printf/_write() call over CAN
 // as log_chunk frames (see the log_aggregator submodule for the actual
-// chunking), tagged with this board's own role. No-op for EngineBay/
-// Unknown, same gating as Prc_Can_ProcessRxMessage -- no log_chunk id is
-// wired for EngineBay here. Call from _write() so every printf both
-// still reaches the local VCP (unchanged) and gets relayed to FC.
+// chunking), tagged with this board's own role (DprLox, DprEth, or
+// EngineBay). No-op for Unknown -- role detection hasn't latched yet.
+// Call from _write() so every printf both still reaches the local VCP
+// (unchanged) and gets relayed to FC.
 void Prc_Log_Forward(FDCAN_HandleTypeDef *hfdcan, const uint8_t *data, uint32_t length);
 
 #ifdef __cplusplus

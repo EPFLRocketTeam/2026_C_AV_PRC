@@ -1,5 +1,6 @@
 #include "Application/FlightControl/prc_state.h"
 #include "Application/FlightControl/prc_fsm_c_api.h"
+#include "Application/FlightControl/engine_state.h"
 
 #include "Application/Control/rst_controller.hpp"
 #include "Drivers/PrcBoardId/PrcBoardId.hpp"
@@ -55,6 +56,40 @@ static float SetPressureBarFor(BoardRole role) {
 
 static bool IsLox(BoardRole role) { return role == BoardRole::DprLox; }
 
+// Role-aware message id selection -- dpr_lox_* and dpr_eth_* are distinct
+// messages in the CAN dictionary (see prc_intranet/message_list.hpp), and
+// prc_can.cpp's RX callbacks already decode each into intranetCmd.id
+// role-gated (OnDprLoxAbort only fires for BoardRole::DprLox, etc). The
+// fromXxx() functions below just need to check the id matching this
+// board's own role instead of a hardcoded one.
+static prc_intranet::constants::MessageId PressurizeIdFor(BoardRole role) {
+  return IsLox(role) ? prc_intranet::constants::MessageId::dpr_lox_pressurize
+                      : prc_intranet::constants::MessageId::dpr_eth_pressurize;
+}
+static prc_intranet::constants::MessageId AbortIdFor(BoardRole role) {
+  return IsLox(role) ? prc_intranet::constants::MessageId::dpr_lox_abort
+                      : prc_intranet::constants::MessageId::dpr_eth_abort;
+}
+static prc_intranet::constants::MessageId PassivateIdFor(BoardRole role) {
+  return IsLox(role) ? prc_intranet::constants::MessageId::dpr_lox_passivate
+                      : prc_intranet::constants::MessageId::dpr_eth_passivate;
+}
+static prc_intranet::constants::MessageId ResetIdFor(BoardRole role) {
+  return IsLox(role) ? prc_intranet::constants::MessageId::dpr_lox_reset
+                      : prc_intranet::constants::MessageId::dpr_eth_reset;
+}
+
+// True on either this board's own role-specific abort message or the
+// FC-wide broadcast_abort (OnBroadcastAbort in prc_can.cpp sets this same
+// intranetCmd regardless of role) -- previously only the (wrong) hardcoded
+// dpr_eth_pressurize id was checked, so broadcast_abort was received and
+// decoded but never actually acted on by this FSM.
+static bool IsAbortCmd(DataDump const &dump) {
+  const uint16_t id = dump.intranetCmd.id;
+  return id == (uint16_t)AbortIdFor(dump.boardIdentity.role)
+      || id == (uint16_t)prc_intranet::constants::MessageId::broadcast_abort;
+}
+
 //static float CurrentTankPressureBar(const PropSensors &s, BoardRole role) {
 //  return static_cast<float>(IsLox(role) ? s.pressure_OTA : s.pressure_ETA);
 //}
@@ -84,7 +119,7 @@ State PrcState::getCurrentState() { return currentState; }
 // ---------------------------------------------------------------------------
 
 State PrcState::fromManual(DataDump const &dump) {
-  if (dump.intranetCmd.id == (uint16_t)prc_intranet::constants::MessageId::dpr_eth_pressurize && dump.intranetCmd.value == 1) {
+  if (dump.intranetCmd.id == (uint16_t)PressurizeIdFor(dump.boardIdentity.role) && dump.intranetCmd.value == 1) {
     return State::INITIALIZE_PRESSURIZE_ON;
   }
   return currentState;
@@ -101,7 +136,7 @@ State PrcState::fromInitializePressurizeOn(DataDump const &dump) {
 }
 
 State PrcState::fromPressurizeOn(DataDump const &dump) {
-  if (dump.intranetCmd.id == (uint16_t)prc_intranet::constants::MessageId::dpr_eth_pressurize) {
+  if (IsAbortCmd(dump)) {
     return State::ABORT_ON_GROUND;
   }
 
@@ -126,10 +161,10 @@ State PrcState::fromInitializeRegulate(DataDump const &dump) {
 }
 
 State PrcState::fromRegulate(DataDump const &dump) {
-  if (dump.intranetCmd.id == (uint16_t)prc_intranet::constants::MessageId::dpr_eth_pressurize) {
+  if (IsAbortCmd(dump)) {
     return State::ABORT_ON_GROUND;
   }
-  if (dump.intranetCmd.id == (uint16_t)prc_intranet::constants::MessageId::dpr_eth_pressurize && dump.intranetCmd.value == 0) {
+  if (dump.intranetCmd.id == (uint16_t)PressurizeIdFor(dump.boardIdentity.role) && dump.intranetCmd.value == 0) {
     return State::PRESSURIZE_OFF;
   }
   return currentState;
@@ -140,11 +175,11 @@ State PrcState::fromPressurizeOff(DataDump const &dump) {
   // ABORT_IN_FLIGHT, not ABORT_ON_GROUND (unlike PRESSURIZE_ON/REGULATE) --
   // intentional, matches the old code's PRESSURIZATION_OFF having no ABORT
   // branch at all plus the diagram's asymmetric abort targets.
-  if (dump.intranetCmd.id == (uint16_t)prc_intranet::constants::MessageId::dpr_eth_pressurize) {
+  if (IsAbortCmd(dump)) {
     return State::ABORT_IN_FLIGHT;
   }
 
-  if (dump.intranetCmd.id == (uint16_t)prc_intranet::constants::MessageId::dpr_eth_passivate) {
+  if (dump.intranetCmd.id == (uint16_t)PassivateIdFor(dump.boardIdentity.role)) {
     return State::INITIALIZE_PASSIVATE;
   }
 
@@ -173,14 +208,14 @@ State PrcState::fromPassivate(DataDump const &dump) {
 }
 
 State PrcState::fromAbortOnGround(DataDump const &dump) {
-  if (dump.intranetCmd.id == (uint16_t)prc_intranet::constants::MessageId::dpr_eth_reset) {
+  if (dump.intranetCmd.id == (uint16_t)ResetIdFor(dump.boardIdentity.role)) {
     return State::MANUAL;
   }
   return currentState;
 }
 
 State PrcState::fromAbortInFlight(DataDump const &dump) {
-  if (dump.intranetCmd.id == (uint16_t)prc_intranet::constants::MessageId::dpr_eth_reset) {
+  if (dump.intranetCmd.id == (uint16_t)ResetIdFor(dump.boardIdentity.role)) {
     return State::MANUAL;
   }
   return currentState;
@@ -461,10 +496,14 @@ void Prc_Fsm_Init(void) {
   // everyday set_role() setter.
   BoardRole role = Prc_DetectBoardRole();
   BoardIdentity identity;
-  identity.role = BoardRole::DprLox;
+  identity.role = role;
   PrcStore::get_instance().boardIdentityStore.set(identity);
 
   printf("[PRC FSM] init: board role=%s\r\n", RoleToString(role));
+
+  if (role == BoardRole::EngineBay) {
+    Prc_Engine_Fsm_Init();
+  }
 }
 
 void Prc_Fsm_Tick(void) {
@@ -472,9 +511,10 @@ void Prc_Fsm_Tick(void) {
   DataDump dump = store.get();
 
   // EngineBay runs a different FSM entirely (ignition/burn/passivate, not
-  // pressurize/regulate -- see PrcBoardId.hpp / data.hpp BoardRole comment),
-  // not yet built. Don't let this DPR FSM touch its valves.
+  // pressurize/regulate -- see PrcBoardId.hpp / data.hpp BoardRole comment
+  // and engine_state.cpp/"Propulsion Computer FSM" diagram).
   if (dump.boardIdentity.role == BoardRole::EngineBay) {
+    Prc_Engine_Fsm_Tick();
     return;
   }
 
