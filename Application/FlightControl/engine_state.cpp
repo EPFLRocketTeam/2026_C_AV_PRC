@@ -13,14 +13,18 @@ namespace pi = prc_intranet;
 // ---------------------------------------------------------------------------
 // !!! TIMING CONSTANTS BELOW ARE PLACEHOLDERS -- NOT REAL VALUES !!!
 //
-// Prc_Engine_Fsm_Init() also prints a warning every boot until these are
-// filled in. DO NOT FLY with any of these still at 0.
+// Set to a uniform 10 s so dry-run bench testing doesn't blow through the
+// whole ignition/burn/passivate sequence in a single tick burst (which is
+// what happened at 0 ms) -- still arbitrary, not derived from any real
+// mission parameter. Prc_Engine_Fsm_Init() also prints a warning every
+// boot until these are replaced with real values. DO NOT FLY with any of
+// these still at this placeholder value.
 // ---------------------------------------------------------------------------
 
-static constexpr uint32_t k_prechill_duration_ms			= 0; // PRECHILL DURATION
-static constexpr uint32_t k_igniter_duration_ms           	= 0; // IGNITER DURATION
-static constexpr uint32_t k_ignition_delay_ms              	= 0; // IGNITION DELAY
-static constexpr uint32_t k_rampup_duration_ms             	= 0; // RAMPUP DURATION
+static constexpr uint32_t k_prechill_duration_ms			= 10000; // PRECHILL DURATION
+static constexpr uint32_t k_igniter_duration_ms           	= 10000; // IGNITER DURATION
+static constexpr uint32_t k_ignition_delay_ms              	= 10000; // IGNITION DELAY
+static constexpr uint32_t k_rampup_duration_ms             	= 10000; // RAMPUP DURATION
 
 
 // "Total impulse + upper/lower bound timer" -- real cutoff should be
@@ -30,18 +34,18 @@ static constexpr uint32_t k_rampup_duration_ms             	= 0; // RAMPUP DURAT
 
 /// TOTAL IMPULSE    ?????????????????????
 
-static constexpr uint32_t k_burn_duration_lower_bound_ms	= 0;  //IS THIS REALLY NEEDED THOUGH
-static constexpr uint32_t k_burn_duration_upper_bound_ms	= 0;
-static constexpr uint32_t k_cutoff_delay_ms                 = 0; // CUTOFF DELAY
+static constexpr uint32_t k_burn_duration_lower_bound_ms	= 10000;  //IS THIS REALLY NEEDED THOUGH
+static constexpr uint32_t k_burn_duration_upper_bound_ms	= 10000;
+static constexpr uint32_t k_cutoff_delay_ms                 = 10000; // CUTOFF DELAY
 // PASSIVATION_DELAY_NO_COM_PRC, comms-loss watchdog, same idea as DPR's
 // k_passivation_delay_no_com_ms (prc_state.cpp), no ported number here.
-static constexpr uint32_t k_passivation_delay_no_com_ms    	= 0;
+static constexpr uint32_t k_passivation_delay_no_com_ms    	= 10000;
 // In-flight-abort-only "timer" before rejoining WaitForPassivation --
 // distinct arrow from PASSIVATION_DELAY_NO_COM_PRC on the diagram.
-static constexpr uint32_t k_abort_in_flight_timer_ms       	= 0;
-static constexpr uint32_t k_passivation_fuel_duration_ms   	= 0; // PASSIVATION FUEL DURATION
-static constexpr uint32_t k_interlude_duration_ms          	= 0; // INTERLUDE DURATION
-static constexpr uint32_t k_passivation_ox_duration_ms     	= 0; // PASSIVATION OX DURATION
+static constexpr uint32_t k_abort_in_flight_timer_ms       	= 10000;
+static constexpr uint32_t k_passivation_fuel_duration_ms   	= 10000; // PASSIVATION FUEL DURATION
+static constexpr uint32_t k_interlude_duration_ms          	= 10000; // INTERLUDE DURATION
+static constexpr uint32_t k_passivation_ox_duration_ms     	= 10000; // PASSIVATION OX DURATION
 
 // ---------------------------------------------------------------------------
 // Valve mapping: MO (Main Oxidizer) / ME (Main Ethanol) -- same Sol3/Sol4
@@ -382,8 +386,8 @@ static PrcEngineState& engine_fsm_instance() {
 
 void Prc_Engine_Fsm_Init() {
   printf("[PRC ENGINE FSM] WARNING: ignition/burn/passivation timing "
-         "constants are all placeholders (0 ms) -- see engine_state.cpp. "
-         "DO NOT FLY.\r\n");
+         "constants are all placeholders (uniform 10 s, not real values) "
+         "-- see engine_state.cpp. DO NOT FLY.\r\n");
 }
 
 void Prc_Engine_Fsm_Tick() {

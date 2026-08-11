@@ -246,7 +246,7 @@ int main(void)
   //run_pte7300_i2c_scanner();
   //i2c_bus_scan(&hi2c1);
   //run_pte7300_channel0_scope_probe();
-  manual_test_ctl190();  /* loops forever -- never returns, everything below this line won't run while active */
+  //manual_test_ctl190();  /* loops forever -- never returns, everything below this line won't run while active */
   //manual_test_lmt85();  /* loops forever -- never returns, everything below this line won't run while active */
   //Valve_ManualTest();
   main_init();
