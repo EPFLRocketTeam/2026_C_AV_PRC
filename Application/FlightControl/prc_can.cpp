@@ -5,6 +5,7 @@
 
 #include "Application/Data/data.hpp"
 #include "Application/FlightControl/engine_state.h"
+#include "Application/FlightControl/prc_state.h"
 // #include "Application/FlightControl/intranet_cmd.hpp"
 #include "Drivers/Valve/ValveList.hpp"
 #include "log_aggregator/chunker.hpp"
@@ -67,6 +68,40 @@ void OnDprEthReset(void*, pi::payload::reset r) noexcept {
 // for wiring two solenoids to a single board and driving them from FC's
 // shell (main lox/main fuel). Not a real mission valve mapping yet.
 void ApplyCmdValves(pi::payload::cmd_valves cmd) noexcept {
+  // Ground-station manual override of the DPR FSM's own valves (VENT
+  // LOX/FUEL -> Vent, PRESSURE LOX/FUEL -> Safety, VENT_COPV -> the
+  // bundled Vent+Safety+ball-valve sequence, see Prc_Fsm_ManualVentCopv).
+  // Routed through Prc_Fsm_ManualSetSafety/Vent/VentCopv, which only take
+  // effect in State::MANUAL -- see prc_state.cpp for why.
+  if (cmd.valve_id == pi::constants::VALVE_SAFETY ||
+      cmd.valve_id == pi::constants::VALVE_VENT ||
+      cmd.valve_id == pi::constants::VALVE_COPV_VENT) {
+    // DPR-only: Prc_Fsm_ManualSetSafety/Vent/VentCopv assume PrcState's
+    // own State enum, which doesn't apply to EngineBay's separate FSM/
+    // valve set.
+    const BoardRole role = CurrentRole();
+    if (role != BoardRole::DprLox && role != BoardRole::DprEth) return;
+    if (cmd.state != pi::constants::VALVE_STATE_OPEN && cmd.state != pi::constants::VALVE_STATE_CLOSED) return;
+    const bool open = (cmd.state == pi::constants::VALVE_STATE_OPEN);
+
+    const char* label;
+    bool applied;
+    if (cmd.valve_id == pi::constants::VALVE_SAFETY) {
+      label = "Safety";
+      applied = Prc_Fsm_ManualSetSafety(open);
+    } else if (cmd.valve_id == pi::constants::VALVE_VENT) {
+      label = "Vent";
+      applied = Prc_Fsm_ManualSetVent(open);
+    } else {
+      label = "CopvVent";
+      applied = Prc_Fsm_ManualVentCopv(open);
+    }
+    printf("[PRC CAN] cmd_valves: %s -> %s (%s)\r\n",
+           label, open ? "open" : "closed",
+           applied ? "applied" : "ignored, FSM not in MANUAL");
+    return;
+  }
+
   ValveId id;
   if (cmd.valve_id == pi::constants::VALVE_SOL3) id = ValveId::Sol3;
   else if (cmd.valve_id == pi::constants::VALVE_SOL4) id = ValveId::Sol4;

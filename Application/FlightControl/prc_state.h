@@ -86,4 +86,10 @@ private:
   uint32_t pressurize_off_entry_ms_ = 0; // drives the comms-loss auto-passivate watchdog
 };
 
+// See prc_state.cpp for the full comment -- all three are no-ops (return
+// false) unless this board's FSM is currently in State::MANUAL.
+bool Prc_Fsm_ManualSetSafety(bool open);
+bool Prc_Fsm_ManualSetVent(bool open);
+bool Prc_Fsm_ManualVentCopv(bool open);
+
 #endif /* PRC_STATE_H */

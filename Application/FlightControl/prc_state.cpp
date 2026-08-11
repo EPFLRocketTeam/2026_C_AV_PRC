@@ -528,3 +528,40 @@ void Prc_Fsm_Tick(void) {
 
   store.stateStore.set(new_state);
 }
+
+// Manual valve override for ground-station bench commands (VENT LOX/FUEL,
+// PRESSURE LOX/FUEL, VENT_COPV -- see prc_can.cpp's ApplyCmdValves). Only
+// takes effect while this board's FSM is in State::MANUAL, so it can never
+// fight ApplyValveActions()'s own continuous Safety/Vent control once a
+// mission sequence (PRESSURIZE_ON/REGULATE/PASSIVATE/...) is running.
+// Returns false (no-op) if the FSM isn't in MANUAL.
+bool Prc_Fsm_ManualSetSafety(bool open) {
+  if (fsm_instance().getCurrentState() != State::MANUAL) return false;
+  auto& store = PrcStore::get_instance();
+  SetSafety(open, IsLox(store.boardIdentityStore.get_role()), store.valvesStore);
+  return true;
+}
+
+bool Prc_Fsm_ManualSetVent(bool open) {
+  if (fsm_instance().getCurrentState() != State::MANUAL) return false;
+  auto& store = PrcStore::get_instance();
+  SetVent(open, IsLox(store.boardIdentityStore.get_role()), store.valvesStore);
+  return true;
+}
+
+// This board has no standalone COPV vent line -- gas can only exit via
+// Vent -> Safety -> the ball valve (same three-valve sequence as
+// PASSIVATE's phase B in ApplyValveActions, just triggered manually
+// instead of via the FSM). Only takes effect in State::MANUAL, same
+// reasoning as Prc_Fsm_ManualSetSafety/Vent above.
+bool Prc_Fsm_ManualVentCopv(bool open) {
+  if (fsm_instance().getCurrentState() != State::MANUAL) return false;
+  auto& store = PrcStore::get_instance();
+  const bool is_lox = IsLox(store.boardIdentityStore.get_role());
+  SetSafety(open, is_lox, store.valvesStore);
+  SetVent(open, is_lox, store.valvesStore);
+  if (ServoBallValve* ball = Valve_GetBallValve()) {
+    ball->set_position(open ? 100.0f : 0.0f);
+  }
+  return true;
+}

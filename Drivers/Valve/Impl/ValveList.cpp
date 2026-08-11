@@ -22,17 +22,17 @@ void Valve_InitAll()
     // SafetyDpr=NC); active_high is still ASSUMED (see ValveList.hpp TODO)
     // — verify against the actual drive circuit before relying on this for
     // anything live.
-    static SolenoidValve vent({
+    static SolenoidValve safety_dpr({
         .port      = Sol1_ctrl_GPIO_Port,
         .pin       = Sol1_ctrl_Pin,
-        .fail_safe = FailSafeState::NormallyOpen,
-        .name      = "Vent",
-    });
-    static SolenoidValve safety_dpr({
-        .port      = Sol2_ctrl_GPIO_Port,
-        .pin       = Sol2_ctrl_Pin,
         .fail_safe = FailSafeState::NormallyClosed,
         .name      = "SafetyDpr",
+    });
+    static SolenoidValve vent({
+        .port      = Sol2_ctrl_GPIO_Port,
+        .pin       = Sol2_ctrl_Pin,
+        .fail_safe = FailSafeState::NormallyOpen,
+        .name      = "Vent",
     });
     static SolenoidValve sol3({
         .port      = Sol3_ctrl_GPIO_Port,
