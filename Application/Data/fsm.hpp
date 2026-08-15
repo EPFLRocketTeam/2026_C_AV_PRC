@@ -26,7 +26,7 @@ enum State {
 
   /* ============== Error States ============== */
   ABORT_ON_GROUND,
-  ABORT_IN_FLIGHT,
+  ABORT_IN_FLIGHT, // step 1: Safety + Ball closed, then rejoins PASSIVATE via a timer
 };
 };
 

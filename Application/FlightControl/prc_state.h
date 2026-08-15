@@ -84,6 +84,7 @@ private:
   uint32_t pressurize_on_entry_ms_  = 0;
   uint32_t passivate_entry_ms_      = 0;
   uint32_t pressurize_off_entry_ms_ = 0; // drives the comms-loss auto-passivate watchdog
+  uint32_t abort_in_flight_entry_ms_ = 0; // drives the ABORT_IN_FLIGHT -> INITIALIZE_PASSIVATE timer
 };
 
 // See prc_state.cpp for the full comment -- all three are no-ops (return
@@ -91,5 +92,6 @@ private:
 bool Prc_Fsm_ManualSetSafety(bool open);
 bool Prc_Fsm_ManualSetVent(bool open);
 bool Prc_Fsm_ManualVentCopv(bool open);
+bool Prc_Fsm_ManualSetBallValve(float percent_open);
 
 #endif /* PRC_STATE_H */

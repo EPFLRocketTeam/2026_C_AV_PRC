@@ -121,6 +121,12 @@ void OnDprEthCmdValves(void*, pi::payload::cmd_valves cmd) noexcept {
   if (CurrentRole() != BoardRole::DprEth) return;
   ApplyCmdValves(cmd);
 }
+void OnDprEthBallValve(void*, pi::payload::ball_valve_position pos) noexcept {
+  if (CurrentRole() != BoardRole::DprEth) return;
+  bool applied = Prc_Fsm_ManualSetBallValve(pos.percent_open);
+  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_5);
+  printf("[PRC CAN] ball_valve: %.1f%% (%s)\r\n", pos.percent_open, applied ? "applied" : "ignored, FSM not in MANUAL");
+}
 
 void OnDprLoxAbort(void*, pi::payload::safety_key key) noexcept {
   if (CurrentRole() != BoardRole::DprLox) return;
@@ -142,6 +148,11 @@ void OnDprLoxReset(void*, pi::payload::reset r) noexcept {
 void OnDprLoxCmdValves(void*, pi::payload::cmd_valves cmd) noexcept {
   if (CurrentRole() != BoardRole::DprLox) return;
   ApplyCmdValves(cmd);
+}
+void OnDprLoxBallValve(void*, pi::payload::ball_valve_position pos) noexcept {
+  if (CurrentRole() != BoardRole::DprLox) return;
+  bool applied = Prc_Fsm_ManualSetBallValve(pos.percent_open);
+  printf("[PRC CAN] ball_valve: %.1f%% (%s)\r\n", pos.percent_open, applied ? "applied" : "ignored, FSM not in MANUAL");
 }
 
 // Engine bay (PRC-P) commands -- consumed by PrcEngineState::fromXxx()
@@ -235,11 +246,13 @@ pi::context& Ctx() {
     driver.on_dpr_eth_pressurize = OnDprEthPressurize;
     driver.on_dpr_eth_reset      = OnDprEthReset;
     driver.on_dpr_eth_cmd_valves = OnDprEthCmdValves;
+    driver.on_dpr_eth_ball_valve = OnDprEthBallValve;
     driver.on_dpr_lox_abort      = OnDprLoxAbort;
     driver.on_dpr_lox_passivate  = OnDprLoxPassivate;
     driver.on_dpr_lox_pressurize = OnDprLoxPressurize;
     driver.on_dpr_lox_reset      = OnDprLoxReset;
     driver.on_dpr_lox_cmd_valves = OnDprLoxCmdValves;
+    driver.on_dpr_lox_ball_valve = OnDprLoxBallValve;
     driver.on_prc_clear_to_ignite = OnPrcClearToIgnite;
     driver.on_prc_ignite         = OnPrcIgnite;
     driver.on_prc_passivate      = OnPrcPassivate;
@@ -312,8 +325,8 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
                       | (me_open ? pi::constants::VALVE_MASK_BIT_ME : 0);
     pi::send_prc_state(&ctx, state);
 
-    printf("[PRC CAN] TX telemetry: fsm=%u mo=%d me=%d\r\n",
-           state.fsm_state, mo_open, me_open);
+    // printf("[PRC CAN] TX telemetry: fsm=%u mo=%d me=%d\r\n",
+    //        state.fsm_state, mo_open, me_open);
     return;
   }
 
@@ -360,7 +373,7 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
     p_copv = pressures.p_hpe;
   }
 
-  printf("[PRC CAN] TX telemetry: tank=%.2f copv=%.2f\r\n", p_tank, p_copv);
+  // printf("[PRC CAN] TX telemetry: tank=%.2f copv=%.2f\r\n", p_tank, p_copv);
 }
 
 void Prc_Log_Forward(FDCAN_HandleTypeDef *hfdcan, const uint8_t *data, uint32_t length) {

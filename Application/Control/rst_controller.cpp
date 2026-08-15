@@ -181,20 +181,34 @@ constexpr float kPhiData[kFlowTablePoints] = {
 } // namespace
 
 float FlowToAngleDeg(float phi) {
-  if (phi < kPhiData[0]) return kServoMinAngleDeg;
-  if (phi > kPhiData[kFlowTablePoints - 1]) return kServoMaxAngleDeg;
+  float angle_deg;
 
-  for (int i = 1; i < kFlowTablePoints; ++i) {
-    if (phi <= kPhiData[i]) {
-      float phi1 = kPhiData[i - 1];
-      float phi2 = kPhiData[i];
-      float theta1 = kThetaData[i - 1];
-      float theta2 = kThetaData[i];
-      return theta1 + (phi - phi1) * (theta2 - theta1) / (phi2 - phi1);
+  if (phi < kPhiData[0]) {
+    angle_deg = kServoMinAngleDeg;
+  } else if (phi > kPhiData[kFlowTablePoints - 1]) {
+    angle_deg = kServoMaxAngleDeg;
+  } else {
+    angle_deg = kServoMinAngleDeg; // failsafe, mirrors BVDPR_lib.cpp's flow2angle()
+    for (int i = 1; i < kFlowTablePoints; ++i) {
+      if (phi <= kPhiData[i]) {
+        float phi1 = kPhiData[i - 1];
+        float phi2 = kPhiData[i];
+        float theta1 = kThetaData[i - 1];
+        float theta2 = kThetaData[i];
+        angle_deg = theta1 + (phi - phi1) * (theta2 - theta1) / (phi2 - phi1);
+        break;
+      }
     }
   }
 
-  return kServoMinAngleDeg; // failsafe, mirrors BVDPR_lib.cpp's flow2angle()
+  // Ported from BVDPR.ino's control()/pressurisationTask(), which both
+  // apply this same floor/ceiling clamp right after flow2angle(): never
+  // command below SERVO_ZERO_ANGLE, the characterized dead-band where flow
+  // is near-zero and the curve is nearly vertical (kThetaData starts at
+  // 15.0 deg but flow only becomes meaningful past kServoZeroAngleDeg).
+  if (angle_deg < kServoZeroAngleDeg) angle_deg = kServoZeroAngleDeg;
+  if (angle_deg > kServoMaxAngleDeg) angle_deg = kServoMaxAngleDeg;
+  return angle_deg;
 }
 
 float AngleDegToPercentOpen(float angle_deg) {

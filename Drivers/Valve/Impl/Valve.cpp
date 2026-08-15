@@ -56,9 +56,15 @@ ServoBallValve::ServoBallValve(const ServoBallValveConfig& config)
         HAL_GPIO_WritePin(config_.enable_port, config_.enable_pin, GPIO_PIN_SET);
     }
     // HAL_TIM_PWM_ConfigChannel() (in MX_TIM4_Init) only loads the channel's
-    // config registers — it doesn't enable the output. Without this call the
+    // config registers, it doesn't enable the output. Without this call the
     // compare register updates in write_pulse_us() never reach the pin.
     HAL_TIM_PWM_Start(config_.htim, config_.channel);
+
+    // ConfigChannel leaves the compare register at Pulse=0, a 0 us pulse
+    // that's outside the servo's valid range and can make it hunt before
+    // any real command arrives. Write a real pulse now so the hardware
+    // matches commanded_percent_open_ from the start.
+    write_pulse_us(config_.closed_pulse_us);
 }
 
 void ServoBallValve::write_pulse_us(uint32_t pulse_us)
@@ -93,18 +99,42 @@ const char* ServoBallValve::name() const
     return config_.name;
 }
 
-ValveStatus ServoBallValve::set_position(float percent_open)
+namespace {
+uint32_t PulseUsForPercent(const ServoBallValveConfig& config, float percent_open)
+{
+    float ratio = percent_open / 100.0f;
+    int32_t span = static_cast<int32_t>(config.open_pulse_us) -
+                    static_cast<int32_t>(config.closed_pulse_us);
+    return config.closed_pulse_us + static_cast<uint32_t>(span * ratio);
+}
+} // namespace
+
+ValveStatus ServoBallValve::set_position(float percent_open, bool dither)
 {
     if (percent_open < 0.0f || percent_open > 100.0f) {
         return ValveStatus::InvalidArgument;
     }
 
-    float ratio = percent_open / 100.0f;
-    int32_t span = static_cast<int32_t>(config_.open_pulse_us) -
-                    static_cast<int32_t>(config_.closed_pulse_us);
-    uint32_t pulse_us = config_.closed_pulse_us + static_cast<uint32_t>(span * ratio);
+    constexpr float kDitherAmount = 1.0f;
 
-    write_pulse_us(pulse_us);
+    if (dither) {
+        // Nudges past the target and back before settling -- breaks static
+        // friction so the mechanism actually reaches the commanded position
+        // instead of the servo's internal loop hunting/buzzing around a
+        // target it can't quite settle into. Matches the manual "wiggle it
+        // +/-1%" fix found on the bench.
+        float below = percent_open - kDitherAmount;
+        float above = percent_open + kDitherAmount;
+        if (below < 0.0f) below = 0.0f;
+        if (above > 100.0f) above = 100.0f;
+
+        write_pulse_us(PulseUsForPercent(config_, below));
+        HAL_Delay(60);
+        write_pulse_us(PulseUsForPercent(config_, above));
+        HAL_Delay(60);
+    }
+
+    write_pulse_us(PulseUsForPercent(config_, percent_open));
     commanded_percent_open_ = percent_open;
     return ValveStatus::Ok;
 }

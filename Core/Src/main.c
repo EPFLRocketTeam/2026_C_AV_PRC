@@ -204,6 +204,8 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_4);
+
 
   /* USER CODE END 1 */
 
@@ -249,8 +251,11 @@ int main(void)
   //manual_test_ctl190();  /* loops forever -- never returns, everything below this line won't run while active */
   //manual_test_lmt85();  /* loops forever -- never returns, everything below this line won't run while active */
   //Valve_ManualTest();
+  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_4);
+
   main_init();
   Prc_Fsm_Init();  /* latches board role from ENG_SETUP/ETH_SETUP/LOX_SETUP straps, see Drivers/PrcBoardId/PrcBoardId.hpp, also calls Valve_InitAll() */
+
   Prc_Can_ConfigNodeFilter(&hfdcan1);  /* now that role is latched, accept this board's own DPR node ID, see Application/FlightControl/prc_can.cpp */
   /* USER CODE END 2 */
 
@@ -725,15 +730,17 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE BEGIN TIM4_Init 1 */
 
-  uint32_t timclk = HAL_RCC_GetPCLK1Freq();
-  // If APB1 prescaler != DIV1, timer clock is 2x pclk1 — check your clock config
-  if (HAL_RCC_GetPCLK1Freq() != HAL_RCC_GetHCLKFreq()) timclk *= 2;
-
   /* USER CODE END TIM4_Init 1 */
+
+  uint32_t timclk = HAL_RCC_GetPCLK1Freq();
+   // If APB1 prescaler != DIV1, timer clock is 2x pclk1 — check your clock config
+
+
+   if (HAL_RCC_GetPCLK1Freq() != HAL_RCC_GetHCLKFreq()) timclk *= 2;
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 0;
+  htim4.Init.Prescaler = (timclk / 1000000U) - 1U; // → 1 MHz tick
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 65535;
+  htim4.Init.Period = 19999; // 20 ms frame (50 Hz) for standard RC servo PWM
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)

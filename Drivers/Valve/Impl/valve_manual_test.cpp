@@ -15,11 +15,11 @@ static void exercise(ValveId id)
 
     printf("[Valve] %s: open\r\n", valve->name());
     valve->open();
-    HAL_Delay(5000);
+    HAL_Delay(2500);
 
     printf("[Valve] %s: close\r\n", valve->name());
     valve->close();
-    HAL_Delay(5000);
+
 }
 
 // Sweeps the ball valve through intermediate positions, not just the two
@@ -33,7 +33,7 @@ static void exercise_ball_valve_positions()
         return;
     }
 
-    static const float percentages[] = { 0.0f, 25.0f, 50.0f, 75.0f, 100.0f };
+    static const float percentages[] = { 0.0f, 25.0f, 50.0f, 75.0f, 100.0f, 0.0f };
 
     for (float percent_open : percentages) {
         printf("[Valve] %s: set_position(%.0f%%)\r\n", ball_valve->name(), percent_open);
@@ -48,9 +48,9 @@ void Valve_ManualTest(void)
 
     Valve_InitAll();
 
-    /*for (uint8_t i = 0; i < static_cast<uint8_t>(ValveId::Count); ++i) {
+    for (uint8_t i = 0; i < static_cast<uint8_t>(ValveId::Count); ++i) {
         exercise(static_cast<ValveId>(i));
-    }*/
+    }
 
     exercise_ball_valve_positions();
 

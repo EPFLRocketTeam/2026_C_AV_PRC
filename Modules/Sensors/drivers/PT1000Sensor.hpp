@@ -66,7 +66,11 @@ namespace pt1000 {
     template<const char* (&SensorName)>
     struct PT1000ErrorPipeline {
         void ingest (const PT1000Error &error) {
-            printf("%s: read failed, raw_adc=%lu\r\n", SensorName, (unsigned long)error.raw_adc);
+            // Silenced -- unwired bench channels (e.g. ota2-4) spam this
+            // every poll. Re-enable if you need to see PT1000 read
+            // failures again.
+            // printf("%s: read failed, raw_adc=%lu\r\n", SensorName, (unsigned long)error.raw_adc);
+            (void)error;
         }
     };
 };

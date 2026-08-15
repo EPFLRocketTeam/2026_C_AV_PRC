@@ -40,6 +40,7 @@ private:
   EngineState fromBurnStopMo(DataDump const &dump);
   EngineState fromBurnStopMe(DataDump const &dump);
   EngineState fromWaitForPassivation(DataDump const &dump);
+  EngineState fromPassivationSeparationDelay(DataDump const &dump);
   EngineState fromPassivationEth(DataDump const &dump);
   EngineState fromPassivationCloseMe(DataDump const &dump);
   EngineState fromPassivationLox(DataDump const &dump);
@@ -50,6 +51,7 @@ private:
   EngineState fromAbortInFlight(DataDump const &dump);
   EngineState fromAbortInFlightOxydant(DataDump const &dump);
   EngineState fromAbortInFlightEthanol(DataDump const &dump);
+  EngineState fromDepressurizeOpen(DataDump const &dump);
 
   EngineState currentState;
 

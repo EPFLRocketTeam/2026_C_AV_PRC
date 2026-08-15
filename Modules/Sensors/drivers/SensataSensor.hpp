@@ -118,7 +118,8 @@ namespace sensata {
     template<const char* (&SensorName)>
     struct SensataErrorPipeline {
         void ingest (const internal::SensataError &error) {
-            printf("%s: status=%s step=%s mode=%s\r\n", SensorName, status_str(error.status), step_str(error.step), internal::poll_mode_str(error.pollMode));
+            (void)error;
+            // printf("%s: status=%s step=%s mode=%s\r\n", SensorName, status_str(error.status), step_str(error.step), internal::poll_mode_str(error.pollMode));
         }
     };
 

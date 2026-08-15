@@ -54,40 +54,52 @@ static PressureHpeSensorModule pressure_hpe; // P-HPE        (COPV 2, Sensata PT
 // ---------------------------------------------------------------------------
 
 void prc::PropSensorsStoreEngine::set_pressure_C(double pressure_C) {
-	printf("p_C=%lf\r\n", pressure_C);
+	data_.pressure_C = pressure_C;
+	// 	printf("p_C=%lf\r\n", pressure_C);
 }
 void prc::PropSensorsStoreEngine::set_pressure_C_mean(double pressure_C_mean) {
-	printf("p_C_mean=%lf\r\n", pressure_C_mean);
+	data_.pressure_C_mean = pressure_C_mean;
+	// 	printf("p_C_mean=%lf\r\n", pressure_C_mean);
 }
 void prc::PropSensorsStoreEngine::set_temperature_C(double temperature_C) {
-	printf("t_C=%lf\r\n", temperature_C);
+	data_.temperature_C = temperature_C;
+	// 	printf("t_C=%lf\r\n", temperature_C);
 }
 void prc::PropSensorsStoreEngine::set_temperature_C_mean(double temperature_C_mean) {
-	printf("t_C_mean=%lf\r\n", temperature_C_mean);
+	data_.temperature_C_mean = temperature_C_mean;
+	// 	printf("t_C_mean=%lf\r\n", temperature_C_mean);
 }
 void prc::PropSensorsStoreEngine::set_pressure_OIN(double pressure_OIN) {
-	printf("p_OIN=%lf\r\n", pressure_OIN);
+	data_.pressure_OIN = pressure_OIN;
+	// 	printf("p_OIN=%lf\r\n", pressure_OIN);
 }
 void prc::PropSensorsStoreEngine::set_pressure_OIN_mean(double pressure_OIN_mean) {
-	printf("p_OIN_mean=%lf\r\n", pressure_OIN_mean);
+	data_.pressure_OIN_mean = pressure_OIN_mean;
+	// 	printf("p_OIN_mean=%lf\r\n", pressure_OIN_mean);
 }
 void prc::PropSensorsStoreEngine::set_pressure_EIN(double pressure_EIN) {
-	printf("p_EIN=%lf\r\n", pressure_EIN);
+	data_.pressure_EIN = pressure_EIN;
+	// 	printf("p_EIN=%lf\r\n", pressure_EIN);
 }
 void prc::PropSensorsStoreEngine::set_pressure_EIN_mean(double pressure_EIN_mean) {
-	printf("p_EIN_mean=%lf\r\n", pressure_EIN_mean);
+	data_.pressure_EIN_mean = pressure_EIN_mean;
+	// 	printf("p_EIN_mean=%lf\r\n", pressure_EIN_mean);
 }
 void prc::PropSensorsStoreEngine::set_temperature_OIN(double temperature_OIN) {
-	printf("t_OIN=%lf\r\n", temperature_OIN);
+	data_.temperature_OIN = temperature_OIN;
+	// 	printf("t_OIN=%lf\r\n", temperature_OIN);
 }
 void prc::PropSensorsStoreEngine::set_temperature_OIN_mean(double temperature_OIN_mean) {
-	printf("t_OIN_mean=%lf\r\n", temperature_OIN_mean);
+	data_.temperature_OIN_mean = temperature_OIN_mean;
+	// 	printf("t_OIN_mean=%lf\r\n", temperature_OIN_mean);
 }
 void prc::PropSensorsStoreEngine::set_temperature_EIN(double temperature_EIN) {
-	printf("t_EIN=%lf\r\n", temperature_EIN);
+	data_.temperature_EIN = temperature_EIN;
+	// 	printf("t_EIN=%lf\r\n", temperature_EIN);
 }
 void prc::PropSensorsStoreEngine::set_temperature_EIN_mean(double temperature_EIN_mean) {
-	printf("t_EIN_mean=%lf\r\n", temperature_EIN_mean);
+	data_.temperature_EIN_mean = temperature_EIN_mean;
+	// 	printf("t_EIN_mean=%lf\r\n", temperature_EIN_mean);
 }
 
 // ---------------------------------------------------------------------------
@@ -95,52 +107,68 @@ void prc::PropSensorsStoreEngine::set_temperature_EIN_mean(double temperature_EI
 // ---------------------------------------------------------------------------
 
 void prc::PropSensorsStoreLox::set_pressure_OTA1(double pressure_OTA1) {
-	printf("p_OTA1=%lf\r\n", pressure_OTA1);
+	data_.pressure_OTA1 = pressure_OTA1;
+	// 	printf("p_OTA1=%lf\r\n", pressure_OTA1);
 }
 void prc::PropSensorsStoreLox::set_pressure_OTA2(double pressure_OTA2) {
-	printf("p_OTA2=%lf\r\n", pressure_OTA2);
+	data_.pressure_OTA2 = pressure_OTA2;
+	// 	printf("p_OTA2=%lf\r\n", pressure_OTA2);
 }
 void prc::PropSensorsStoreLox::set_pressure_OTA3(double pressure_OTA3) {
-	printf("p_OTA3=%lf\r\n", pressure_OTA3);
+	data_.pressure_OTA3 = pressure_OTA3;
+	// 	printf("p_OTA3=%lf\r\n", pressure_OTA3);
 }
 void prc::PropSensorsStoreLox::set_pressure_OTA_mean(double pressure_OTA_mean) {
-	printf("p_OTA_mean=%lf\r\n", pressure_OTA_mean);
+	data_.pressure_OTA_mean = pressure_OTA_mean;
+	// 	printf("p_OTA_mean=%lf\r\n", pressure_OTA_mean);
 }
 void prc::PropSensorsStoreLox::set_pressure_HPO(double pressure_HPO) {
-	printf("p_HPO=%lf\r\n", pressure_HPO);
+	data_.pressure_HPO = pressure_HPO;
+	// 	printf("p_HPO=%lf\r\n", pressure_HPO);
 }
 void prc::PropSensorsStoreLox::set_pressure_HPO_mean(double pressure_HPO_mean) {
-	printf("p_HPO_mean=%lf\r\n", pressure_HPO_mean);
+	data_.pressure_HPO_mean = pressure_HPO_mean;
+	// 	printf("p_HPO_mean=%lf\r\n", pressure_HPO_mean);
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA1(double temperature_OTA1) {
-	printf("t_OTA1=%lf\r\n", temperature_OTA1);
+	data_.temperature_OTA1 = temperature_OTA1;
+	// 	printf("t_OTA1=%lf\r\n", temperature_OTA1);
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA1_mean(double temperature_OTA1_mean) {
-	printf("t_OTA1_mean=%lf\r\n", temperature_OTA1_mean);
+	data_.temperature_OTA1_mean = temperature_OTA1_mean;
+	// 	printf("t_OTA1_mean=%lf\r\n", temperature_OTA1_mean);
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA2(double temperature_OTA2) {
-	printf("t_OTA2=%lf\r\n", temperature_OTA2);
+	data_.temperature_OTA2 = temperature_OTA2;
+	// 	printf("t_OTA2=%lf\r\n", temperature_OTA2);
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA2_mean(double temperature_OTA2_mean) {
-	printf("t_OTA2_mean=%lf\r\n", temperature_OTA2_mean);
+	data_.temperature_OTA2_mean = temperature_OTA2_mean;
+	// 	printf("t_OTA2_mean=%lf\r\n", temperature_OTA2_mean);
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA3(double temperature_OTA3) {
-	printf("t_OTA3=%lf\r\n", temperature_OTA3);
+	data_.temperature_OTA3 = temperature_OTA3;
+	// 	printf("t_OTA3=%lf\r\n", temperature_OTA3);
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA3_mean(double temperature_OTA3_mean) {
-	printf("t_OTA3_mean=%lf\r\n", temperature_OTA3_mean);
+	data_.temperature_OTA3_mean = temperature_OTA3_mean;
+	// 	printf("t_OTA3_mean=%lf\r\n", temperature_OTA3_mean);
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA4(double temperature_OTA4) {
-	printf("t_OTA4=%lf\r\n", temperature_OTA4);
+	data_.temperature_OTA4 = temperature_OTA4;
+	// 	printf("t_OTA4=%lf\r\n", temperature_OTA4);
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA4_mean(double temperature_OTA4_mean) {
-	printf("t_OTA4_mean=%lf\r\n", temperature_OTA4_mean);
+	data_.temperature_OTA4_mean = temperature_OTA4_mean;
+	// 	printf("t_OTA4_mean=%lf\r\n", temperature_OTA4_mean);
 }
 void prc::PropSensorsStoreLox::set_FLS(double FLS) {
-	printf("FLS=%lf\r\n", FLS);
+	data_.FLS = FLS;
+	// 	printf("FLS=%lf\r\n", FLS);
 }
 void prc::PropSensorsStoreLox::set_FLS_mean(double FLS_mean) {
-	printf("FLS_mean=%lf\r\n", FLS_mean);
+	data_.FLS_mean = FLS_mean;
+	// 	printf("FLS_mean=%lf\r\n", FLS_mean);
 }
 
 // ---------------------------------------------------------------------------
@@ -148,28 +176,34 @@ void prc::PropSensorsStoreLox::set_FLS_mean(double FLS_mean) {
 // ---------------------------------------------------------------------------
 
 void prc::PropSensorsStoreEth::set_pressure_ETA1(double pressure_ETA1) {
-	printf("p_ETA1=%lf\r\n", pressure_ETA1);
+	data_.pressure_ETA1 = pressure_ETA1;
+	// 	printf("p_ETA1=%lf\r\n", pressure_ETA1);
 }
 void prc::PropSensorsStoreEth::set_pressure_ETA2(double pressure_ETA2) {
-	printf("p_ETA2=%lf\r\n", pressure_ETA2);
+	data_.pressure_ETA2 = pressure_ETA2;
+	// 	printf("p_ETA2=%lf\r\n", pressure_ETA2);
 }
 void prc::PropSensorsStoreEth::set_pressure_ETA3(double pressure_ETA3) {
-	printf("p_ETA3=%lf\r\n", pressure_ETA3);
+	data_.pressure_ETA3 = pressure_ETA3;
+	// 	printf("p_ETA3=%lf\r\n", pressure_ETA3);
 }
 void prc::PropSensorsStoreEth::set_pressure_ETA_mean(double pressure_ETA_mean) {
-	printf("p_ETA_mean=%lf\r\n", pressure_ETA_mean);
+	data_.pressure_ETA_mean = pressure_ETA_mean;
+	// 	printf("p_ETA_mean=%lf\r\n", pressure_ETA_mean);
 }
 void prc::PropSensorsStoreEth::set_pressure_HPE(double pressure_HPE) {
-	printf("p_HPE=%lf\r\n", pressure_HPE);
+	data_.pressure_HPE = pressure_HPE;
+	// 	printf("p_HPE=%lf\r\n", pressure_HPE);
 }
 void prc::PropSensorsStoreEth::set_pressure_HPE_mean(double pressure_HPE_mean) {
-	printf("p_HPE_mean=%lf\r\n", pressure_HPE_mean);
+	data_.pressure_HPE_mean = pressure_HPE_mean;
+	// 	printf("p_HPE_mean=%lf\r\n", pressure_HPE_mean);
 }
 
 // ---------------------------------------------------------------------------
 
 void main_init() {
-	Valve_ManualTest();
+	//Valve_ManualTest();
 
 	// init() just constructs driver/config objects (no bus traffic), so it's
 	// harmless to run for every bay's sensors regardless of which one this
@@ -195,7 +229,7 @@ void main_init() {
 }
 
 void main_tick() {
-	printf("\r\n");
+	// 	printf("\r\n");
 
 	switch (prc::PrcStore::get_instance().boardIdentityStore.get_role()) {
 		case prc::BoardRole::EngineBay:

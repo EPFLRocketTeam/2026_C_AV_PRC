@@ -69,14 +69,14 @@ public:
         std::apply([&frame, &valid](auto&... pipeline_instance){
             std::size_t idx = 0;
             ([&]{
-                printf("Sensor %d: valid=%d, outlier=%d, value=%f\n", (int) idx, (int) valid[idx], (int) frame.is_outlier[idx], (float) frame.values[idx]);
+                // printf("Sensor %d: valid=%d, outlier=%d, value=%f\n", (int) idx, (int) valid[idx], (int) frame.is_outlier[idx], (float) frame.values[idx]);
                 if (valid[idx]) {
                     pipeline_instance.ingest(frame.values[idx]);
                 }
                 idx ++;
             }(), ...);
         }, rawPipelines);
-        printf("number_used=%d, value=%f\n", (int) frame.number_used, (float) frame.value);
+        // printf("number_used=%d, value=%f\n", (int) frame.number_used, (float) frame.value);
         
         if (frame.number_used >= Params::min_kept) {
             meanPipeline.ingest(frame.value);

@@ -43,9 +43,11 @@ static constexpr uint32_t k_passivation_delay_no_com_ms    	= 10000;
 // In-flight-abort-only "timer" before rejoining WaitForPassivation --
 // distinct arrow from PASSIVATION_DELAY_NO_COM_PRC on the diagram.
 static constexpr uint32_t k_abort_in_flight_timer_ms       	= 10000;
+static constexpr uint32_t k_separation_delay_ms            	= 10000; // SEPARATION DELAY
 static constexpr uint32_t k_passivation_fuel_duration_ms   	= 10000; // PASSIVATION FUEL DURATION
 static constexpr uint32_t k_interlude_duration_ms          	= 10000; // INTERLUDE DURATION
 static constexpr uint32_t k_passivation_ox_duration_ms     	= 10000; // PASSIVATION OX DURATION
+static constexpr uint32_t k_depressurize_delay_ms          	= 10000; // DEPRESSURIZE DELAY
 
 // ---------------------------------------------------------------------------
 // Valve mapping: MO (Main Oxidizer) / ME (Main Ethanol) -- same Sol3/Sol4
@@ -171,11 +173,19 @@ EngineState PrcEngineState::fromBurnStopMe(DataDump const &dump) {
 EngineState PrcEngineState::fromWaitForPassivation(DataDump const &dump) {
   if (AbortCmd(dump)) return EngineState::AbortInFlight;
   if (CmdIs(dump, pi::constants::MessageId::prc_passivate)) {
-    return EngineState::PassivationEth;
+    return EngineState::PassivationSeparationDelay;
   }
   // Comms-loss watchdog: no explicit PASSIVATE for this long -> passivate
   // anyway (ported intent from the DPR FSM's identical pattern).
   if (HAL_GetTick() - state_entry_ms_ >= k_passivation_delay_no_com_ms) {
+    return EngineState::PassivationSeparationDelay;
+  }
+  return currentState;
+}
+
+EngineState PrcEngineState::fromPassivationSeparationDelay(DataDump const &dump) {
+  (void)dump;
+  if (HAL_GetTick() - state_entry_ms_ >= k_separation_delay_ms) {
     return EngineState::PassivationEth;
   }
   return currentState;
@@ -207,7 +217,19 @@ EngineState PrcEngineState::fromPassivationLox(DataDump const &dump) {
 
 EngineState PrcEngineState::fromShutoff(DataDump const &dump) {
   (void)dump;
-  // Terminal per the diagram -- no outgoing transition once shut off.
+  // Same DEPRESSURIZE DELAY -> OPEN ME+MO tail on every route (nominal
+  // end-of-burn and abort-in-flight both converge here already).
+  if (HAL_GetTick() - state_entry_ms_ >= k_depressurize_delay_ms) {
+    return EngineState::DepressurizeOpen;
+  }
+  return currentState;
+}
+
+EngineState PrcEngineState::fromDepressurizeOpen(DataDump const &dump) {
+  (void)dump;
+  // Terminal. FC watches for this (MO+ME both open again after having
+  // been fully drained) and is the one that commands the DPR boards to
+  // depressurize, not this board -- see the FC-level FSM diagram.
   return currentState;
 }
 
@@ -244,7 +266,7 @@ EngineState PrcEngineState::fromAbortInFlightOxydant(DataDump const &dump) {
 
 EngineState PrcEngineState::fromAbortInFlightEthanol(DataDump const &dump) {
   (void)dump;
-  // No RESET path per the diagram -- in-flight abort always proceeds
+  // No RESET path per the diagram, in-flight abort always proceeds
   // toward passivation on its own, never back to Idle.
   if (HAL_GetTick() - state_entry_ms_ >= k_abort_in_flight_timer_ms) {
     return EngineState::WaitForPassivation;
@@ -266,6 +288,7 @@ void PrcEngineState::update(const DataDump &dump) {
     case EngineState::BurnStopMo:             currentState = fromBurnStopMo(dump); break;
     case EngineState::BurnStopMe:             currentState = fromBurnStopMe(dump); break;
     case EngineState::WaitForPassivation:     currentState = fromWaitForPassivation(dump); break;
+    case EngineState::PassivationSeparationDelay: currentState = fromPassivationSeparationDelay(dump); break;
     case EngineState::PassivationEth:         currentState = fromPassivationEth(dump); break;
     case EngineState::PassivationCloseMe:     currentState = fromPassivationCloseMe(dump); break;
     case EngineState::PassivationLox:         currentState = fromPassivationLox(dump); break;
@@ -276,6 +299,7 @@ void PrcEngineState::update(const DataDump &dump) {
     case EngineState::AbortInFlight:          currentState = fromAbortInFlight(dump); break;
     case EngineState::AbortInFlightOxydant:   currentState = fromAbortInFlightOxydant(dump); break;
     case EngineState::AbortInFlightEthanol:   currentState = fromAbortInFlightEthanol(dump); break;
+    case EngineState::DepressurizeOpen:       currentState = fromDepressurizeOpen(dump); break;
     default:                                  currentState = EngineState::AbortOnGround;
   }
 
@@ -300,6 +324,7 @@ std::string PrcEngineState::stateToString(EngineState state) {
     case EngineState::BurnStopMo:           return "BURN_STOP_MO";
     case EngineState::BurnStopMe:           return "BURN_STOP_ME";
     case EngineState::WaitForPassivation:   return "WAIT_FOR_PASSIVATION";
+    case EngineState::PassivationSeparationDelay: return "PASSIVATION_SEPARATION_DELAY";
     case EngineState::PassivationEth:       return "PASSIVATION_ETH";
     case EngineState::PassivationCloseMe:   return "PASSIVATION_CLOSE_ME";
     case EngineState::PassivationLox:       return "PASSIVATION_LOX";
@@ -310,6 +335,7 @@ std::string PrcEngineState::stateToString(EngineState state) {
     case EngineState::AbortInFlight:        return "ABORT_IN_FLIGHT";
     case EngineState::AbortInFlightOxydant: return "ABORT_IN_FLIGHT_OXYDANT";
     case EngineState::AbortInFlightEthanol: return "ABORT_IN_FLIGHT_ETHANOL";
+    case EngineState::DepressurizeOpen:     return "DEPRESSURIZE_OPEN";
     default:                                return "ERROR";
   }
 }
@@ -368,6 +394,10 @@ static void ApplyEngineValveActions(EngineState state, EngineState previous_stat
       break;
     case EngineState::AbortInFlightEthanol:
       SetMe(false);
+      break;
+    case EngineState::DepressurizeOpen:
+      SetMo(true);
+      SetMe(true);
       break;
     default:
       break;

@@ -118,7 +118,7 @@ struct ServoBallValveConfig {
     GPIO_TypeDef* enable_port = nullptr;
     uint16_t      enable_pin  = 0;
 
-    uint32_t            open_pulse_us   = 2000;
+    uint32_t            open_pulse_us   = 2100;
     uint32_t            closed_pulse_us = 1000;
     const char*         name            = "";
 };
@@ -134,7 +134,13 @@ public:
 
     // Proportional position for dynamic pressure regulation.
     // percent_open: 0.0 = fully closed, 100.0 = fully open.
-    ValveStatus set_position(float percent_open);
+    // dither: settle into the new position via a brief +/-1% wiggle first,
+    // breaks static friction that otherwise makes the servo hunt/buzz at
+    // the target. Pass false for the RST controller's continuous every-tick
+    // tracking (PRESSURIZE_ON/REGULATE) -- dithering there would fight the
+    // control loop instead of settling it. Leave it true (default) for
+    // manual commands and one-shot state-entry positions.
+    ValveStatus set_position(float percent_open, bool dither = true);
 
 private:
     void write_pulse_us(uint32_t pulse_us);

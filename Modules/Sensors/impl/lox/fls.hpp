@@ -10,7 +10,10 @@ const char fls_error_msg[] = "Could Not Read FLS\r\n";
 template<const char* str>
 struct SimpleErrorPipeline {
 	void ingest (const auto &err) {
-		printf(str);
+		// Silenced -- FLS is unwired on the bench, spams this every poll.
+		// Re-enable if you need to see it again.
+		// printf(str);
+		(void)err;
 	}
 };
 

@@ -30,10 +30,18 @@ enum class EngineState {
   WaitForPassivation,
 
   // PASSIVATION SQ
+  PassivationSeparationDelay, // wait only, no valve action
   PassivationEth,         // open ME
   PassivationCloseMe,     // close ME
   PassivationLox,         // open MO
-  Shutoff,                // close MO -- terminal
+  Shutoff,                // close MO
+
+  // Reached from Shutoff on every route (nominal end-of-burn or
+  // abort-in-flight both converge on WaitForPassivation/Shutoff already).
+  // Opens both mains back up so FC's telemetry shows the tanks are empty --
+  // FC is the one that then commands the DPR boards to depressurize (see
+  // the FC-level FSM diagram), not this board. Terminal.
+  DepressurizeOpen,       // open MO + ME
 
   AbortOnGround,
   AbortOnGroundOxydant,   // close MO

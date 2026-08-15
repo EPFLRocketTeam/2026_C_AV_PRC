@@ -32,15 +32,16 @@ using PressureOtaSensorModule = multi::Module<
 
     // Use only pressure sensors
     multi::PressureSensorParam<
-        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L1>>,
+        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L2>>,
         LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA1),
         sensata::SensataErrorPipeline<OTA1_NAME>
     >,
-    multi::PressureSensorParam<
-        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L2>>,
-        LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA2),
-        sensata::SensataErrorPipeline<OTA2_NAME>
-    >,
+    // OTA2 physically not present on this board, commented out for now.
+    // multi::PressureSensorParam<
+    //     sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L2>>,
+    //     LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA2),
+    //     sensata::SensataErrorPipeline<OTA2_NAME>
+    // >,
     multi::PressureSensorParam<
         sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L3>>,
         LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA3),
