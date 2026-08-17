@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include "Application/Data/data.hpp"
 #include "Modules/Sensors/impl/std/multi.hpp"
+#include "Drivers/Plume/types.hpp"
 
 struct LogHeader {
     uint8_t  magic;
@@ -16,6 +17,15 @@ struct BaseStorageHealth {
     uint32_t write_fail_count_ = 0;
     uint32_t max_write_time_us_ = 0;
     uint32_t tick_count_ = 0;
+};
+
+struct StorageHealth {
+    BaseStorageHealth health;
+    SdTimingStats timing;
+
+    size_t disk_size_remaining;
+    size_t arena_used_bytes;
+    size_t arena_total_bytes;
 };
 
 struct pressures_frame {
