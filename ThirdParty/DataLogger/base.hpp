@@ -1,4 +1,4 @@
-
+#pragma once
 #include "ThirdParty/DataLogger/types.hpp"
 
 template<uint8_t Magic, typename EnumKinds, typename Storage>
@@ -6,7 +6,7 @@ struct BaseDataLogger {
 private:
     Storage storage_;
 
-    StorageHealth health_;
+    BaseStorageHealth health_;
 protected:
     BaseDataLogger () = default;
     BaseDataLogger (Storage& storage) : storage_(storage) {}

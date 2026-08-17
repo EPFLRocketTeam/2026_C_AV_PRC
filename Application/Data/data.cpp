@@ -6,9 +6,9 @@ using namespace prc;
 
 StateStore::StateStore() { data_ = State::MANUAL; }
 
-const DataDump &PrcStore::get() const {
+const DataDump &PrcStore::get(uint32_t timestamp) const {
   data_.prc_state         = stateStore.get();
-  data_.prc_timestamp_ms  = HAL_GetTick();
+  data_.prc_timestamp_ms  = timestamp;
   data_.boardIdentity     = boardIdentityStore.get();
   data_.valves            = valvesStore.get();
   data_.intranetCmd         = intranetCmdStore.get();

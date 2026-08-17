@@ -157,7 +157,7 @@ public:
   PropSensorsStoreLox    propSensorsStoreLox;
 
   void set(const DataDump &value);
-  const DataDump &get() const;
+  const DataDump &get(uint32_t timestamp) const;
   DataDump *get_ref();
 
   static inline PrcStore &get_instance() {

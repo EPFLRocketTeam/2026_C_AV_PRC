@@ -86,7 +86,7 @@ public:
         transactions_.clear();
     }
 
-    StorageHealth withInternalHealth (StorageHealth health) {
+    BaseStorageHealth withInternalHealth (BaseStorageHealth health) {
         return health;
     }
 
