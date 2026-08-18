@@ -17,18 +17,31 @@ struct header {
 
 };
 
-template <typename T>
-std::ostream& operator<<(std::ostream& os, const csv::header<T>& x);
+#define X(type) \
+    std::ostream& operator<< (std::ostream& os, const csv::header<type> &x);
+X_PRIMITIVE_TYPES
+#undef X
+
+template<typename T>
+    requires std::is_enum_v<T>
+std::ostream& operator<< (std::ostream& os, const csv::header<T> &x);
+
+template<typename T, size_t N>
+std::ostream& operator<<(std::ostream &os, const csv::header<std::array<T, N>> &x);
+
+template<typename T>
+    requires std::is_class_v<T>
+std::ostream& operator<<(std::ostream &os, const csv::header<T>& x);
 
 #define CSV_HEADER_BASE_FN(type) \
     std::ostream& operator<< (std::ostream& os, const csv::header<type> &x) { \
         if (!x.first) os << ","; \
-        os << x.field; \
+        if (x.field == "") os << "value"; \
+        else os << x.field; \
         return os; \
     }
 
 #define X(type) \
-    template<> \
     CSV_HEADER_BASE_FN(type)
 X_PRIMITIVE_TYPES
 #undef X
@@ -47,7 +60,7 @@ std::ostream& operator<<(std::ostream &os, const csv::header<std::array<T, N>> &
 }
 
 template<typename T>
-    requires std::is_aggregate_v<T>
+    requires std::is_class_v<T>
 std::ostream& operator<<(std::ostream &os, const csv::header<T>& x) {
     bool first = x.first;
 

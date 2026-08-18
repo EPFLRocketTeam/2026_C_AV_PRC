@@ -2,7 +2,7 @@
 #include "ThirdParty/DataLogger/base.hpp"
 
 template<typename Storage>
-struct LoxDataLogger : public BaseDataLogger<ENGINE_LOGGER_MAGIC, EngineRecordType, Storage> {
+struct LoxDataLogger : public BaseDataLogger<LOX_LOGGER_MAGIC, EngineRecordType, Storage> {
 public:
     LoxDataLogger () = default;
     LoxDataLogger (Storage& storage) : BaseDataLogger(storage) {}
@@ -26,11 +26,9 @@ public:
         writeRecord(lox::RecordType::LOG_OTA_T_FRAME, &frame, sizeof(frame));
     }
     
-    // TODO choose the type of bundled old + new, find types of
-    //   FSM states.
-    //void logFsmTransition (??? old_fsm, ??? new_fsm) {
-    //    writeRecord(EngineRecordType::LOG_FSM_TRANSITION, ???, ???)
-    //}
+    void logFsmTransition (dpr_fsm_transition frame) {
+        writeRecord(lox::RecordType::LOG_FSM_TRANSITION, &frame, sizeof(frame));
+    }
 
     void logError (lox::ErrorKind kind) {
         writeRecord(lox::RecordType::LOG_ERROR, &kind, sizeof(EngineErrorKind));

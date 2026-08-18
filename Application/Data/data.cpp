@@ -1,7 +1,5 @@
 #include "Application/Data/data.hpp"
 
-#include "stm32h7xx_hal.h"
-
 using namespace prc;
 
 StateStore::StateStore() { data_ = State::MANUAL; }

@@ -10,9 +10,9 @@ namespace outlier_pipeline {
 template<const size_t NumberInputs>
 struct Frame {
     /* Array of values from the NumberInputs sensors */
-    double values[NumberInputs];
+    std::array<double, NumberInputs> values;
     /* Whether the sensor is an outlier */
-    bool is_outlier[NumberInputs];
+    std::array<bool, NumberInputs> is_outlier;
 
     /* Number of used data points */
     size_t number_used;

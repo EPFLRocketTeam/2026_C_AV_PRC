@@ -29,11 +29,9 @@ public:
         writeRecord(engine::RecordType::LOG_OIN_T_FRAME, &frame, sizeof(frame));
     }
 
-    // TODO choose the type of bundled old + new, find types of
-    //   FSM states.
-    //void logFsmTransition (??? old_fsm, ??? new_fsm) {
-    //    writeRecord(engine::RecordType::LOG_FSM_TRANSITION, ???, ???)
-    //}
+    void logFsmTransition (engine_fsm_transition frame) {
+        writeRecord(engine::RecordType::LOG_FSM_TRANSITION, &frame, sizeof(frame));
+    }
 
     void logError (engine::ErrorKind kind) {
         writeRecord(engine::RecordType::LOG_ERROR, &kind, sizeof(EngineErrorKind));

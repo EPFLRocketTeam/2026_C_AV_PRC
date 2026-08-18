@@ -2,7 +2,7 @@
 #include "ThirdParty/DataLogger/base.hpp"
 
 template<typename Storage>
-struct EthDataLogger : public BaseDataLogger<ENGINE_LOGGER_MAGIC, EngineRecordType, Storage> {
+struct EthDataLogger : public BaseDataLogger<ETH_LOGGER_MAGIC, EngineRecordType, Storage> {
 public:
     EthDataLogger () = default;
     EthDataLogger (Storage& storage) : BaseDataLogger(storage) {}
@@ -19,11 +19,9 @@ public:
         writeRecord(eth::RecordType::LOG_ETA_P_FRAME, &frame, sizeof(frame));
     }
     
-    // TODO choose the type of bundled old + new, find types of
-    //   FSM states.
-    //void logFsmTransition (??? old_fsm, ??? new_fsm) {
-    //    writeRecord(EngineRecordType::LOG_FSM_TRANSITION, ???, ???)
-    //}
+    void logFsmTransition (dpr_fsm_transition frame) {
+        writeRecord(eth::RecordType::LOG_FSM_TRANSITION, &frame, sizeof(frame));
+    }
 
     void logError (eth::ErrorKind kind) {
         writeRecord(eth::RecordType::LOG_ERROR, &kind, sizeof(EngineErrorKind));

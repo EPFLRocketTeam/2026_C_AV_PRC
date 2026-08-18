@@ -1,8 +1,14 @@
 #pragma once
 #include <stddef.h>
 #include "Application/Data/data.hpp"
+#include "Application/Data/fsm.hpp"
+#include "Application/Data/engine_fsm.hpp"
 #include "Modules/Sensors/impl/std/multi.hpp"
 #include "Drivers/Plume/types.hpp"
+
+constexpr uint8_t ENGINE_LOGGER_MAGIC = 0xA4;
+constexpr uint8_t LOX_LOGGER_MAGIC = 0xC1;
+constexpr uint8_t ETH_LOGGER_MAGIC = 0x8B;
 
 struct LogHeader {
     uint8_t  magic;
@@ -42,6 +48,16 @@ struct pressure_temperature_frame {
     
     double temperature;
     double temperature_mean;
+};
+
+struct engine_fsm_transition {
+    prc::EngineState old_state;
+    prc::EngineState new_state;
+};
+
+struct dpr_fsm_transition {
+    prc::State old_state;
+    prc::State new_state;
 };
 
 namespace engine {
