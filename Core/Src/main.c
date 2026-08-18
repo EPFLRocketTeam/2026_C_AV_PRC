@@ -29,6 +29,7 @@
 #include "../../Drivers/KULITE_CTL190/kulite_manual_test.hpp"
 #include "../../Drivers/LMT85/lmt85_manual_test.hpp"
 #include "../../Drivers/Valve/valve_manual_test.hpp"
+#include "../../Drivers/Plume/Tests/Hardware/plume_manual_test.h"
 #include "../../Application/FlightControl/prc_fsm_c_api.h"
 #include "../../Application/FlightControl/prc_can.hpp"
 #include "../../Application/main_app.h"
@@ -246,6 +247,17 @@ int main(void)
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 
+  for (int i = 0; i < 30; i ++) {
+    printf("Waiting, %u seconds remaining...\n", 30 - i);
+    HAL_Delay(1000);
+  }
+
+  printf("Starting manual test...\n");
+    plume_manual_test(&hsd1);
+  while (1) {
+    printf("Do nothing forever...\n");
+    HAL_Delay(1000);
+  }
 
   //manual_test_pt1000();  /* loops forever -- never returns, everything below this line won't run while active */
 
@@ -706,7 +718,7 @@ static void MX_SDMMC1_SD_Init(void)
   hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
   hsd1.Init.BusWide = SDMMC_BUS_WIDE_4B;
   hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd1.Init.ClockDiv = 0;
+  hsd1.Init.ClockDiv = 4;
   if (HAL_SD_Init(&hsd1) != HAL_OK)
   {
     Error_Handler();

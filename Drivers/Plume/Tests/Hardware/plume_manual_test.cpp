@@ -1,12 +1,12 @@
 
 extern "C" {
-    #include "stm32hal.h"
-    #include "plume_manual_test.h"
+    #include "stm32h7xx_hal.h"
+    #include "./plume_manual_test.h"
     #include "plume/status.h"
     #include <stdio.h>
 }
 
-#include "plume_driver.hpp"
+#include "../../plume_driver.hpp"
 
 const size_t plume_manual_test_arena_length = 64 * 1024;
 uint8_t plume_manual_test_arena_buffer[plume_manual_test_arena_length] \
@@ -48,13 +48,13 @@ void plume_manual_test (SD_HandleTypeDef *hsd) {
         uint32_t j = ((i ^ 0b1101100110111000) << 16) | i;
 
         uint8_t status = interface.write((const uint8_t*) (&j), sizeof(uint32_t));
-        if (status != PLUME_OK) {
+        if (!plume_is_ok(status)) {
             printf("[PLUME] Failure of write for %u. Error code: %u\r\n", i, (uint32_t) status);
             return ;
         }
 
         status = interface.tick();
-        if (status != PLUME_OK) {
+        if (!plume_is_ok(status)) {
             printf("[PLUME] Failure of tick at %u. Error code: %u\r\n", i, (uint32_t) status);
             return ;
         }

@@ -1,8 +1,8 @@
 
-#include "plume_driver.hpp"
+#include "../plume_driver.hpp"
 #include <stdio.h>
 #include <string.h>
-#include "app_timebase.h"
+#include "Application/app_timebase.h"
 
 extern "C" {
     #include "plume/writer.h"
@@ -85,6 +85,7 @@ uint8_t plume_stm32_read_block (SD_HandleTypeDef* hsd, struct plume_context* con
      * (IDMA is only used by HAL_SD_ReadBlocks_DMA.) */
     HAL_StatusTypeDef status = HAL_SD_ReadBlocks(hsd, buffer, (uint32_t) block_id, 1, HAL_MAX_DELAY);
     if (status == HAL_OK) {
+        printf("Read block: %lu\n", block_id);
         return PLUME_OK;
     }
 
@@ -92,10 +93,16 @@ uint8_t plume_stm32_read_block (SD_HandleTypeDef* hsd, struct plume_context* con
 }
 uint8_t plume_stm32_write_block (SD_HandleTypeDef* hsd, struct plume_context* context, const uint8_t* buffer, uint64_t block_id) {
     /* Wait for card to reach TRANSFER state (previous write programming done). */
+    if (g_sd_dma_error == 1) {
+        printf("Error during DMA: %d\n", (int) s_sd_timing.last_error_code);
+        return PLUME_EBAD_DISK;
+    } 
+
     uint32_t t0 = HAL_GetTick();
     while (HAL_SD_GetCardState(hsd) != HAL_SD_CARD_TRANSFER) {
         if (HAL_GetTick() - t0 > 500) {
             HAL_SD_Abort(hsd);
+            printf("HAL_SD_GetCardState in invalid mode %d. (single)\n", (int) HAL_SD_GetCardState(hsd));
             return PLUME_OK_RETRY;
         }
     }
@@ -119,6 +126,7 @@ uint8_t plume_stm32_write_block (SD_HandleTypeDef* hsd, struct plume_context* co
     if (status != HAL_OK) {
         g_sd_dma_complete = 1;
         s_sd_timing.dma_start_us = 0;
+        printf("HAL_SD_WriteBlocks_DMA has failed %d. (single)\n", (int) status);
         return PLUME_OK_RETRY;
     }
     return PLUME_OK_SENT_DMA;
@@ -126,10 +134,16 @@ uint8_t plume_stm32_write_block (SD_HandleTypeDef* hsd, struct plume_context* co
 
 uint8_t plume_stm32_write_blocks (SD_HandleTypeDef* hsd, struct plume_context* context, const uint8_t* buffer, uint64_t block_id, uint32_t num_blocks) {
     /* Wait for card to reach TRANSFER state. */
+    if (g_sd_dma_error == 1) {
+        printf("Error during DMA: %d\n", (int) s_sd_timing.last_error_code);
+        return PLUME_EBAD_DISK;
+    } 
+    
     uint32_t t0 = HAL_GetTick();
     while (HAL_SD_GetCardState(hsd) != HAL_SD_CARD_TRANSFER) {
         if (HAL_GetTick() - t0 > 500) {
             HAL_SD_Abort(hsd);
+            printf("HAL_SD_GetCardState in invalid mode %d. (multi)\n", (int) HAL_SD_GetCardState(hsd));
             return PLUME_OK_RETRY;
         }
     }
@@ -165,6 +179,7 @@ uint8_t plume_stm32_write_blocks (SD_HandleTypeDef* hsd, struct plume_context* c
     if (status != HAL_OK) {
         g_sd_dma_complete = 1;
         s_sd_timing.dma_start_us = 0;   /* don't record broken DMA */
+        printf("HAL_SD_WriteBlocks_DMA has failed %d. (multi)\n", (int) status);
         return PLUME_OK_RETRY;
     }
     return PLUME_OK_SENT_DMA;
@@ -192,9 +207,9 @@ uint8_t plume_stm32_write_block_ready (SD_HandleTypeDef* hsd, struct plume_conte
         s_sd_timing.dma_count++;
     }
 
-    if (g_sd_dma_error) {
-        g_sd_dma_error = 0;   /* consume the error — caller will see data not written */
-    }
+    // if (g_sd_dma_error) {
+    //     g_sd_dma_error = 0;   /* consume the error — caller will see data not written */
+    // }
 
     return 1;
 }

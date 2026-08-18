@@ -4,6 +4,7 @@ extern "C" {
 
 #include "stm32h7xx_hal.h"
 
+#include "Application/app_timebase.h"
 #include "Application/Data/data.hpp"
 #include "Data/propulsion/data.hpp"
 #include <stdio.h>
@@ -203,6 +204,7 @@ void prc::PropSensorsStoreEth::set_pressure_HPE_mean(double pressure_HPE_mean) {
 // ---------------------------------------------------------------------------
 
 void main_init() {
+	app_timebase_init();
 	//Valve_ManualTest();
 
 	// init() just constructs driver/config objects (no bus traffic), so it's

@@ -30,7 +30,7 @@ public:
         return fullHealth;
     }
     uint32_t now_us () {
-        return HAL_GetTick() * 1000;
+        return app_timebase_now_us();
     }
 
     void beginTransaction () {

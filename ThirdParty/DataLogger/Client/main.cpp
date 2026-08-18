@@ -15,7 +15,7 @@ int main (void) {
 
     prc::DataDump dump;
     container.ingest({
-        .magic = ENGINE_LOGGER_MAGIC,
+        .magic = ETH_LOGGER_MAGIC,
         .record_type = engine::LOG_DATA_DUMP,
         .length = sizeof(dump),
         .timestamp_us = 124 

@@ -1,7 +1,7 @@
 #pragma once
 
 extern "C" {
-    #include "stm32hal.h"
+    #include "stm32h7xx_hal.h"
     #include "plume/context.h"
     #include "plume/driver.h"
     #include "plume/atomic.h"
