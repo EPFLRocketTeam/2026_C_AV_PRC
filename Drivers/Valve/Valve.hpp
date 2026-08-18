@@ -119,7 +119,7 @@ struct ServoBallValveConfig {
     uint16_t      enable_pin  = 0;
 
     uint32_t            open_pulse_us   = 2100;
-    uint32_t            closed_pulse_us = 1000;
+    uint32_t            closed_pulse_us = 900;
     const char*         name            = "";
 };
 

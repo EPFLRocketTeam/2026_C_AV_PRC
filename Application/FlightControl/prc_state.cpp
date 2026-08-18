@@ -31,6 +31,9 @@ static constexpr float k_ramp_rate_bar_per_ms = 50.0e-3f; // DESIRED_DP, BVDPR_l
 // (`pressureData(TANK_SENSOR) >= 0.98 * (P_REF - 1.0)`, BVDPR.ino:517).
 static constexpr float k_ramp_exit_threshold_ratio = 0.98f;
 
+// TEMPORARY bench override delay -- see fromPressurizeOn().
+static constexpr uint32_t k_pressurize_on_bypass_delay_ms = 5000u;
+
 // PASSIVATION_DURATION_DPR — confirmed: 300 s, every flight variant. Not
 // currently used: PASSIVATE's venting is now driven by live tank/COPV
 // pressure readings (ported from 2026_C_PR_BDPR's passivation(), see
@@ -108,10 +111,6 @@ static float CurrentCopvPressureBar(const DataDump &dump) {
       : static_cast<float>(dump.propSensorsEth.pressure_HPE_mean);
 }
 
-// Threshold below which a tank/COPV is considered "vented" -- ported from
-// 2026_C_PR_BDPR's BVDPR.ino passivation() (`<= 1.0` bar, i.e. ~atmospheric).
-static constexpr float k_vented_threshold_bar = 1.0f;
-
 // Placeholder guess for how long the engine board's own abort shutdown +
 // drain sequence takes (engine_state.cpp's AbortInFlight through Shutoff).
 // The boards don't share progress over CAN, so this is a timer, not a real
@@ -136,19 +135,9 @@ State PrcState::getCurrentState() { return currentState; }
 
 State PrcState::fromManual(DataDump const &dump) {
   if (dump.intranetCmd.id == (uint16_t)PressurizeIdFor(dump.boardIdentity.role) && dump.intranetCmd.value == 1) {
-    return State::INITIALIZE_PRESSURIZE_ON;
+    return State::PRESSURIZE_ON;
   }
   return currentState;
-}
-
-// One-time setup on entry to pressurization (was set_offset()+initialize()
-// in the old code's INITIALIZE_PRESSURIZATION case) — falls through to
-// PRESSURIZE_ON in the same tick, same as the old switch-case did. Ramp
-// state (ramp start pressure/time) is captured in ApplyValveActions() on
-// entry to PRESSURIZE_ON, not here -- see the RST controller comment there.
-State PrcState::fromInitializePressurizeOn(DataDump const &dump) {
-  (void)dump;
-  return State::PRESSURIZE_ON;
 }
 
 State PrcState::fromPressurizeOn(DataDump const &dump) {
@@ -156,12 +145,14 @@ State PrcState::fromPressurizeOn(DataDump const &dump) {
     return State::ABORT_ON_GROUND;
   }
 
-  // TEMPORARY bench override: go straight to REGULATE instead of waiting
-  // for the real exit condition below. Without real pressurant, measured
-  // tank pressure never actually reaches k_ramp_exit_threshold_ratio of the
-  // set pressure, so PRESSURIZE_ON would otherwise never exit on its own.
-  // Remove this early return to restore the real behavior.
-  return State::INITIALIZE_REGULATE;
+  // TEMPORARY bench override: go to REGULATE after a fixed delay instead of
+  // waiting for the real exit condition below. Without real pressurant,
+  // measured tank pressure never actually reaches k_ramp_exit_threshold_ratio
+  // of the set pressure, so PRESSURIZE_ON would otherwise never exit on its
+  // own. Remove this early return to restore the real behavior.
+  if (HAL_GetTick() - pressurize_on_entry_ms_ >= k_pressurize_on_bypass_delay_ms) {
+    return State::REGULATE;
+  }
 
   // Real behavior: exit the open-loop ramp once measured tank pressure is
   // within k_ramp_exit_threshold_ratio of the final set pressure -- ported
@@ -170,18 +161,10 @@ State PrcState::fromPressurizeOn(DataDump const &dump) {
   const float target_bar  = SetPressureBarFor(dump.boardIdentity.role);
   const float current_bar = CurrentTankPressureBar(dump);
   if (current_bar >= k_ramp_exit_threshold_ratio * target_bar) {
-    return State::INITIALIZE_REGULATE;
+    return State::REGULATE;
   }
 
   return currentState;
-}
-
-// Formality state (old code's INITIALIZE_REGULATION also just calls
-// initialize() then falls through) — kept as its own state for symmetry
-// with the diagram/old code rather than folded into fromPressurizeOn.
-State PrcState::fromInitializeRegulate(DataDump const &dump) {
-  (void)dump;
-  return State::REGULATE;
 }
 
 State PrcState::fromRegulate(DataDump const &dump) {
@@ -204,22 +187,17 @@ State PrcState::fromPressurizeOff(DataDump const &dump) {
   }
 
   if (dump.intranetCmd.id == (uint16_t)PassivateIdFor(dump.boardIdentity.role)) {
-    return State::INITIALIZE_PASSIVATE;
+    return State::PASSIVATE;
   }
 
   // Comms-loss watchdog (ported from the old code's PRESSURIZATION_OFF
   // case): no explicit PASSIVATE command for this long -> passivate anyway.
   const uint32_t elapsed_ms = HAL_GetTick() - pressurize_off_entry_ms_;
   if (elapsed_ms >= k_passivation_delay_no_com_ms) {
-    return State::INITIALIZE_PASSIVATE;
+    return State::PASSIVATE;
   }
 
   return currentState;
-}
-
-State PrcState::fromInitializePassivate(DataDump const &dump) {
-  (void)dump;
-  return State::PASSIVATE;
 }
 
 State PrcState::fromPassivate(DataDump const &dump) {
@@ -251,7 +229,7 @@ State PrcState::fromAbortInFlight(DataDump const &dump) {
   // DPR FSM diagram (Abort-in-Flight --Timer--> DEPRESSURIZE), rather than
   // a separate abort-only passivation path.
   if (HAL_GetTick() - abort_in_flight_entry_ms_ >= k_abort_in_flight_dpr_delay_ms) {
-    return State::INITIALIZE_PASSIVATE;
+    return State::PASSIVATE;
   }
   return currentState;
 }
@@ -263,23 +241,14 @@ void PrcState::update(const DataDump &dump) {
     case State::MANUAL:
       currentState = fromManual(dump);
       break;
-    case State::INITIALIZE_PRESSURIZE_ON:
-      currentState = fromInitializePressurizeOn(dump);
-      break;
     case State::PRESSURIZE_ON:
       currentState = fromPressurizeOn(dump);
-      break;
-    case State::INITIALIZE_REGULATE:
-      currentState = fromInitializeRegulate(dump);
       break;
     case State::REGULATE:
       currentState = fromRegulate(dump);
       break;
     case State::PRESSURIZE_OFF:
       currentState = fromPressurizeOff(dump);
-      break;
-    case State::INITIALIZE_PASSIVATE:
-      currentState = fromInitializePassivate(dump);
       break;
     case State::PASSIVATE:
       currentState = fromPassivate(dump);
@@ -310,12 +279,9 @@ void PrcState::update(const DataDump &dump) {
 std::string PrcState::stateToString(State state) {
   switch (state) {
     case State::MANUAL:                  return "MANUAL";
-    case State::INITIALIZE_PRESSURIZE_ON:return "INITIALIZE_PRESSURIZE_ON";
     case State::PRESSURIZE_ON:           return "PRESSURIZE_ON";
-    case State::INITIALIZE_REGULATE:     return "INITIALIZE_REGULATE";
     case State::REGULATE:                return "REGULATE";
     case State::PRESSURIZE_OFF:          return "PRESSURIZE_OFF";
-    case State::INITIALIZE_PASSIVATE:    return "INITIALIZE_PASSIVATE";
     case State::PASSIVATE:               return "PASSIVATE";
     case State::ABORT_ON_GROUND:         return "ABORT_ON_GROUND";
     case State::ABORT_IN_FLIGHT:         return "ABORT_IN_FLIGHT";
@@ -487,34 +453,11 @@ static void ValveActions(State state, State previous_state, const DataDump &dump
       SetVent(false, is_lox, valvesStore);
     }
   } else if (state == State::PASSIVATE) {
-    // Ported from BDPR's passivation(): two-phase, driven by live pressure
-    // readings every tick rather than a fixed duration.
-    //   Phase A (tank still pressurized): SAFETY closed, VENT open, vent
-    //     the tank first, keep the COPV isolated.
-    //   Phase B (tank already vented): SAFETY also opens, ball valve driven
-    //     to 50% open (matches the DPR FSM diagram's "OPEN PE+PO at 50%"),
-    //     now vent the COPV too (through SAFETY, tank, VENT, since this
-    //     board has no separate COPV-only vent path).
-    //   Once both tank and COPV are vented: close everything.
-    const float tank_bar = CurrentTankPressureBar(dump);
-    const float copv_bar = CurrentCopvPressureBar(dump);
-    const bool tank_vented = tank_bar <= k_vented_threshold_bar;
-    const bool copv_vented = copv_bar <= k_vented_threshold_bar;
-
-    if (tank_vented && copv_vented) {
-      SetSafety(false, is_lox, valvesStore);
-      SetVent(false, is_lox, valvesStore);
-      if (ServoBallValve* ball = Valve_GetBallValve()) ball->set_position(0.0f);
-    } else if (tank_vented) {
-      // Phase B: also vent the COPV.
-      SetSafety(true, is_lox, valvesStore);
-      SetVent(true, is_lox, valvesStore);
-      if (ServoBallValve* ball = Valve_GetBallValve()) ball->set_position(50.0f);
-    } else {
-      // Phase A: vent the tank only.
-      SetSafety(false, is_lox, valvesStore);
-      SetVent(true, is_lox, valvesStore);
-    }
+    // Simplified from BDPR's two-phase passivation() (tank-then-COPV,
+    // live-pressure-driven): just open everything at once instead.
+    SetSafety(true, is_lox, valvesStore);
+    SetVent(true, is_lox, valvesStore);
+    if (ServoBallValve* ball = Valve_GetBallValve()) ball->set_position(100.0f);
   }
 }
 
@@ -600,9 +543,7 @@ void Prc_Fsm_Tick(void) {
 // the ball valve isn't affected by that and works normally.
 static bool ManualOverrideAllowed(State state) {
   return state == State::MANUAL
-      || state == State::INITIALIZE_PRESSURIZE_ON
       || state == State::PRESSURIZE_ON
-      || state == State::INITIALIZE_REGULATE
       || state == State::REGULATE;
 }
 

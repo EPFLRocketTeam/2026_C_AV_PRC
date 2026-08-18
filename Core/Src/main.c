@@ -256,6 +256,25 @@ int main(void)
   main_init();
   Prc_Fsm_Init();  /* latches board role from ENG_SETUP/ETH_SETUP/LOX_SETUP straps, see Drivers/PrcBoardId/PrcBoardId.hpp, also calls Valve_InitAll() */
 
+  /* Reset cause. Printed here (after Prc_Fsm_Init()'s buzzer delays), not
+   * right after MX_USB_DEVICE_Init(), because USB CDC hasn't finished
+   * enumerating with the host that early -- _write() silently drops
+   * anything sent before the host's endpoint is ready. RCC->RSR itself
+   * isn't touched by anything in between, so reading it late is safe;
+   * RMVF is never written, so flags accumulate across resets until an
+   * actual power-on reset clears them. */
+  printf("[RESET] RCC->RSR=0x%08lX%s%s%s%s%s%s%s%s%s\r\n",
+         (unsigned long)RCC->RSR,
+         (RCC->RSR & RCC_RSR_PORRSTF)   ? " POR"   : "",
+         (RCC->RSR & RCC_RSR_PINRSTF)   ? " PIN"   : "",
+         (RCC->RSR & RCC_RSR_BORRSTF)   ? " BOR"   : "",
+         (RCC->RSR & RCC_RSR_SFTRSTF)   ? " SFT"   : "",
+         (RCC->RSR & RCC_RSR_IWDG1RSTF) ? " IWDG1" : "",
+         (RCC->RSR & RCC_RSR_WWDG1RSTF) ? " WWDG1" : "",
+         (RCC->RSR & RCC_RSR_LPWRRSTF)  ? " LPWR"  : "",
+         (RCC->RSR & RCC_RSR_D1RSTF)    ? " D1"    : "",
+         (RCC->RSR & RCC_RSR_D2RSTF)    ? " D2"    : "");
+
   Prc_Can_ConfigNodeFilter(&hfdcan1);  /* now that role is latched, accept this board's own DPR node ID, see Application/FlightControl/prc_can.cpp */
   /* USER CODE END 2 */
 

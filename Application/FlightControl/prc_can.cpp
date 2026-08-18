@@ -179,6 +179,14 @@ void OnPrcCmdValves(void*, pi::payload::cmd_valves cmd) noexcept {
   if (CurrentRole() != BoardRole::EngineBay) return;
   ApplyCmdValves(cmd);
 }
+// Manual bench test trigger, consumed by ColdflowSequence (engine_state.cpp),
+// not by PrcEngineState -- separate from the real FSM entirely.
+volatile bool g_coldflow_trigger_pending = false;
+void OnPrcColdflow(void*, pi::payload::empty) noexcept {
+  if (CurrentRole() != BoardRole::EngineBay) return;
+  SetCmd((uint16_t)prc_intranet::constants::MessageId::prc_coldflow);
+  g_coldflow_trigger_pending = true;
+}
 
 // HAL_FDCAN_AddMessageToTxFifoQ word-copies from this buffer regardless of
 // dlc (see 2026_C_AV_FC's main.c TX test comment), so pad to the full
@@ -205,7 +213,10 @@ void CbSend(void* driver_ptr, uint16_t can_id, const uint8_t* buffer, uint32_t d
   memcpy(txData, buffer, dlc);
 
   if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &txHeader, txData) != HAL_OK) {
-    printf("[PRC CAN] TX failed, id=0x%X\r\n", can_id);
+    // TEMPORARY: silenced -- expected/constant when this board is standalone
+    // on the bench with no other CAN node to ACK frames, was drowning out
+    // other prints (e.g. [SENSATA]). Re-enable once testing on the full bus.
+    // printf("[PRC CAN] TX failed, id=0x%X\r\n", can_id);
   }
 }
 
@@ -258,6 +269,7 @@ pi::context& Ctx() {
     driver.on_prc_passivate      = OnPrcPassivate;
     driver.on_prc_reset          = OnPrcReset;
     driver.on_prc_cmd_valves     = OnPrcCmdValves;
+    driver.on_prc_coldflow       = OnPrcColdflow;
     return pi::create_context(driver);
   }();
   return ctx;
@@ -274,6 +286,14 @@ void Prc_Can_ProcessRxMessage(uint32_t can_id, const uint8_t *data, uint32_t dlc
   }
 
   pi::dispatch_frame(&Ctx(), static_cast<uint16_t>(can_id), data, dlc);
+}
+
+uint8_t Prc_Can_TakeColdflowTrigger(void) {
+  if (g_coldflow_trigger_pending) {
+    g_coldflow_trigger_pending = false;
+    return 1;
+  }
+  return 0;
 }
 
 void Prc_Can_ConfigNodeFilter(FDCAN_HandleTypeDef *hfdcan) {
