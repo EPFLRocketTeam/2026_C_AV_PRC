@@ -1,8 +1,12 @@
 
 #include "Drivers/Plume/plume_driver.hpp"
-#include "plume/status.h"
+
+extern "C" {
+    #include "plume/status.h"
+}
 
 #include "ThirdParty/DataLogger/types.hpp"
+#include "Application/app_timebase.h"
 #include "stm32h7xx.h"
 
 struct PlumeStorage {

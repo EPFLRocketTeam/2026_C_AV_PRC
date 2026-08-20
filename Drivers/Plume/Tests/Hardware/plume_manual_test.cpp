@@ -8,12 +8,13 @@ extern "C" {
 
 #include "../../plume_driver.hpp"
 
-const size_t plume_manual_test_arena_length = 64 * 1024;
-uint8_t plume_manual_test_arena_buffer[plume_manual_test_arena_length] \
-	__attribute__((aligned(32))) \
-	__attribute__((section(".AXI_SRAM")));
+// const size_t plume_manual_test_arena_length = 64 * 1024;
+// uint8_t plume_manual_test_arena_buffer[plume_manual_test_arena_length] \
+// 	__attribute__((aligned(32))) \
+// 	__attribute__((section(".AXI_SRAM")));
 
 void plume_manual_test (SD_HandleTypeDef *hsd) {
+    /*
     SDCardInterface interface;
     
     printf("[PLUME] SD Card & Plume -- Manual Test\r\n");
@@ -65,4 +66,5 @@ void plume_manual_test (SD_HandleTypeDef *hsd) {
 
     printf("[PLUME] Remaining number of files: %lu\r\n", interface.number_files_remaining());
     printf("[PLUME] Remaining disk size: %lu\r\n", interface.disk_size_remaining());
+    */
 }

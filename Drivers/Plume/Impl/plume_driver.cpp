@@ -93,6 +93,7 @@ uint8_t plume_stm32_read_block (SD_HandleTypeDef* hsd, struct plume_context* con
 }
 uint8_t plume_stm32_write_block (SD_HandleTypeDef* hsd, struct plume_context* context, const uint8_t* buffer, uint64_t block_id) {
     /* Wait for card to reach TRANSFER state (previous write programming done). */
+	printf("Trying to write. (single)\n");
     if (g_sd_dma_error == 1) {
         printf("Error during DMA: %d\n", (int) s_sd_timing.last_error_code);
         return PLUME_EBAD_DISK;
@@ -102,7 +103,7 @@ uint8_t plume_stm32_write_block (SD_HandleTypeDef* hsd, struct plume_context* co
     while (HAL_SD_GetCardState(hsd) != HAL_SD_CARD_TRANSFER) {
         if (HAL_GetTick() - t0 > 500) {
             HAL_SD_Abort(hsd);
-            printf("HAL_SD_GetCardState in invalid mode %d. (single)\n", (int) HAL_SD_GetCardState(hsd));
+            printf("HAL_SD_GetCardState in invalid mode %d (ErrorCode=%d). (single)\n", (int) HAL_SD_GetCardState(hsd), (int) hsd->ErrorCode);
             return PLUME_OK_RETRY;
         }
     }
@@ -122,18 +123,21 @@ uint8_t plume_stm32_write_block (SD_HandleTypeDef* hsd, struct plume_context* co
     g_sd_dma_error    = 0;
     s_sd_timing.dma_start_us = app_timebase_now_us();
 
-    HAL_StatusTypeDef status = HAL_SD_WriteBlocks_DMA(hsd, s_dma_bounce, (uint32_t)block_id, 1);
+    HAL_StatusTypeDef status = HAL_SD_WriteBlocks(hsd, s_dma_bounce, (uint32_t)block_id, 1, 5000);
     if (status != HAL_OK) {
         g_sd_dma_complete = 1;
         s_sd_timing.dma_start_us = 0;
         printf("HAL_SD_WriteBlocks_DMA has failed %d. (single)\n", (int) status);
         return PLUME_OK_RETRY;
     }
+    g_sd_dma_complete = 1;
+    printf("Did write. (single)\n");
     return PLUME_OK_SENT_DMA;
 }
 
 uint8_t plume_stm32_write_blocks (SD_HandleTypeDef* hsd, struct plume_context* context, const uint8_t* buffer, uint64_t block_id, uint32_t num_blocks) {
     /* Wait for card to reach TRANSFER state. */
+	printf("Trying to write. (multi)\n");
     if (g_sd_dma_error == 1) {
         printf("Error during DMA: %d\n", (int) s_sd_timing.last_error_code);
         return PLUME_EBAD_DISK;
@@ -175,13 +179,15 @@ uint8_t plume_stm32_write_blocks (SD_HandleTypeDef* hsd, struct plume_context* c
     g_sd_dma_error    = 0;
     s_sd_timing.dma_start_us = app_timebase_now_us();
 
-    HAL_StatusTypeDef status = HAL_SD_WriteBlocks_DMA(hsd, s_dma_bounce, (uint32_t)block_id, num_blocks);
+    HAL_StatusTypeDef status = HAL_SD_WriteBlocks(hsd, s_dma_bounce, (uint32_t)block_id, num_blocks, 5000);
     if (status != HAL_OK) {
         g_sd_dma_complete = 1;
         s_sd_timing.dma_start_us = 0;   /* don't record broken DMA */
         printf("HAL_SD_WriteBlocks_DMA has failed %d. (multi)\n", (int) status);
         return PLUME_OK_RETRY;
     }
+    g_sd_dma_complete = 1;
+    printf("Did write. (multi)\n");
     return PLUME_OK_SENT_DMA;
 }
 
@@ -222,6 +228,8 @@ bool SDCardInterface::init_sd_card (
     uint8_t* arena_buffer,
     size_t   arena_length
 ) {
+    printf("s_dma_bounce @ %p\r\n", (void*)s_dma_bounce);
+    
     if (hsd->State != HAL_SD_STATE_READY) {
         return PLUME_EBAD_DISK;
     }

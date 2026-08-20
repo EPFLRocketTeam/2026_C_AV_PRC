@@ -1,5 +1,6 @@
 #pragma once
 #include "ThirdParty/DataLogger/types.hpp"
+#include <string.h>
 
 template<uint8_t Magic, typename EnumKinds, typename Storage>
 struct BaseDataLogger {
@@ -9,7 +10,7 @@ private:
     BaseStorageHealth health_;
 protected:
     BaseDataLogger () = default;
-    BaseDataLogger (Storage& storage) : storage_(storage) {}
+    BaseDataLogger (Storage& storage) : storage_(std::move(storage)) {}
 
     void writeRecord (EnumKinds recordType, const void* payload, uint16_t payload_len) {
         if (!storage_.ready()) return;

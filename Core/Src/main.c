@@ -247,18 +247,6 @@ int main(void)
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 
-  for (int i = 0; i < 30; i ++) {
-    printf("Waiting, %u seconds remaining...\n", 30 - i);
-    HAL_Delay(1000);
-  }
-
-  printf("Starting manual test...\n");
-    plume_manual_test(&hsd1);
-  while (1) {
-    printf("Do nothing forever...\n");
-    HAL_Delay(1000);
-  }
-
   //manual_test_pt1000();  /* loops forever -- never returns, everything below this line won't run while active */
 
   //run_pte7300_i2c_scanner();

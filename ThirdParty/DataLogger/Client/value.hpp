@@ -62,7 +62,7 @@ std::ostream& operator<<(std::ostream &os, const csv::value<T>& x) {
     }
 
     if (!found) {
-        os << "UNKNOWN";
+        os << "UNKNOWN(" << ((int) x.value) << ")";
     }
 
     return os;

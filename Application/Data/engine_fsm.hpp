@@ -14,7 +14,7 @@ namespace prc {
 // flattened into their individual internal states here, same way the DPR
 // FSM flattens INITIALIZE_* "setup states" rather than modeling real
 // hierarchical states -- see engine_state.cpp's EngineState::update().
-enum class EngineState {
+enum class EngineState : uint8_t {
   Idle,
   ClearToIgnite,
 

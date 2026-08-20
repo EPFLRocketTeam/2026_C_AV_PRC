@@ -1,4 +1,4 @@
-
+#pragma once
 #include <cstdint>
 
 /* SD card DMA timing statistics (populated by plume_driver, read from main) */

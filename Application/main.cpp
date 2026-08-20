@@ -4,6 +4,10 @@ extern "C" {
 
 #include "stm32h7xx_hal.h"
 
+#include "Drivers/Plume/plume_storage.hpp"
+#include "ThirdParty/DataLogger/loggers/engine.hpp"
+#include "ThirdParty/DataLogger/loggers/eth.hpp"
+#include "ThirdParty/DataLogger/loggers/lox.hpp"
 #include "Application/app_timebase.h"
 #include "Application/Data/data.hpp"
 #include "Data/propulsion/data.hpp"
@@ -203,8 +207,47 @@ void prc::PropSensorsStoreEth::set_pressure_HPE_mean(double pressure_HPE_mean) {
 
 // ---------------------------------------------------------------------------
 
+const size_t plume_arena_length = 64 * 1024;
+uint8_t plume_arena_buffer[plume_arena_length] \
+	__attribute__((aligned(32))) \
+	__attribute__((section(".AXI_SRAM")));
+
+extern SD_HandleTypeDef hsd1;
+
 void main_init() {
 	app_timebase_init();
+	
+  for (int i = 0; i < 10; i ++) {
+    printf("Waiting, %u seconds remaining...\n", 10 - i);
+    HAL_Delay(1000);
+  }
+
+	SDCardInterface interface;
+	if (interface.init_sd_card(&hsd1, plume_arena_buffer, plume_arena_length)) {
+		if (interface.open_file()) {
+			PlumeStorage storage(&interface);
+			
+			LoxDataLogger<PlumeStorage> logger(storage);
+			for (int i = 0; i < 512; i ++) {
+				logger.logFsmTransition({ .old_state = prc::State::MANUAL, .new_state = prc::State::INITIALIZE_PASSIVATE });
+				logger.logFsmTransition({ .old_state = prc::State::MANUAL, .new_state = prc::State::INITIALIZE_PASSIVATE });
+				logger.logFsmTransition({ .old_state = prc::State::MANUAL, .new_state = prc::State::INITIALIZE_PASSIVATE });
+				logger.logFsmTransition({ .old_state = prc::State::MANUAL, .new_state = prc::State::INITIALIZE_PASSIVATE });
+				logger.logFsmTransition({ .old_state = prc::State::MANUAL, .new_state = prc::State::INITIALIZE_PASSIVATE });
+			}
+
+			for (int i = 0; i < 50; i ++) {
+				printf("Number of ticks remaining %d\n", 50 - i);
+				logger.tick();
+				HAL_Delay(100);
+			}
+		} else printf("Error during open.\n");
+	} else printf("Error during init.\n");
+	
+	while (1) {
+		printf("Do nothing...\n");
+		HAL_Delay(10000);
+	}
 	//Valve_ManualTest();
 
 	// init() just constructs driver/config objects (no bus traffic), so it's

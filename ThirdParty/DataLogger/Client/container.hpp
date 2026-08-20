@@ -1,5 +1,6 @@
 
 #include <stdexcept>
+#include <assert.h>
 #include "./channel.hpp"
 #include "../types.hpp"
 
@@ -74,6 +75,10 @@ public:
         
         #define X_CHANNEL(Magic, ns, RecordType, Typename, FileName) \
             if (Magic == header.magic && ns::RecordType == header.record_type) { \
+                if (((int) sizeof(Typename)) != ((int) header.length)) { \
+                    printf(#Typename " : local = %d, remote = %d\n", (int) sizeof(Typename), (int) header.length); \
+                    assert(false); \
+                } \
                 CHANNEL_VAR(ns, RecordType).aggregate(header.timestamp_us, *((const Typename*) payload)); \
                 found = true; \
             }

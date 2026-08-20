@@ -13,7 +13,7 @@ namespace prc {
 // immediately falls through to the corresponding steady state, same as the
 // old code's INITIALIZE_PRESSURIZATION/INITIALIZE_REGULATION/
 // INITIALIZE_PASSIVATION -> PRESSURIZATION/REGULATION/PASSIVATION pattern.
-enum State {
+enum State : uint8_t {
   MANUAL,
 
   INITIALIZE_PRESSURIZE_ON,

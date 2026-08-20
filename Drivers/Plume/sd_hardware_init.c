@@ -82,12 +82,12 @@ void sd_post_init(SD_HandleTypeDef *hsd)
     if (hsd->State != HAL_SD_STATE_READY) return;
 
     /* Switch card to High Speed (SDR25, up to 50 MHz) */
-    if (HAL_SD_ConfigSpeedBusOperation(hsd, SDMMC_SPEED_MODE_HIGH) == HAL_OK)
-    {
-        /* PLL2R = 200 MHz, ClockDiv = 2 → SDMMC_CK = 200/(2×2) = 50 MHz */
-        MODIFY_REG(hsd->Instance->CLKCR, SDMMC_CLKCR_CLKDIV, 2U);
-        hsd->Init.ClockDiv = 2;
-    }
+    // if (HAL_SD_ConfigSpeedBusOperation(hsd, SDMMC_SPEED_MODE_HIGH) == HAL_OK)
+    // {
+    //     /* PLL2R = 200 MHz, ClockDiv = 2 → SDMMC_CK = 200/(2×2) = 50 MHz */
+    //     MODIFY_REG(hsd->Instance->CLKCR, SDMMC_CLKCR_CLKDIV, 2U);
+    //     hsd->Init.ClockDiv = 2;
+    // }
 }
 
 /* ------------------------------------------------------------------ */
