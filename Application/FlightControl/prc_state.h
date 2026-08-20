@@ -58,12 +58,9 @@ public:
 
 private:
   State fromManual(DataDump const &dump);
-  State fromInitializePressurizeOn(DataDump const &dump);
   State fromPressurizeOn(DataDump const &dump);
-  State fromInitializeRegulate(DataDump const &dump);
   State fromRegulate(DataDump const &dump);
   State fromPressurizeOff(DataDump const &dump);
-  State fromInitializePassivate(DataDump const &dump);
   State fromPassivate(DataDump const &dump);
   State fromAbortOnGround(DataDump const &dump);
   State fromAbortInFlight(DataDump const &dump);
@@ -84,6 +81,14 @@ private:
   uint32_t pressurize_on_entry_ms_  = 0;
   uint32_t passivate_entry_ms_      = 0;
   uint32_t pressurize_off_entry_ms_ = 0; // drives the comms-loss auto-passivate watchdog
+  uint32_t abort_in_flight_entry_ms_ = 0; // drives the ABORT_IN_FLIGHT -> PASSIVATE timer
 };
+
+// See prc_state.cpp for the full comment -- all three are no-ops (return
+// false) unless this board's FSM is currently in State::MANUAL.
+bool Prc_Fsm_ManualSetSafety(bool open);
+bool Prc_Fsm_ManualSetVent(bool open);
+bool Prc_Fsm_ManualVentCopv(bool open);
+bool Prc_Fsm_ManualSetBallValve(float percent_open);
 
 #endif /* PRC_STATE_H */

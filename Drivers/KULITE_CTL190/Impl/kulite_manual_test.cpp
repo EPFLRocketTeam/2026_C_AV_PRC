@@ -5,7 +5,7 @@
 #include <cstring>
 
 
-extern ADC_HandleTypeDef hadc3;  // À adapter selon le STM32
+extern ADC_HandleTypeDef hadc1;  // Kulite (PA4) is wired to ADC1 channel 18 -- see .ioc's PA4.GPIO_Label=Kulite / PA4.Signal=ADCx_INP18
 
 static Ctl190::Config ctl190_cfg;
 static Ctl190::Handle ctl190_handle;
@@ -28,7 +28,7 @@ constexpr int kNumSamples = 128;
  * À adapter selon le pin et l' ADC
  *
  * Explicitly (re)configures the channel/sample time here rather than
- * relying on MX_ADC3_Init()'s default -- that default sample time
+ * relying on MX_ADC1_Init()'s default -- that default sample time
  * (ADC_SAMPLETIME_1CYCLE_5, the shortest possible) is the same setting
  * that produced ~10 degC of pure ADC noise on the LMT85 driver on this
  * same MCU family; using a longer sample time here preemptively, same
@@ -41,7 +41,7 @@ static bool ctl190_adc_read(uint32_t* raw_value) {
     }
 
     ADC_ChannelConfTypeDef sConfig = {0};
-    sConfig.Channel                = ADC_CHANNEL_11; // matches MX_ADC3_Init's CTL190 channel
+    sConfig.Channel                = ADC_CHANNEL_18; // PA4/Kulite, ADC1 -- see .ioc
     sConfig.Rank                   = ADC_REGULAR_RANK_1;
     sConfig.SamplingTime           = ADC_SAMPLETIME_64CYCLES_5;
     sConfig.SingleDiff             = ADC_SINGLE_ENDED;
@@ -49,23 +49,23 @@ static bool ctl190_adc_read(uint32_t* raw_value) {
     sConfig.Offset                 = 0;
     sConfig.OffsetSignedSaturation = DISABLE;
 
-    if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK) {
+    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
         return false;
     }
 
     uint64_t sum = 0;
     for (int i = 0; i < kNumSamples; ++i) {
-        if (HAL_ADC_Start(&hadc3) != HAL_OK) {
+        if (HAL_ADC_Start(&hadc1) != HAL_OK) {
             return false;
         }
 
-        if (HAL_ADC_PollForConversion(&hadc3, 1000) != HAL_OK) {
-            HAL_ADC_Stop(&hadc3);
+        if (HAL_ADC_PollForConversion(&hadc1, 1000) != HAL_OK) {
+            HAL_ADC_Stop(&hadc1);
             return false;
         }
 
-        sum += HAL_ADC_GetValue(&hadc3);
-        HAL_ADC_Stop(&hadc3);
+        sum += HAL_ADC_GetValue(&hadc1);
+        HAL_ADC_Stop(&hadc1);
     }
 
     *raw_value = static_cast<uint32_t>(sum / kNumSamples);

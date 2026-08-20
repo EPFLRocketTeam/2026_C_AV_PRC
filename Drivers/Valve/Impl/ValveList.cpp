@@ -18,21 +18,22 @@ static bool            s_initialized  = false;
 
 void Valve_InitAll()
 {
-    // Fail-safe state matches PR's confirmed part list (Vent=NO,
-    // SafetyDpr=NC); active_high is still ASSUMED (see ValveList.hpp TODO)
-    // — verify against the actual drive circuit before relying on this for
-    // anything live.
-    static SolenoidValve vent({
-        .port      = Sol1_ctrl_GPIO_Port,
-        .pin       = Sol1_ctrl_Pin,
-        .fail_safe = FailSafeState::NormallyOpen,
-        .name      = "Vent",
-    });
+    // Fail-safe state matches the part labels (Vent=NO, SafetyDpr=NC).
+    // Vent's active_high was confirmed false by testing (open/close were
+    // inverted at active_high=true). SafetyDpr/Sol3/Sol4 still assume
+    // active_high=true, unverified.
     static SolenoidValve safety_dpr({
-        .port      = Sol2_ctrl_GPIO_Port,
-        .pin       = Sol2_ctrl_Pin,
+        .port      = Sol3_ctrl_GPIO_Port,
+        .pin       = Sol3_ctrl_Pin,
         .fail_safe = FailSafeState::NormallyClosed,
         .name      = "SafetyDpr",
+    });
+    static SolenoidValve vent({
+        .port        = Sol2_ctrl_GPIO_Port,
+        .pin         = Sol2_ctrl_Pin,
+        .fail_safe   = FailSafeState::NormallyOpen,
+        .active_high = true,
+        .name        = "Vent",
     });
     static SolenoidValve sol3({
         .port      = Sol3_ctrl_GPIO_Port,
@@ -60,6 +61,12 @@ void Valve_InitAll()
         .name        = "PWM_BV",
     });
     s_servo = &ball_valve;
+
+    // TIM4 leaves the compare register at 0 (an invalid pulse width) until
+    // something actually calls set_position(), so drive it to a known
+    // closed position as soon as the timer starts, instead of leaving it
+    // wherever the floating pre-init signal happened to leave it.
+    ball_valve.set_position(0.0f);
 
     s_initialized = true;
 }

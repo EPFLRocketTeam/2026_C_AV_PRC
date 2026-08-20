@@ -95,10 +95,17 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     /* Peripheral clock enable */
     __HAL_RCC_ADC12_CLK_ENABLE();
 
+    __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
     /**ADC1 GPIO Configuration
+    PA4     ------> ADC1_INP18
     PB1     ------> ADC1_INP5
     */
+    GPIO_InitStruct.Pin = Kulite_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(Kulite_GPIO_Port, &GPIO_InitStruct);
+
     GPIO_InitStruct.Pin = LMT85_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -156,8 +163,11 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
     __HAL_RCC_ADC12_CLK_DISABLE();
 
     /**ADC1 GPIO Configuration
+    PA4     ------> ADC1_INP18
     PB1     ------> ADC1_INP5
     */
+    HAL_GPIO_DeInit(Kulite_GPIO_Port, Kulite_Pin);
+
     HAL_GPIO_DeInit(LMT85_GPIO_Port, LMT85_Pin);
 
     /* USER CODE BEGIN ADC1_MspDeInit 1 */

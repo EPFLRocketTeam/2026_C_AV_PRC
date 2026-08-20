@@ -4,6 +4,8 @@
 #include <cstring>
 
 #include "Application/Data/data.hpp"
+#include "Application/FlightControl/engine_state.h"
+#include "Application/FlightControl/prc_state.h"
 // #include "Application/FlightControl/intranet_cmd.hpp"
 #include "Drivers/Valve/ValveList.hpp"
 #include "log_aggregator/chunker.hpp"
@@ -66,6 +68,40 @@ void OnDprEthReset(void*, pi::payload::reset r) noexcept {
 // for wiring two solenoids to a single board and driving them from FC's
 // shell (main lox/main fuel). Not a real mission valve mapping yet.
 void ApplyCmdValves(pi::payload::cmd_valves cmd) noexcept {
+  // Ground-station manual override of the DPR FSM's own valves (VENT
+  // LOX/FUEL -> Vent, PRESSURE LOX/FUEL -> Safety, VENT_COPV -> the
+  // bundled Vent+Safety+ball-valve sequence, see Prc_Fsm_ManualVentCopv).
+  // Routed through Prc_Fsm_ManualSetSafety/Vent/VentCopv, which only take
+  // effect in State::MANUAL -- see prc_state.cpp for why.
+  if (cmd.valve_id == pi::constants::VALVE_SAFETY ||
+      cmd.valve_id == pi::constants::VALVE_VENT ||
+      cmd.valve_id == pi::constants::VALVE_COPV_VENT) {
+    // DPR-only: Prc_Fsm_ManualSetSafety/Vent/VentCopv assume PrcState's
+    // own State enum, which doesn't apply to EngineBay's separate FSM/
+    // valve set.
+    const BoardRole role = CurrentRole();
+    if (role != BoardRole::DprLox && role != BoardRole::DprEth) return;
+    if (cmd.state != pi::constants::VALVE_STATE_OPEN && cmd.state != pi::constants::VALVE_STATE_CLOSED) return;
+    const bool open = (cmd.state == pi::constants::VALVE_STATE_OPEN);
+
+    const char* label;
+    bool applied;
+    if (cmd.valve_id == pi::constants::VALVE_SAFETY) {
+      label = "Safety";
+      applied = Prc_Fsm_ManualSetSafety(open);
+    } else if (cmd.valve_id == pi::constants::VALVE_VENT) {
+      label = "Vent";
+      applied = Prc_Fsm_ManualSetVent(open);
+    } else {
+      label = "CopvVent";
+      applied = Prc_Fsm_ManualVentCopv(open);
+    }
+    printf("[PRC CAN] cmd_valves: %s -> %s (%s)\r\n",
+           label, open ? "open" : "closed",
+           applied ? "applied" : "ignored, FSM not in MANUAL");
+    return;
+  }
+
   ValveId id;
   if (cmd.valve_id == pi::constants::VALVE_SOL3) id = ValveId::Sol3;
   else if (cmd.valve_id == pi::constants::VALVE_SOL4) id = ValveId::Sol4;
@@ -84,6 +120,12 @@ void ApplyCmdValves(pi::payload::cmd_valves cmd) noexcept {
 void OnDprEthCmdValves(void*, pi::payload::cmd_valves cmd) noexcept {
   if (CurrentRole() != BoardRole::DprEth) return;
   ApplyCmdValves(cmd);
+}
+void OnDprEthBallValve(void*, pi::payload::ball_valve_position pos) noexcept {
+  if (CurrentRole() != BoardRole::DprEth) return;
+  bool applied = Prc_Fsm_ManualSetBallValve(pos.percent_open);
+  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_5);
+  printf("[PRC CAN] ball_valve: %.1f%% (%s)\r\n", pos.percent_open, applied ? "applied" : "ignored, FSM not in MANUAL");
 }
 
 void OnDprLoxAbort(void*, pi::payload::safety_key key) noexcept {
@@ -106,6 +148,44 @@ void OnDprLoxReset(void*, pi::payload::reset r) noexcept {
 void OnDprLoxCmdValves(void*, pi::payload::cmd_valves cmd) noexcept {
   if (CurrentRole() != BoardRole::DprLox) return;
   ApplyCmdValves(cmd);
+}
+void OnDprLoxBallValve(void*, pi::payload::ball_valve_position pos) noexcept {
+  if (CurrentRole() != BoardRole::DprLox) return;
+  bool applied = Prc_Fsm_ManualSetBallValve(pos.percent_open);
+  printf("[PRC CAN] ball_valve: %.1f%% (%s)\r\n", pos.percent_open, applied ? "applied" : "ignored, FSM not in MANUAL");
+}
+
+// Engine bay (PRC-P) commands -- consumed by PrcEngineState::fromXxx()
+// (engine_state.cpp). broadcast_abort is handled separately by
+// OnBroadcastAbort above, which already applies to every role including
+// EngineBay, so there's no dedicated prc_abort message/callback here.
+void OnPrcClearToIgnite(void*, pi::payload::empty) noexcept {
+  if (CurrentRole() != BoardRole::EngineBay) return;
+  SetCmd((uint16_t)prc_intranet::constants::MessageId::prc_clear_to_ignite);
+}
+void OnPrcIgnite(void*, pi::payload::empty) noexcept {
+  if (CurrentRole() != BoardRole::EngineBay) return;
+  SetCmd((uint16_t)prc_intranet::constants::MessageId::prc_ignite);
+}
+void OnPrcPassivate(void*, pi::payload::safety_key key) noexcept {
+  if (CurrentRole() != BoardRole::EngineBay) return;
+  if (key.safety_key == pi::constants::SAFETY_KEY_PRC_PASSIVATE) SetCmd((uint16_t)prc_intranet::constants::MessageId::prc_passivate);
+}
+void OnPrcReset(void*, pi::payload::reset r) noexcept {
+  if (CurrentRole() != BoardRole::EngineBay) return;
+  if (r.magic == pi::constants::RESET_MAGIC) SetCmd((uint16_t)prc_intranet::constants::MessageId::prc_reset);
+}
+void OnPrcCmdValves(void*, pi::payload::cmd_valves cmd) noexcept {
+  if (CurrentRole() != BoardRole::EngineBay) return;
+  ApplyCmdValves(cmd);
+}
+// Manual bench test trigger, consumed by ColdflowSequence (engine_state.cpp),
+// not by PrcEngineState -- separate from the real FSM entirely.
+volatile bool g_coldflow_trigger_pending = false;
+void OnPrcColdflow(void*, pi::payload::empty) noexcept {
+  if (CurrentRole() != BoardRole::EngineBay) return;
+  SetCmd((uint16_t)prc_intranet::constants::MessageId::prc_coldflow);
+  g_coldflow_trigger_pending = true;
 }
 
 // HAL_FDCAN_AddMessageToTxFifoQ word-copies from this buffer regardless of
@@ -133,7 +213,10 @@ void CbSend(void* driver_ptr, uint16_t can_id, const uint8_t* buffer, uint32_t d
   memcpy(txData, buffer, dlc);
 
   if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &txHeader, txData) != HAL_OK) {
-    printf("[PRC CAN] TX failed, id=0x%X\r\n", can_id);
+    // TEMPORARY: silenced -- expected/constant when this board is standalone
+    // on the bench with no other CAN node to ACK frames, was drowning out
+    // other prints (e.g. [SENSATA]). Re-enable once testing on the full bus.
+    // printf("[PRC CAN] TX failed, id=0x%X\r\n", can_id);
   }
 }
 
@@ -154,10 +237,12 @@ void SendLogChunk(void* ctx, const uint8_t chunk[8]) noexcept {
     case BoardRole::DprLox:
       pi::send_log_chunk_dpr_lox(channel_ctx, payload);
       break;
+    case BoardRole::EngineBay:
+      pi::send_log_chunk_prc_engine(channel_ctx, payload);
+      break;
     default:
-      // EngineBay/Unknown: no log_chunk id wired for EngineBay here yet,
-      // and Unknown means role detection hasn't latched. Drop silently,
-      // same as every other role gate in this file.
+      // Unknown means role detection hasn't latched. Drop silently, same
+      // as every other role gate in this file.
       break;
   }
 }
@@ -172,11 +257,19 @@ pi::context& Ctx() {
     driver.on_dpr_eth_pressurize = OnDprEthPressurize;
     driver.on_dpr_eth_reset      = OnDprEthReset;
     driver.on_dpr_eth_cmd_valves = OnDprEthCmdValves;
+    driver.on_dpr_eth_ball_valve = OnDprEthBallValve;
     driver.on_dpr_lox_abort      = OnDprLoxAbort;
     driver.on_dpr_lox_passivate  = OnDprLoxPassivate;
     driver.on_dpr_lox_pressurize = OnDprLoxPressurize;
     driver.on_dpr_lox_reset      = OnDprLoxReset;
     driver.on_dpr_lox_cmd_valves = OnDprLoxCmdValves;
+    driver.on_dpr_lox_ball_valve = OnDprLoxBallValve;
+    driver.on_prc_clear_to_ignite = OnPrcClearToIgnite;
+    driver.on_prc_ignite         = OnPrcIgnite;
+    driver.on_prc_passivate      = OnPrcPassivate;
+    driver.on_prc_reset          = OnPrcReset;
+    driver.on_prc_cmd_valves     = OnPrcCmdValves;
+    driver.on_prc_coldflow       = OnPrcColdflow;
     return pi::create_context(driver);
   }();
   return ctx;
@@ -186,26 +279,35 @@ pi::context& Ctx() {
 
 void Prc_Can_ProcessRxMessage(uint32_t can_id, const uint8_t *data, uint32_t dlc) {
   const BoardRole role = CurrentRole();
-  if (role != BoardRole::DprLox && role != BoardRole::DprEth) {
-    // EngineBay runs a different FSM (not built here, see
-    // prc_state.cpp's Prc_Fsm_Tick) and Unknown means role detection
-    // hasn't latched yet. Either way, this decode doesn't apply.
+  if (role != BoardRole::DprLox && role != BoardRole::DprEth && role != BoardRole::EngineBay) {
+    // Unknown means role detection hasn't latched yet -- no node to
+    // decode for.
     return;
   }
 
   pi::dispatch_frame(&Ctx(), static_cast<uint16_t>(can_id), data, dlc);
 }
 
+uint8_t Prc_Can_TakeColdflowTrigger(void) {
+  if (g_coldflow_trigger_pending) {
+    g_coldflow_trigger_pending = false;
+    return 1;
+  }
+  return 0;
+}
+
 void Prc_Can_ConfigNodeFilter(FDCAN_HandleTypeDef *hfdcan) {
   const BoardRole role = CurrentRole();
-  if (role != BoardRole::DprLox && role != BoardRole::DprEth) {
-    // EngineBay/Unknown: this decode layer doesn't handle EngineBay's
-    // messages, and Unknown means detection failed (see
-    // PrcBoardId.cpp). Either way, no node to filter on.
+  if (role != BoardRole::DprLox && role != BoardRole::DprEth && role != BoardRole::EngineBay) {
+    // Unknown means detection failed (see PrcBoardId.cpp) -- no node to
+    // filter on.
     return;
   }
 
-  const auto node = (role == BoardRole::DprLox) ? pi::can::Node::DprLox : pi::can::Node::DprEth;
+  pi::can::Node node;
+  if (role == BoardRole::DprLox)      node = pi::can::Node::DprLox;
+  else if (role == BoardRole::DprEth) node = pi::can::Node::DprEth;
+  else                                 node = pi::can::Node::PrcP;
 
   FDCAN_FilterTypeDef filter;
   filter.IdType       = FDCAN_STANDARD_ID;
@@ -222,12 +324,31 @@ void Prc_Can_ConfigNodeFilter(FDCAN_HandleTypeDef *hfdcan) {
 
 void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
   const BoardRole role = CurrentRole();
-  if (role != BoardRole::DprLox && role != BoardRole::DprEth) {
+  if (role != BoardRole::DprLox && role != BoardRole::DprEth && role != BoardRole::EngineBay) {
     return;
   }
 
   pi::context& ctx = Ctx();
   ctx.driver.driver_ptr = hfdcan;
+
+  if (role == BoardRole::EngineBay) {
+    // MO/ME are the engine board's own on/off main valves (see
+    // engine_state.cpp's k_valve_mo/k_valve_me), read back via
+    // IValve::is_open() rather than tracking a separate shadow bool,
+    // since the valve driver already owns that state.
+    const bool mo_open = Valve_Get(ValveId::Sol3) && Valve_Get(ValveId::Sol3)->is_open();
+    const bool me_open = Valve_Get(ValveId::Sol4) && Valve_Get(ValveId::Sol4)->is_open();
+
+    pi::payload::prc_state state{};
+    state.fsm_state = static_cast<uint8_t>(Prc_Engine_Fsm_GetState());
+    state.valve_mask = (mo_open ? pi::constants::VALVE_MASK_BIT_MO : 0)
+                      | (me_open ? pi::constants::VALVE_MASK_BIT_ME : 0);
+    pi::send_prc_state(&ctx, state);
+
+    // printf("[PRC CAN] TX telemetry: fsm=%u mo=%d me=%d\r\n",
+    //        state.fsm_state, mo_open, me_open);
+    return;
+  }
 
   // auto& sensors = PrcStore::get_instance().propSensorsStore;
   auto& valves  = PrcStore::get_instance().valvesStore;
@@ -272,12 +393,12 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
     p_copv = pressures.p_hpe;
   }
 
-  printf("[PRC CAN] TX telemetry: tank=%.2f copv=%.2f\r\n", p_tank, p_copv);
+  // printf("[PRC CAN] TX telemetry: tank=%.2f copv=%.2f\r\n", p_tank, p_copv);
 }
 
 void Prc_Log_Forward(FDCAN_HandleTypeDef *hfdcan, const uint8_t *data, uint32_t length) {
   const BoardRole role = CurrentRole();
-  if (role != BoardRole::DprLox && role != BoardRole::DprEth) {
+  if (role != BoardRole::DprLox && role != BoardRole::DprEth && role != BoardRole::EngineBay) {
     return;
   }
 

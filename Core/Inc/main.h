@@ -105,6 +105,8 @@ void Error_Handler(void);
 #define BV_CTRL_GPIO_Port GPIOB
 #define PWM_BV_Pin GPIO_PIN_8
 #define PWM_BV_GPIO_Port GPIOB
+#define LIFTOFF_Pin GPIO_PIN_9
+#define LIFTOFF_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

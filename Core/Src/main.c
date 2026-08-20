@@ -31,6 +31,7 @@
 #include "../../Drivers/Valve/valve_manual_test.hpp"
 #include "../../Application/FlightControl/prc_fsm_c_api.h"
 #include "../../Application/FlightControl/prc_can.hpp"
+#include "../../Application/main_app.h"
 #include "CAN.h"
 #include "usbd_cdc_if.h"
 
@@ -89,15 +90,14 @@ int _write(int file, char *ptr, int len) {
     // Wait until USB is ready, but never wedge: if the CDC endpoint stays
     // busy (host not draining, missed completion), drop the output instead
     // of spinning forever.
-
-#ifndef ENABLE_LOG
 	uint32_t start = HAL_GetTick();
     while (CDC_Transmit_HS((uint8_t*)ptr, len) == USBD_BUSY) {
         if (HAL_GetTick() - start > 100) {
             break;
         }
     }
-#else
+
+#ifdef ENABLE_LOG
     // Relay the same bytes over CAN to FC, tagged with this board's role
     // (see Application/FlightControl/prc_can.cpp). Local VCP output above
     // is unaffected either way -- this is purely additive.
@@ -204,6 +204,8 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_4);
+
 
   /* USER CODE END 1 */
 
@@ -241,17 +243,39 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
 
-  //manual_test_pt1000();
+  //manual_test_pt1000();  /* loops forever -- never returns, everything below this line won't run while active */
 
   //run_pte7300_i2c_scanner();
   //i2c_bus_scan(&hi2c1);
   //run_pte7300_channel0_scope_probe();
   //manual_test_ctl190();  /* loops forever -- never returns, everything below this line won't run while active */
   //manual_test_lmt85();  /* loops forever -- never returns, everything below this line won't run while active */
-  Valve_ManualTest();
+  //Valve_ManualTest();
+  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_4);
+
   main_init();
-  Prc_Fsm_Init();  /* latches board role from ENG_SETUP/ETH_SETUP/LOX_SETUP straps, see Drivers/PrcBoardId/PrcBoardId.hpp -- also calls Valve_InitAll() */
-  Prc_Can_ConfigNodeFilter(&hfdcan1);  /* now that role is latched, accept this board's own DPR node ID -- see Application/FlightControl/prc_can.cpp */
+  Prc_Fsm_Init();  /* latches board role from ENG_SETUP/ETH_SETUP/LOX_SETUP straps, see Drivers/PrcBoardId/PrcBoardId.hpp, also calls Valve_InitAll() */
+
+  /* Reset cause. Printed here (after Prc_Fsm_Init()'s buzzer delays), not
+   * right after MX_USB_DEVICE_Init(), because USB CDC hasn't finished
+   * enumerating with the host that early -- _write() silently drops
+   * anything sent before the host's endpoint is ready. RCC->RSR itself
+   * isn't touched by anything in between, so reading it late is safe;
+   * RMVF is never written, so flags accumulate across resets until an
+   * actual power-on reset clears them. */
+  printf("[RESET] RCC->RSR=0x%08lX%s%s%s%s%s%s%s%s%s\r\n",
+         (unsigned long)RCC->RSR,
+         (RCC->RSR & RCC_RSR_PORRSTF)   ? " POR"   : "",
+         (RCC->RSR & RCC_RSR_PINRSTF)   ? " PIN"   : "",
+         (RCC->RSR & RCC_RSR_BORRSTF)   ? " BOR"   : "",
+         (RCC->RSR & RCC_RSR_SFTRSTF)   ? " SFT"   : "",
+         (RCC->RSR & RCC_RSR_IWDG1RSTF) ? " IWDG1" : "",
+         (RCC->RSR & RCC_RSR_WWDG1RSTF) ? " WWDG1" : "",
+         (RCC->RSR & RCC_RSR_LPWRRSTF)  ? " LPWR"  : "",
+         (RCC->RSR & RCC_RSR_D1RSTF)    ? " D1"    : "",
+         (RCC->RSR & RCC_RSR_D2RSTF)    ? " D2"    : "");
+
+  Prc_Can_ConfigNodeFilter(&hfdcan1);  /* now that role is latched, accept this board's own DPR node ID, see Application/FlightControl/prc_can.cpp */
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -563,7 +587,7 @@ static void MX_FDCAN1_Init(void)
   hfdcan1.Instance = FDCAN1;
   hfdcan1.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
   hfdcan1.Init.Mode = FDCAN_MODE_NORMAL;
-  hfdcan1.Init.AutoRetransmission = DISABLE;
+  hfdcan1.Init.AutoRetransmission = ENABLE;
   hfdcan1.Init.TransmitPause = DISABLE;
   hfdcan1.Init.ProtocolException = DISABLE;
   hfdcan1.Init.NominalPrescaler = 1;
@@ -575,7 +599,7 @@ static void MX_FDCAN1_Init(void)
   hfdcan1.Init.DataTimeSeg1 = 1;
   hfdcan1.Init.DataTimeSeg2 = 1;
   hfdcan1.Init.MessageRAMOffset = 0;
-  hfdcan1.Init.StdFiltersNbr = 2; /* index 0: FC broadcast (static, below). index 1: this board's own node, configured dynamically by Prc_Can_ConfigNodeFilter() once role detection has run -- see USER CODE 2. */
+  hfdcan1.Init.StdFiltersNbr = 2;
   hfdcan1.Init.ExtFiltersNbr = 0;
   hfdcan1.Init.RxFifo0ElmtsNbr = 4;
   hfdcan1.Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_8;
@@ -725,15 +749,17 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE BEGIN TIM4_Init 1 */
 
-  uint32_t timclk = HAL_RCC_GetPCLK1Freq();
-  // If APB1 prescaler != DIV1, timer clock is 2x pclk1 — check your clock config
-  if (HAL_RCC_GetPCLK1Freq() != HAL_RCC_GetHCLKFreq()) timclk *= 2;
-
   /* USER CODE END TIM4_Init 1 */
+
+  uint32_t timclk = HAL_RCC_GetPCLK1Freq();
+   // If APB1 prescaler != DIV1, timer clock is 2x pclk1 — check your clock config
+
+
+   if (HAL_RCC_GetPCLK1Freq() != HAL_RCC_GetHCLKFreq()) timclk *= 2;
   htim4.Instance = TIM4;
   htim4.Init.Prescaler = (timclk / 1000000U) - 1U; // → 1 MHz tick
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 19999;
+  htim4.Init.Period = 19999; // 20 ms frame (50 Hz) for standard RC servo PWM
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)
@@ -789,13 +815,13 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(BOOT_LED_GPIO_Port, BOOT_LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, Igniter_Pin|BV_CTRL_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, LEDCTRL_Pin|ETH_ON_Pin|LOX_ON_Pin|ENG_ON_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, GPIO_PIN_SET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(BV_CTRL_GPIO_Port, BV_CTRL_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : Buzzer_Pin Sol1_ctrl_Pin Sol2_ctrl_Pin Sol3_ctrl_Pin
                            Sol4_ctrl_Pin */
@@ -812,12 +838,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : Kulite_Pin */
-  GPIO_InitStruct.Pin = Kulite_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(Kulite_GPIO_Port, &GPIO_InitStruct);
-
   /*Configure GPIO pin : BOOT_LED_Pin */
   GPIO_InitStruct.Pin = BOOT_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -825,11 +845,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(BOOT_LED_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : Igniter_Pin */
-  GPIO_InitStruct.Pin = Igniter_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  /*Configure GPIO pins : Igniter_Pin BV_CTRL_Pin */
+  GPIO_InitStruct.Pin = Igniter_Pin|BV_CTRL_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(Igniter_GPIO_Port, &GPIO_InitStruct);
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PWRGD_Pin */
   GPIO_InitStruct.Pin = PWRGD_Pin;
@@ -846,12 +867,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : BV_CTRL_Pin */
-  GPIO_InitStruct.Pin = BV_CTRL_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  /*Configure GPIO pin : LIFTOFF_Pin */
+  GPIO_InitStruct.Pin = LIFTOFF_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(BV_CTRL_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(LIFTOFF_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 

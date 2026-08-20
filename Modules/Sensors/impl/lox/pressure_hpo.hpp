@@ -8,7 +8,7 @@
 
 using PressureHpoSensorModule = PressureModule<
     CommonTimerPolicy,
-    sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L5>>,
+    sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L4>>,
 
     // raw setter
     LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_HPO),

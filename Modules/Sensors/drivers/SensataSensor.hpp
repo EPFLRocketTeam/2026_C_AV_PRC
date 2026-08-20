@@ -1,4 +1,6 @@
 #pragma once
+#include <cstdio>
+
 #include "Drivers/SensataPte7300/SensataPte7300.hpp"
 #include "Modules/Sensors/impl/std/sensor.hpp"
 
@@ -118,7 +120,15 @@ namespace sensata {
     template<const char* (&SensorName)>
     struct SensataErrorPipeline {
         void ingest (const internal::SensataError &error) {
-            printf("%s: status=%s step=%s mode=%s\r\n", SensorName, status_str(error.status), step_str(error.step), internal::poll_mode_str(error.pollMode));
+            // status/step are printed as raw enum values (Status/Pte7300Step
+            // in Drivers/SensataPte7300/Types.hpp) -- no string table for
+            // them exists yet, unlike poll_mode_str. Cross-reference the
+            // number against that header if you need the name.
+            printf("[SENSATA] %s: FAIL status=%u step=%u mode=%s\r\n",
+                   SensorName,
+                   static_cast<unsigned>(error.status),
+                   static_cast<unsigned>(error.step),
+                   internal::poll_mode_str(error.pollMode));
         }
     };
 
