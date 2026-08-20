@@ -7,3 +7,6 @@
 [submodule "ThirdParty/SignalUtils"]
 	path = ThirdParty/SignalUtils
 	url = https://github.com/EPFLRocketTeam/2026_C_AV_SIGNAL_UTILS.git
+[submodule "Drivers/Plume/2026_C_AV_PLUME"]
+	path = Drivers/Plume/2026_C_AV_PLUME
+	url = https://github.com/EPFLRocketTeam/2026_C_AV_PLUME.git

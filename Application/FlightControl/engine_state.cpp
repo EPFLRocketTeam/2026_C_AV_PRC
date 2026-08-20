@@ -1,4 +1,5 @@
 #include "Application/FlightControl/engine_state.h"
+#include "Application/app_timebase.h"
 #include "Application/FlightControl/prc_can.hpp"
 
 #include "Drivers/Valve/ValveList.hpp"
@@ -507,7 +508,7 @@ void Prc_Engine_Fsm_Init() {
 
 void Prc_Engine_Fsm_Tick() {
   auto& store = PrcStore::get_instance();
-  DataDump dump = store.get();
+  DataDump dump = store.get(app_timebase_now_ms());
 
   PrcEngineState& fsm = engine_fsm_instance();
 

@@ -10,9 +10,9 @@ namespace outlier_pipeline {
 template<const size_t NumberInputs>
 struct Frame {
     /* Array of values from the NumberInputs sensors */
-    double values[NumberInputs];
+    std::array<double, NumberInputs> values;
     /* Whether the sensor is an outlier */
-    bool is_outlier[NumberInputs];
+    std::array<bool, NumberInputs> is_outlier;
 
     /* Number of used data points */
     size_t number_used;
@@ -64,7 +64,7 @@ public:
         params.min = Params::min_value;
         params.max = Params::max_value;
 
-        frame.number_used = outlier<double, InputCount, Params::number_kept, false>(params, frame.values, frame.is_outlier, frame.value);
+        frame.number_used = outlier<double, InputCount, Params::number_kept, false>(params, frame.values.data(), frame.is_outlier.data(), frame.value);
 
         std::apply([&frame, &valid](auto&... pipeline_instance){
             std::size_t idx = 0;

@@ -1,7 +1,7 @@
 #include "Application/FlightControl/prc_state.h"
 #include "Application/FlightControl/prc_fsm_c_api.h"
 #include "Application/FlightControl/engine_state.h"
-
+#include "Application/app_timebase.h"
 #include "Application/Control/rst_controller.hpp"
 #include "Drivers/PrcBoardId/PrcBoardId.hpp"
 #include "Drivers/Valve/ValveList.hpp"
@@ -513,7 +513,7 @@ void Prc_Fsm_Init(void) {
 
 void Prc_Fsm_Tick(void) {
   auto& store = PrcStore::get_instance();
-  DataDump dump = store.get();
+  DataDump dump = store.get(app_timebase_now_ms());
 
   // EngineBay runs a different FSM entirely (ignition/burn/passivate, not
   // pressurize/regulate -- see PrcBoardId.hpp / data.hpp BoardRole comment

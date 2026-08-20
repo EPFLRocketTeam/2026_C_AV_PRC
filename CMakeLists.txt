@@ -62,3 +62,5 @@ endfunction()
 
 create_test(test_average_module Modules/Sensors/tests/test_average_policy.cpp)
 create_test(test_outlier_module Modules/Sensors/tests/test_outlier_policy.cpp)
+
+create_test(test_base_logger ThirdParty/DataLogger/Tests/test_base_logger.cpp)

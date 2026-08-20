@@ -29,9 +29,11 @@
 #include "../../Drivers/KULITE_CTL190/kulite_manual_test.hpp"
 #include "../../Drivers/LMT85/lmt85_manual_test.hpp"
 #include "../../Drivers/Valve/valve_manual_test.hpp"
+#include "../../Drivers/Plume/Tests/Hardware/plume_manual_test.h"
 #include "../../Application/FlightControl/prc_fsm_c_api.h"
 #include "../../Application/FlightControl/prc_can.hpp"
 #include "../../Application/main_app.h"
+#include "../../Drivers/Plume/sd_hardware_init.h"
 #include "CAN.h"
 #include "usbd_cdc_if.h"
 
@@ -214,6 +216,9 @@ int main(void)
 
   /* MCU Configuration--------------------------------------------------------*/
 
+  SCB_EnableICache();
+  SCB_EnableDCache();
+
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
@@ -235,13 +240,12 @@ int main(void)
   MX_GPIO_Init();
   MX_FDCAN1_Init();
   MX_I2C1_Init();
-  //MX_SDMMC1_SD_Init();
+  MX_SDMMC1_SD_Init();
   MX_TIM4_Init();
   MX_USB_DEVICE_Init();
   MX_ADC3_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-
 
   //manual_test_pt1000();  /* loops forever -- never returns, everything below this line won't run while active */
 
@@ -710,7 +714,7 @@ static void MX_SDMMC1_SD_Init(void)
 {
 
   /* USER CODE BEGIN SDMMC1_Init 0 */
-
+  sd_pre_init();
   /* USER CODE END SDMMC1_Init 0 */
 
   /* USER CODE BEGIN SDMMC1_Init 1 */
@@ -721,13 +725,13 @@ static void MX_SDMMC1_SD_Init(void)
   hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
   hsd1.Init.BusWide = SDMMC_BUS_WIDE_4B;
   hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd1.Init.ClockDiv = 0;
+  hsd1.Init.ClockDiv = 4;
   if (HAL_SD_Init(&hsd1) != HAL_OK)
   {
     Error_Handler();
   }
   /* USER CODE BEGIN SDMMC1_Init 2 */
-
+  sd_post_init(&hsd1);
   /* USER CODE END SDMMC1_Init 2 */
 
 }

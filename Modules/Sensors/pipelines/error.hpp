@@ -8,7 +8,8 @@ private:
     Success success;
     Error   error;
 public:
-    void ingest (const result<auto, auto> &data) noexcept {
+    template<typename U, typename V>
+    void ingest (const result<U, V> &data) noexcept {
         if (data.is_success()) {
             success.ingest(data.get_value());
         } else {

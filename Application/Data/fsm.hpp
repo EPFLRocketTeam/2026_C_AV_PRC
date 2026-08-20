@@ -7,12 +7,13 @@ namespace prc {
 // "Dynamic Pressure Regulator FSM" diagram). Mirrors flight_computer::State
 // (Application/Data/fsm.hpp in 2026_C_AV_FC) in structure, but this is this
 // board's own local FSM, not the mission-wide FC state.
-// The old code's INITIALIZE_PRESSURIZE_ON/INITIALIZE_REGULATE/
-// INITIALIZE_PASSIVATE one-time-setup states (ported from the previous
-// vehicle's DPRComputer.cpp, each falling straight through to its
-// corresponding steady state) were all removed since none of them did any
-// real setup work -- they only added pass-through ticks.
-enum State {
+// INITIALIZE_* are one-time-setup states (ported from the previous
+// vehicle's DPRComputer.cpp): each runs its setup once (zero the PID
+// integrator/derivative, capture start time / initial COPV pressure) then
+// immediately falls through to the corresponding steady state, same as the
+// old code's INITIALIZE_PRESSURIZATION/INITIALIZE_REGULATION/
+// INITIALIZE_PASSIVATION -> PRESSURIZATION/REGULATION/PASSIVATION pattern.
+enum State : uint8_t {
   MANUAL,
 
   PRESSURIZE_ON,

@@ -25,8 +25,9 @@ private:
     static constexpr std::size_t NumberSetters = sizeof...(Setters);
 
 public:
+    template<typename T>
     inline auto ingest (
-            const std::array<auto, NumberSetters> &data,
+            const std::array<T,    NumberSetters> &data,
             const std::array<bool, NumberSetters> &valid) noexcept {
         std::apply([&data, &valid](auto&... setter) {
             size_t idx = 0;
