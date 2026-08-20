@@ -56,15 +56,19 @@ template<
     typename PollPolicy,
     typename Sensor,
     typename RawPipeline, const size_t WindowSize, typename MeanPipeline,
-    typename ErrorPipeline = NoPipeline
+    typename ErrorPipeline = NoPipeline,
+    typename OnSuccess = NoPipeline
 >
 using PressureModule = SensorModule<
     PollPolicy,
     Sensor,
     IfPipeline<
-        SingleSensorPipeline<
-            average_pipeline::SimplePipeline<RawPipeline, WindowSize, MeanPipeline>,
-            NoPipeline
+        BranchPipeline<
+            SingleSensorPipeline<
+                average_pipeline::SimplePipeline<RawPipeline, WindowSize, MeanPipeline>,
+                NoPipeline
+            >,
+            OnSuccess
         >,
         ErrorPipeline
     >
@@ -73,15 +77,19 @@ template<
     typename PollPolicy,
     typename Sensor,
     typename RawPipeline, const size_t WindowSize, typename MeanPipeline,
-    typename ErrorPipeline = NoPipeline
+    typename ErrorPipeline = NoPipeline,
+    typename OnSuccess = NoPipeline
 >
 using TemperatureModule = SensorModule<
     PollPolicy,
     Sensor,
     IfPipeline<
-        SingleSensorPipeline<
-            NoPipeline,
-            average_pipeline::SimplePipeline<RawPipeline, WindowSize, MeanPipeline>
+        BranchPipeline<
+            SingleSensorPipeline<
+                NoPipeline,
+                average_pipeline::SimplePipeline<RawPipeline, WindowSize, MeanPipeline>
+            >,
+            OnSuccess
         >,
         ErrorPipeline
     >
@@ -90,14 +98,18 @@ using TemperatureModule = SensorModule<
 template<typename PollPolicy, typename Sensor,
     typename PRawPipeline, const size_t PWindowSize, typename PMeanPipeline,
     typename TRawPipeline, const size_t TWindowSize, typename TMeanPipeline,
-    typename ErrorPipeline = NoPipeline>
+    typename ErrorPipeline = NoPipeline,
+    typename OnSuccess = NoPipeline>
 using BothModule = SensorModule<
     PollPolicy,
     Sensor,
     IfPipeline<
-        SingleSensorPipeline<
-            average_pipeline::SimplePipeline<PRawPipeline, PWindowSize, PMeanPipeline>,
-            average_pipeline::SimplePipeline<TRawPipeline, TWindowSize, TMeanPipeline>
+        BranchPipeline<
+            SingleSensorPipeline<
+                average_pipeline::SimplePipeline<PRawPipeline, PWindowSize, PMeanPipeline>,
+                average_pipeline::SimplePipeline<TRawPipeline, TWindowSize, TMeanPipeline>
+            >,
+            OnSuccess
         >,
         ErrorPipeline
     >

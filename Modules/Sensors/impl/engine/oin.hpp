@@ -7,6 +7,15 @@
 #include "Modules/Sensors/drivers/SensataSensor.hpp"
 #include "Modules/Sensors/drivers/PT1000Sensor.hpp"
 
+struct OnSuccessPressureOin {
+    void ingest (const auto &data) {
+        engineLogger.logOinPFrame({
+            .pressure      = prc::PrcStore::get_instance().propSensorsStoreEngine.get_pressure_OIN(),
+            .pressure_mean = prc::PrcStore::get_instance().propSensorsStoreEngine.get_pressure_OIN_mean(),
+        });
+    }
+};
+
 using OxidizerInModule = PressureModule<
     CommonTimerPolicy,
     sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L4>>,
@@ -15,7 +24,8 @@ using OxidizerInModule = PressureModule<
     PRESSURE_OIN_WINDOW_SIZE,
     ENGINE_SETTER_POLICY(prc::PropSensorsStoreEngine::set_pressure_OIN_mean),
 
-    sensata::SensataErrorPipeline<OIN_NAME>
+    sensata::SensataErrorPipeline<OIN_NAME, &engineLogger, &EngineDataLogger<PlumeStorage>::logOinPError>,
+    OnSuccessPressureOin
 >;
 
 using TemperatureOinModule = TemperatureModule<

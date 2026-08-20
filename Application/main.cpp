@@ -216,6 +216,15 @@ uint8_t plume_arena_buffer[plume_arena_length] \
 	__attribute__((section(".AXI_SRAM")));
 
 extern SD_HandleTypeDef hsd1;
+extern FDCAN_HandleTypeDef hfdcan1;
+
+SDCardInterface sd_interface;
+
+PlumeStorage storage;
+
+EngineDataLogger<PlumeStorage> engineLogger;
+EthDataLogger<PlumeStorage> ethLogger;
+LoxDataLogger<PlumeStorage> loxLogger;
 
 void main_init() {
 	Prc_Fsm_Init();  /* latches board role from ENG_SETUP/ETH_SETUP/LOX_SETUP straps, see Drivers/PrcBoardId/PrcBoardId.hpp, also calls Valve_InitAll() */
@@ -223,55 +232,65 @@ void main_init() {
 
 	app_timebase_init();
 
-	/*SDCardInterface interface;
-	if (interface.init_sd_card(&hsd1, plume_arena_buffer, plume_arena_length)) {
-		if (interface.open_file()) {
-			PlumeStorage storage(&interface);
+	SDCardInterface interface;
+	if (!interface.init_sd_card(&hsd1, plume_arena_buffer, plume_arena_length)) {
+		printf("Could not init SD card.\n");
+		return ;
+	}
+
+	if (!interface.open_file()) {
+		printf("Could not open a file on the SD card.\n");
+		return ;
+	}
+
+	storage = PlumeStorage(&interface);
+
+	switch (prc::PrcStore::get_instance().boardIdentityStore.get_role()) {
+		case prc::BoardRole::EngineBay:
+			engineLogger = EngineDataLogger<PlumeStorage>(storage);
+			break ;
+		case prc::BoardRole::DprLox:
+			loxLogger = LoxDataLogger<PlumeStorage>(storage);
+			break ;
+		case prc::BoardRole::DprEth:
+			ethLogger = EthDataLogger<PlumeStorage>(storage);
+			break ;
 			
-			LoxDataLogger<PlumeStorage> logger(storage);
-			for (int i = 0; i < 512; i ++) {
-				logger.logFsmTransition({ .old_state = prc::State::MANUAL, .new_state = prc::State::INITIALIZE_PASSIVATE });
-				logger.logFsmTransition({ .old_state = prc::State::MANUAL, .new_state = prc::State::INITIALIZE_PASSIVATE });
-				logger.logFsmTransition({ .old_state = prc::State::MANUAL, .new_state = prc::State::INITIALIZE_PASSIVATE });
-				logger.logFsmTransition({ .old_state = prc::State::MANUAL, .new_state = prc::State::INITIALIZE_PASSIVATE });
-				logger.logFsmTransition({ .old_state = prc::State::MANUAL, .new_state = prc::State::INITIALIZE_PASSIVATE });
-			}
+		case prc::BoardRole::Unknown:
+		default:
+			// Role detection hasn't latched yet (or failed) -- report nothing
+			// rather than guessing which bay's sensors to poll.
+			break;
+	}
 
-			for (int i = 0; i < 50; i ++) {
-				printf("Number of ticks remaining %d\n", 50 - i);
-				logger.tick();
-				HAL_Delay(100);
-			}
-		} else printf("Error during open.\n");
-	} else printf("Error during init.\n");
-	
-	while (1) {
-		printf("Do nothing...\n");
-		HAL_Delay(10000);
-	}*/
-	//Valve_ManualTest();
-
-	// init() just constructs driver/config objects (no bus traffic), so it's
-	// harmless to run for every bay's sensors regardless of which one this
-	// board turns out to be -- BoardRole isn't latched yet at this point
-	// (Prc_Fsm_Init() runs after main_init(), see Core/Src/main.c), only
-	// main_tick() below can gate on role.
-	chamber.init();
-	oin.init();
-	ein.init();
-	t_oin.init();
-	t_ein.init();
-
-	ota_module.init();
-	pressure_hpo.init();
-	t_ota1.init();
-	t_ota2.init();
-	t_ota3.init();
-	t_ota4.init();
-	fls_module.init();
-
-	eta_module.init();
-	pressure_hpe.init();
+	switch (prc::PrcStore::get_instance().boardIdentityStore.get_role()) {
+		case prc::BoardRole::EngineBay:
+			chamber.init();
+			oin.init();
+			ein.init();
+			t_oin.init();
+			t_ein.init();
+			break ;
+		case prc::BoardRole::DprLox:
+			ota_module.init();
+			pressure_hpo.init();
+			t_ota1.init();
+			t_ota2.init();
+			t_ota3.init();
+			t_ota4.init();
+			fls_module.init();
+			break ;
+		case prc::BoardRole::DprEth:
+			eta_module.init();
+			pressure_hpe.init();
+			break ;
+			
+		case prc::BoardRole::Unknown:
+		default:
+			// Role detection hasn't latched yet (or failed) -- report nothing
+			// rather than guessing which bay's sensors to poll.
+			break;
+	}
 }
 
 void main_tick() {
@@ -284,6 +303,8 @@ void main_tick() {
 			ein.tick();
 			t_oin.tick();
 			t_ein.tick();
+
+			engineLogger.tick();
 			break;
 
 		case prc::BoardRole::DprLox:
@@ -294,11 +315,15 @@ void main_tick() {
 			t_ota3.tick();
 			t_ota4.tick();
 			fls_module.tick();
+
+			loxLogger.tick();
 			break;
 
 		case prc::BoardRole::DprEth:
 			eta_module.tick();
 			pressure_hpe.tick();
+
+			ethLogger.tick();
 			break;
 
 		case prc::BoardRole::Unknown:

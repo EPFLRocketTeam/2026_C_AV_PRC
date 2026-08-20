@@ -33,17 +33,6 @@ namespace sensata {
     };
 
     namespace internal {
-        enum SensataPollMode {
-            PRESSURE, TEMPERATURE
-        };
-
-        struct SensataError {
-            Status      status;
-            Pte7300Step step;
-
-            SensataPollMode pollMode;
-        };
-
         template<
             typename Params,
             const bool PollTemperature,
@@ -117,9 +106,9 @@ namespace sensata {
 
 
 
-    template<const char* (&SensorName)>
+    template<const char* (&SensorName), auto *Logger, auto Call>
     struct SensataErrorPipeline {
-        void ingest (const internal::SensataError &error) {
+        void ingest (const SensataError &error) {
             // status/step are printed as raw enum values (Status/Pte7300Step
             // in Drivers/SensataPte7300/Types.hpp) -- no string table for
             // them exists yet, unlike poll_mode_str. Cross-reference the
@@ -129,7 +118,9 @@ namespace sensata {
                    static_cast<unsigned>(error.status),
                    static_cast<unsigned>(error.step),
                    internal::poll_mode_str(error.pollMode));
-        }
+
+            (Logger->*Call)(error);
+       }
     };
 
 

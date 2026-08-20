@@ -3,6 +3,14 @@
 #include "Modules/Sensors/sensor.hpp"
 #include "Application/Data/data.hpp"
 
+#include "ThirdParty/DataLogger/loggers/engine.hpp"
+#include "ThirdParty/DataLogger/loggers/eth.hpp"
+#include "ThirdParty/DataLogger/loggers/lox.hpp"
+
+extern EngineDataLogger<PlumeStorage> engineLogger;
+extern EthDataLogger<PlumeStorage> ethLogger;
+extern LoxDataLogger<PlumeStorage> loxLogger;
+
 const size_t DEFAULT_NUMBER_TICKS = 10;
 
 /* Channel Index of sensata SENS1 */
