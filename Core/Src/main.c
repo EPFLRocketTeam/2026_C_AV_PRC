@@ -240,7 +240,7 @@ int main(void)
   MX_GPIO_Init();
   MX_FDCAN1_Init();
   MX_I2C1_Init();
-  MX_SDMMC1_SD_Init();
+  //MX_SDMMC1_SD_Init();
   MX_TIM4_Init();
   MX_USB_DEVICE_Init();
   MX_ADC3_Init();

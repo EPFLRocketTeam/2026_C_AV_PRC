@@ -4,6 +4,8 @@ extern "C" {
 
 #include "stm32h7xx_hal.h"
 
+extern "C" FDCAN_HandleTypeDef hfdcan1;
+
 #include "Drivers/Plume/plume_storage.hpp"
 #include "ThirdParty/DataLogger/loggers/engine.hpp"
 #include "ThirdParty/DataLogger/loggers/eth.hpp"
@@ -275,7 +277,7 @@ void main_init() {
 }
 
 void main_tick() {
-	// 	printf("\r\n");
+	//printf("tick\r\n");
 
 	switch (prc::PrcStore::get_instance().boardIdentityStore.get_role()) {
 		case prc::BoardRole::EngineBay:
