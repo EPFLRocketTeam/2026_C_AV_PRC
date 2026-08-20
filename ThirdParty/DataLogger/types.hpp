@@ -5,6 +5,7 @@
 #include "Application/Data/engine_fsm.hpp"
 #include "Modules/Sensors/impl/std/multi.hpp"
 #include "Drivers/Plume/types.hpp"
+#include "Drivers/SensataPte7300/Types.hpp"
 
 constexpr uint8_t ENGINE_LOGGER_MAGIC = 0xA4;
 constexpr uint8_t LOX_LOGGER_MAGIC = 0xC1;
@@ -79,11 +80,15 @@ namespace engine {
         LOG_FSM_TRANSITION,
 
         LOG_CHAMBER_FRAME, // { P, T, P_mean, C_mean }
+        LOG_CHAMBER_ERROR,
 
         LOG_EIN_P_FRAME, // { P, P_mean }
         LOG_EIN_T_FRAME, // { T, T_mean }
         LOG_OIN_P_FRAME, // { P, P_mean }
         LOG_OIN_T_FRAME, // { T, T_mean }
+        
+        LOG_EIN_P_ERROR,
+        LOG_OIN_P_ERROR,
 
         LOG_ERROR // Send an EngineErrorKind
     };
@@ -128,8 +133,14 @@ namespace lox {
         LOG_FLS, // fill level
 
         LOG_HPO_FRAME, // { P, P_mean }
+        LOG_HPO_ERROR,
+
         LOG_OTA_P_FRAME, // OtaPressureFrame
         LOG_OTA_T_FRAME, // OtaTemperatureFrame
+
+        LOG_OTA1_P_ERROR,
+        LOG_OTA2_P_ERROR,
+        LOG_OTA3_P_ERROR,
 
         LOG_ERROR // Send a LoxErrorKind
     };
@@ -164,7 +175,12 @@ namespace eth {
         LOG_FSM_TRANSITION,
 
         LOG_HPE_FRAME, // { P, P_mean }
+        LOG_HPE_ERROR,
+
         LOG_ETA_P_FRAME, // OtaPressureFrame
+        LOG_ETA1_P_ERROR,
+        LOG_ETA2_P_ERROR,
+        LOG_ETA3_P_ERROR,
         
         LOG_ERROR // Send a LoxErrorKind
     };

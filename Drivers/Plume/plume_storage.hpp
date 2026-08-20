@@ -13,6 +13,7 @@ struct PlumeStorage {
 private:
     SDCardInterface *sd_;
 public:
+    PlumeStorage () = default;
     PlumeStorage (SDCardInterface *sd) : sd_(sd) {}
 
     bool ready () {

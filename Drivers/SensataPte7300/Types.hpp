@@ -94,4 +94,15 @@ struct pte7300_measurement {
     pte7300_status_frame      status;
 };
 
+enum SensataPollMode {
+    PRESSURE, TEMPERATURE
+};
+
+struct SensataError {
+    Status      status;
+    Pte7300Step step;
+
+    SensataPollMode pollMode;
+};
+
 };
