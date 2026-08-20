@@ -10,7 +10,14 @@
 
 struct OnSuccessOtaPressure {
     void ingest (const auto &data) {
-        loxLogger.logOTAPressureFrame(*((lox::OtaPressureFrame*) &data));
+    	printf("Success OTA ?\n");
+    	lox::OtaPressureFrame frame;
+    	frame.pressure = data.pressure;
+    	frame.temperature = data.temperature;
+    	frame.valid = data.valid;
+    	printf("Start logging %d ?\n", sizeof(frame));
+    	getLoxLogger().logOTAPressureFrame(frame);
+        printf("Success OTA\n");
     }
 };
 
@@ -41,16 +48,16 @@ using PressureOtaSensorModule = multi::Module<
     multi::PressureSensorParam<
         sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L1>>,
         LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA1),
-        sensata::SensataErrorPipeline<OTA1_NAME, &loxLogger, &LoxDataLogger<PlumeStorage>::logOTA1PressureError>
+        sensata::SensataErrorPipeline<OTA1_NAME, &getLoxLogger, &LoxDataLogger<PlumeStorage>::logOTA1PressureError>
     >,
     multi::PressureSensorParam<
         sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L3>>,
         LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA2),
-        sensata::SensataErrorPipeline<OTA2_NAME, &loxLogger, &LoxDataLogger<PlumeStorage>::logOTA2PressureError>
+        sensata::SensataErrorPipeline<OTA2_NAME, &getLoxLogger, &LoxDataLogger<PlumeStorage>::logOTA2PressureError>
     >,
     multi::PressureSensorParam<
         sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L2>>,
         LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA3),
-        sensata::SensataErrorPipeline<OTA3_NAME, &loxLogger, &LoxDataLogger<PlumeStorage>::logOTA3PressureError>
+        sensata::SensataErrorPipeline<OTA3_NAME, &getLoxLogger, &LoxDataLogger<PlumeStorage>::logOTA3PressureError>
     >
 >;

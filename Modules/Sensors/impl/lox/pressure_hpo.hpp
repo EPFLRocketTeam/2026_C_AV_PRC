@@ -8,7 +8,7 @@
 
 struct OnSuccessHpo {
     void ingest (const auto &data) {
-        loxLogger.logHPO({
+    	getLoxLogger().logHPO({
             .pressure      = prc::PrcStore::get_instance().propSensorsStoreLox.get_pressure_HPO(),
             .pressure_mean = prc::PrcStore::get_instance().propSensorsStoreLox.get_pressure_HPO_mean(),
         });
@@ -26,6 +26,6 @@ using PressureHpoSensorModule = PressureModule<
     PRESSURE_HPO_WINDOW_SIZE,
     LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_HPO_mean),
 
-    sensata::SensataErrorPipeline<HPO_NAME, &loxLogger, &LoxDataLogger<PlumeStorage>::logHPOError>,
+    sensata::SensataErrorPipeline<HPO_NAME, &getLoxLogger, &LoxDataLogger<PlumeStorage>::logHPOError>,
     OnSuccessHpo
 >;

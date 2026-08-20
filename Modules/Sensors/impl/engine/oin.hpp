@@ -9,7 +9,7 @@
 
 struct OnSuccessPressureOin {
     void ingest (const auto &data) {
-        engineLogger.logOinPFrame({
+    	getEngineLogger().logOinPFrame({
             .pressure      = prc::PrcStore::get_instance().propSensorsStoreEngine.get_pressure_OIN(),
             .pressure_mean = prc::PrcStore::get_instance().propSensorsStoreEngine.get_pressure_OIN_mean(),
         });
@@ -24,7 +24,7 @@ using OxidizerInModule = PressureModule<
     PRESSURE_OIN_WINDOW_SIZE,
     ENGINE_SETTER_POLICY(prc::PropSensorsStoreEngine::set_pressure_OIN_mean),
 
-    sensata::SensataErrorPipeline<OIN_NAME, &engineLogger, &EngineDataLogger<PlumeStorage>::logOinPError>,
+    sensata::SensataErrorPipeline<OIN_NAME, &getEngineLogger, &EngineDataLogger<PlumeStorage>::logOinPError>,
     OnSuccessPressureOin
 >;
 

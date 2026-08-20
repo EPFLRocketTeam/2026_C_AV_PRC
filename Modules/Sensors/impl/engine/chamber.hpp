@@ -8,7 +8,7 @@
 
 struct OnSuccessChamber {
     void ingest (const auto &data) {
-        engineLogger.logChamberFrame({
+        getEngineLogger().logChamberFrame({
             .pressure      = prc::PrcStore::get_instance().propSensorsStoreEngine.get_pressure_C(),
             .pressure_mean = prc::PrcStore::get_instance().propSensorsStoreEngine.get_pressure_C_mean(),
             .temperature      = prc::PrcStore::get_instance().propSensorsStoreEngine.get_temperature_C(),
@@ -29,6 +29,6 @@ using ChamberModule = BothModule<
     TEMPERATURE_C_WINDOW_SIZE,
     ENGINE_SETTER_POLICY(prc::PropSensorsStoreEngine::set_temperature_C_mean),
 
-    sensata::SensataErrorPipeline<CHAMBER_NAME, &engineLogger, &EngineDataLogger<PlumeStorage>::logChamberError>,
+    sensata::SensataErrorPipeline<CHAMBER_NAME, &getEngineLogger, &EngineDataLogger<PlumeStorage>::logChamberError>,
     OnSuccessChamber
 >;

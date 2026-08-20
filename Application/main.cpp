@@ -228,25 +228,28 @@ EngineDataLogger<PlumeStorage> engineLogger;
 EthDataLogger<PlumeStorage> ethLogger;
 LoxDataLogger<PlumeStorage> loxLogger;
 
+EngineDataLogger<PlumeStorage>& getEngineLogger() { return engineLogger; }
+EthDataLogger<PlumeStorage>& getEthLogger() { return ethLogger; }
+LoxDataLogger<PlumeStorage>& getLoxLogger() { return loxLogger; }
+
 void main_init() {
 	Prc_Fsm_Init();  /* latches board role from ENG_SETUP/ETH_SETUP/LOX_SETUP straps, see Drivers/PrcBoardId/PrcBoardId.hpp, also calls Valve_InitAll() */
 	Prc_Can_ConfigNodeFilter(&hfdcan1);  /* now that role is latched, accept this board's own DPR node ID, see Application/FlightControl/prc_can.cpp */
 
 	app_timebase_init();
 
-	SDCardInterface interface;
-	if (!interface.init_sd_card(&hsd1, plume_arena_buffer, plume_arena_length)) {
+	if (!sd_interface.init_sd_card(&hsd1, plume_arena_buffer, plume_arena_length)) {
 		printf("Could not init SD card.\n");
 		return ;
 	}
 
-	if (!interface.open_file()) {
+	if (!sd_interface.open_file()) {
 		printf("Could not open a file on the SD card.\n");
 		return ;
 	}
 
-	storage = PlumeStorage(&interface);
-
+	storage = PlumeStorage(&sd_interface);
+	
 	switch (prc::PrcStore::get_instance().boardIdentityStore.get_role()) {
 		case prc::BoardRole::EngineBay:
 			engineLogger = EngineDataLogger<PlumeStorage>(storage);
@@ -322,8 +325,8 @@ void main_tick() {
 			break;
 
 		case prc::BoardRole::DprEth:
-			eta_module.tick();
-			pressure_hpe.tick();
+			//eta_module.tick();
+			//pressure_hpe.tick();
 
 			ethLogger.tick();
 			break;

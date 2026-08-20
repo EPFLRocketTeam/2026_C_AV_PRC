@@ -7,9 +7,9 @@
 #include "ThirdParty/DataLogger/loggers/eth.hpp"
 #include "ThirdParty/DataLogger/loggers/lox.hpp"
 
-extern EngineDataLogger<PlumeStorage> engineLogger;
-extern EthDataLogger<PlumeStorage> ethLogger;
-extern LoxDataLogger<PlumeStorage> loxLogger;
+EngineDataLogger<PlumeStorage>& getEngineLogger();
+EthDataLogger<PlumeStorage>& getEthLogger();
+LoxDataLogger<PlumeStorage>& getLoxLogger();
 
 const size_t DEFAULT_NUMBER_TICKS = 10;
 

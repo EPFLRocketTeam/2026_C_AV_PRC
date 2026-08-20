@@ -106,7 +106,7 @@ namespace sensata {
 
 
 
-    template<const char* (&SensorName), auto *Logger, auto Call>
+    template<const char* (&SensorName), auto Func, auto Call>
     struct SensataErrorPipeline {
         void ingest (const SensataError &error) {
             // status/step are printed as raw enum values (Status/Pte7300Step
@@ -119,7 +119,8 @@ namespace sensata {
                    sensata::step_str(error.step),
                    internal::poll_mode_str(error.pollMode));
 
-            (Logger->*Call)(error);
+            auto &logger = Func();
+			(logger.*Call)(error);
        }
     };
 

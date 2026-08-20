@@ -26,6 +26,7 @@ public:
     }
 
     void logOTAPressureFrame (const lox::OtaPressureFrame &frame) {
+    	printf("In log.\n");
         this->writeRecord(lox::RecordType::LOG_OTA_P_FRAME, &frame, sizeof(frame));
     }
     void logOTATemperatureFrame (const lox::OtaTemperatureFrame &frame) {

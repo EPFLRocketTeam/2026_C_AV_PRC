@@ -8,7 +8,7 @@
 
 struct OnSuccessHpe {
     void ingest (const auto &data) {
-        ethLogger.logHPE({
+    	getEthLogger().logHPE({
             .pressure      = prc::PrcStore::get_instance().propSensorsStoreEth.get_pressure_HPE(),
             .pressure_mean = prc::PrcStore::get_instance().propSensorsStoreEth.get_pressure_HPE_mean(),
         });
@@ -26,5 +26,5 @@ using PressureHpeSensorModule = PressureModule<
     PRESSURE_HPE_WINDOW_SIZE,
     ETH_SETTER_POLICY(prc::PropSensorsStoreEth::set_pressure_HPE_mean),
 
-    sensata::SensataErrorPipeline<HPE_NAME, &ethLogger, &EthDataLogger<PlumeStorage>::logHPEPressureError>
+    sensata::SensataErrorPipeline<HPE_NAME, &getEthLogger, &EthDataLogger<PlumeStorage>::logHPEPressureError>
 >;
