@@ -1,5 +1,6 @@
 #include "Application/FlightControl/engine_state.h"
 #include "Application/app_timebase.h"
+#include "Application/FlightControl/prc_can.hpp"
 
 #include "Drivers/Valve/ValveList.hpp"
 #include "Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include/prc_intranet/const.hpp"
@@ -73,6 +74,87 @@ static void SetMe(bool open) {
 // TODO, confirm before relying on this live.
 static void SetIgniter(bool on) {
   HAL_GPIO_WritePin(Igniter_GPIO_Port, Igniter_Pin, on ? GPIO_PIN_SET : GPIO_PIN_RESET);
+}
+
+// ---------------------------------------------------------------------------
+// ColdflowSequence: manual bench test, entirely separate from
+// PrcEngineState/the real ignition FSM above -- runs its own tiny timed
+// sequence in parallel, driving the same MO/ME/igniter outputs directly.
+// Not mutually exclusive with the real FSM; don't run both at once.
+//
+// Sequence: PRECHILL (MO open, chill only) -> IGNITER (MO closed, igniter
+// on) -> BURN_OPEN (igniter off, MO+ME open together, no delay between
+// them, unlike the real FSM's staggered BurnStartMo->BurnStartMe) -> hold
+// 1 s -> IDLE (MO+ME closed together). Retriggerable: sending "coldflow"
+// again restarts from PRECHILL regardless of current state, via
+// Prc_Can_TakeColdflowTrigger()'s edge-detected one-shot flag (a level
+// check on intranetCmd would retrigger forever, since it's never
+// consumed/cleared elsewhere).
+//
+// Durations are placeholders, same as the real FSM's -- change when real
+// values are known.
+// ---------------------------------------------------------------------------
+
+static constexpr uint32_t k_coldflow_prechill_duration_ms = 10000;
+static constexpr uint32_t k_coldflow_igniter_duration_ms  = 10000;
+static constexpr uint32_t k_coldflow_burn_duration_ms     = 1000;
+
+enum class ColdflowState { Idle, Prechill, Igniter, BurnOpen };
+
+namespace {
+  ColdflowState g_coldflow_state = ColdflowState::Idle;
+  uint32_t g_coldflow_state_entry_ms = 0;
+}
+
+static void ColdflowEnter(ColdflowState state) {
+  g_coldflow_state = state;
+  g_coldflow_state_entry_ms = HAL_GetTick();
+  switch (state) {
+    case ColdflowState::Prechill:
+      printf("[COLDFLOW] -> PRECHILL\r\n");
+      SetIgniter(false);
+      SetMe(false);
+      SetMo(true);
+      break;
+    case ColdflowState::Igniter:
+      printf("[COLDFLOW] PRECHILL -> IGNITER\r\n");
+      SetMo(false);
+      SetIgniter(true);
+      break;
+    case ColdflowState::BurnOpen:
+      printf("[COLDFLOW] IGNITER -> BURN_OPEN\r\n");
+      SetIgniter(false);
+      SetMo(true);
+      SetMe(true);
+      break;
+    case ColdflowState::Idle:
+      printf("[COLDFLOW] BURN_OPEN -> IDLE (closed)\r\n");
+      SetMo(false);
+      SetMe(false);
+      break;
+  }
+}
+
+static void ColdflowTick() {
+  if (Prc_Can_TakeColdflowTrigger()) {
+    ColdflowEnter(ColdflowState::Prechill);
+    return;
+  }
+
+  const uint32_t elapsed_ms = HAL_GetTick() - g_coldflow_state_entry_ms;
+  switch (g_coldflow_state) {
+    case ColdflowState::Idle:
+      break;
+    case ColdflowState::Prechill:
+      if (elapsed_ms >= k_coldflow_prechill_duration_ms) ColdflowEnter(ColdflowState::Igniter);
+      break;
+    case ColdflowState::Igniter:
+      if (elapsed_ms >= k_coldflow_igniter_duration_ms) ColdflowEnter(ColdflowState::BurnOpen);
+      break;
+    case ColdflowState::BurnOpen:
+      if (elapsed_ms >= k_coldflow_burn_duration_ms) ColdflowEnter(ColdflowState::Idle);
+      break;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -227,10 +309,13 @@ EngineState PrcEngineState::fromShutoff(DataDump const &dump) {
 }
 
 EngineState PrcEngineState::fromDepressurizeOpen(DataDump const &dump) {
-  (void)dump;
-  // Terminal. FC watches for this (MO+ME both open again after having
-  // been fully drained) and is the one that commands the DPR boards to
-  // depressurize, not this board -- see the FC-level FSM diagram.
+  // Terminal, otherwise. Per the FC-level FSM diagram, this board isn't
+  // the one that commands the DPR boards to depressurize -- FC is. In the
+  // current implementation (2026_C_AV_FC's av_state.cpp) that send is a
+  // blind 50s timer from DESCENT entry, timed to roughly match this
+  // board's own 5-stage/10s-each passivation sequence, not a live read of
+  // this state.
+  if (CmdIs(dump, pi::constants::MessageId::prc_reset)) return EngineState::Idle;
   return currentState;
 }
 
@@ -433,6 +518,9 @@ void Prc_Engine_Fsm_Tick() {
 
   ApplyEngineValveActions(new_state, previous_state);
 
+  // Separate manual bench sequence, runs in parallel with the real FSM
+  // above -- see ColdflowSequence comment.
+  ColdflowTick();
 }
 
 EngineState Prc_Engine_Fsm_GetState() {

@@ -57,6 +57,14 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan);
 // (unchanged) and gets relayed to FC.
 void Prc_Log_Forward(FDCAN_HandleTypeDef *hfdcan, const uint8_t *data, uint32_t length);
 
+// Edge-detected coldflow trigger for ColdflowSequence (engine_state.cpp):
+// returns 1 exactly once per received prc_coldflow CAN frame, then 0 until
+// the next one arrives. intranetCmd itself is never consumed/cleared (see
+// Prc_Fsm_Tick), so a level check on it would retrigger forever once set --
+// this is a separate one-shot flag specifically so "coldflow" can be
+// retyped to run the sequence again without looping on its own.
+uint8_t Prc_Can_TakeColdflowTrigger(void);
+
 #ifdef __cplusplus
 }
 #endif

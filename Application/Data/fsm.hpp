@@ -16,12 +16,9 @@ namespace prc {
 enum State : uint8_t {
   MANUAL,
 
-  INITIALIZE_PRESSURIZE_ON,
   PRESSURIZE_ON,
-  INITIALIZE_REGULATE,
   REGULATE,
   PRESSURIZE_OFF,
-  INITIALIZE_PASSIVATE,
   PASSIVATE,
 
   /* ============== Error States ============== */
