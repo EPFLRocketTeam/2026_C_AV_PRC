@@ -9,7 +9,7 @@
 
 using EthanolInModule = PressureModule<
     CommonTimerPolicy,
-    sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L2>>,
+    sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L3>>,
 
     ENGINE_SETTER_POLICY(prc::PropSensorsStoreEngine::set_pressure_EIN),
     PRESSURE_EIN_WINDOW_SIZE,

@@ -9,7 +9,7 @@
 
 using OxidizerInModule = PressureModule<
     CommonTimerPolicy,
-    sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L3>>,
+    sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L4>>,
 
     ENGINE_SETTER_POLICY(prc::PropSensorsStoreEngine::set_pressure_OIN),
     PRESSURE_OIN_WINDOW_SIZE,

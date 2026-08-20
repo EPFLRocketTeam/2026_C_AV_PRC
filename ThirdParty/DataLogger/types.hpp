@@ -91,11 +91,10 @@ namespace engine {
 
 namespace lox {
 
-    // For now, no OTA2 is present
     using OtaPressureFrame = multi::internal::PipelineReturnValue<
         multi::UseOutlier<int, int>,
         multi::UseUnpack,
-        2
+        3
     >;
 
     struct OtaTemperatureFrame {
@@ -141,11 +140,10 @@ namespace lox {
 
 namespace eth {
 
-    // For now, no OTA3 is present
     using EtaPressureFrame = multi::internal::PipelineReturnValue<
         multi::UseOutlier<int, int>,
         multi::UseUnpack,
-        2
+        3
     >;
 
     enum ErrorKind {

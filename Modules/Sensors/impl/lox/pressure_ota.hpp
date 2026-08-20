@@ -32,22 +32,17 @@ using PressureOtaSensorModule = multi::Module<
 
     // Use only pressure sensors
     multi::PressureSensorParam<
-        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L2>>,
+        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L1>>,
         LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA1),
         sensata::SensataErrorPipeline<OTA1_NAME>
     >,
-    // OTA2 physically not present on this board, commented out for now.
-    // Also modify ThirdParty/DataLogger/types.hpp to change the pressure frame with
-    //   number of sensors to 3 instead of 2.
-    // Also modify ThirdParty/DataLogger/Client/rules.yaml to add the pressure frame
-    //   data to the csv generator.
-    // multi::PressureSensorParam<
-    //     sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L2>>,
-    //     LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA2),
-    //     sensata::SensataErrorPipeline<OTA2_NAME>
-    // >,
     multi::PressureSensorParam<
         sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L3>>,
+        LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA2),
+        sensata::SensataErrorPipeline<OTA2_NAME>
+    >,
+    multi::PressureSensorParam<
+        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L2>>,
         LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA3),
         sensata::SensataErrorPipeline<OTA3_NAME>
     >

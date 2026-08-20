@@ -24,7 +24,10 @@ extern "C" {
 #include "Modules/Sensors/impl/engine/ein.hpp"
 
 #include "Drivers/SensataPte7300/SensataPte7300HardwareTest.hpp"
-#include "../../Drivers/Valve/valve_manual_test.hpp"
+// #include "../Drivers/Valve/valve_manual_test.hpp"
+
+#include "Application/FlightControl/prc_fsm_c_api.h"
+#include "../../Application/FlightControl/prc_can.hpp"
 
 // ---------------------------------------------------------------------------
 // One sensor module instance per row of the sensor table (see project docs:
@@ -215,14 +218,12 @@ uint8_t plume_arena_buffer[plume_arena_length] \
 extern SD_HandleTypeDef hsd1;
 
 void main_init() {
-	app_timebase_init();
-	
-  for (int i = 0; i < 10; i ++) {
-    printf("Waiting, %u seconds remaining...\n", 10 - i);
-    HAL_Delay(1000);
-  }
+	Prc_Fsm_Init();  /* latches board role from ENG_SETUP/ETH_SETUP/LOX_SETUP straps, see Drivers/PrcBoardId/PrcBoardId.hpp, also calls Valve_InitAll() */
+	Prc_Can_ConfigNodeFilter(&hfdcan1);  /* now that role is latched, accept this board's own DPR node ID, see Application/FlightControl/prc_can.cpp */
 
-	SDCardInterface interface;
+	app_timebase_init();
+
+	/*SDCardInterface interface;
 	if (interface.init_sd_card(&hsd1, plume_arena_buffer, plume_arena_length)) {
 		if (interface.open_file()) {
 			PlumeStorage storage(&interface);
@@ -247,7 +248,7 @@ void main_init() {
 	while (1) {
 		printf("Do nothing...\n");
 		HAL_Delay(10000);
-	}
+	}*/
 	//Valve_ManualTest();
 
 	// init() just constructs driver/config objects (no bus traffic), so it's

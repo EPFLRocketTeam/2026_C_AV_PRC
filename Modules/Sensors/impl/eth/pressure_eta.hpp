@@ -31,18 +31,18 @@ using PressureEtaSensorModule = multi::Module<
     >,
 
     // Use only pressure sensors
-    /*multi::PressureSensorParam<
+    multi::PressureSensorParam<
         sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L3>>,
         ETH_SETTER_POLICY(prc::PropSensorsStoreEth::set_pressure_ETA1),
         sensata::SensataErrorPipeline<ETA1_NAME>
-    >,*/
+    >,
     multi::PressureSensorParam<
         sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L2>>,
         ETH_SETTER_POLICY(prc::PropSensorsStoreEth::set_pressure_ETA2),
         sensata::SensataErrorPipeline<ETA2_NAME>
     >,
     multi::PressureSensorParam<
-        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L3>>,
+        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L4>>,
         ETH_SETTER_POLICY(prc::PropSensorsStoreEth::set_pressure_ETA3),
         sensata::SensataErrorPipeline<ETA3_NAME>
     >

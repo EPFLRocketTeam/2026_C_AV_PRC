@@ -8,7 +8,7 @@
 
 using ChamberModule = BothModule<
     CommonTimerPolicy,
-    sensata::BothSensata<sensata::SensataParams<SENSATA_CHANNEL_L1>>,
+    sensata::BothSensata<sensata::SensataParams<SENSATA_CHANNEL_L2>>,
 
     ENGINE_SETTER_POLICY(prc::PropSensorsStoreEngine::set_pressure_C),
     PRESSURE_C_WINDOW_SIZE,
