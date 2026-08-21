@@ -345,12 +345,29 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
                       | (me_open ? pi::constants::VALVE_MASK_BIT_ME : 0);
     pi::send_prc_state(&ctx, state);
 
-    // printf("[PRC CAN] TX telemetry: fsm=%u mo=%d me=%d\r\n",
-    //        state.fsm_state, mo_open, me_open);
+    auto& sensors = PrcStore::get_instance().propSensorsStoreEngine;
+
+    pi::payload::prc_p_injector p_injector{};
+    p_injector.p_oin = static_cast<float>(sensors.get_pressure_OIN_mean());
+    p_injector.p_ein = static_cast<float>(sensors.get_pressure_EIN_mean());
+    pi::send_prc_p_injector(&ctx, p_injector);
+
+    pi::payload::prc_p_chamber p_chamber{};
+    p_chamber.p_ccc = static_cast<float>(sensors.get_pressure_C_mean());
+    pi::send_prc_p_chamber(&ctx, p_chamber);
+
+    pi::payload::prc_t_injector t_injector{};
+    t_injector.t_oin = static_cast<float>(sensors.get_temperature_OIN_mean());
+    t_injector.t_ein = static_cast<float>(sensors.get_temperature_EIN_mean());
+    pi::send_prc_t_injector(&ctx, t_injector);
+
+    pi::payload::prc_t_chamber t_chamber{};
+    t_chamber.t_ccc = static_cast<float>(sensors.get_temperature_C_mean());
+    pi::send_prc_t_chamber(&ctx, t_chamber);
+
     return;
   }
 
-  // auto& sensors = PrcStore::get_instance().propSensorsStore;
   auto& valves  = PrcStore::get_instance().valvesStore;
   const bool is_lox = (role == BoardRole::DprLox);
 
@@ -362,38 +379,35 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
   state.valve_mask = (safety_open ? pi::constants::VALVE_MASK_BIT_SAFETY : 0)
                     | (vent_open  ? pi::constants::VALVE_MASK_BIT_VENT   : 0);
 
-  float p_tank, p_copv;
   if (is_lox) {
     pi::send_dpr_lox_state(&ctx, state);
 
+    auto& sensors = PrcStore::get_instance().propSensorsStoreLox;
+
     pi::payload::dpr_lox_pressures pressures{};
-//    pressures.p_ota = static_cast<float>(sensors.get_pressure_OTA_mean());
-//    pressures.p_hpo = static_cast<float>(sensors.get_pressure_HPO_mean());
+    pressures.p_ota = static_cast<float>(sensors.get_pressure_OTA_mean());
+    pressures.p_hpo = static_cast<float>(sensors.get_pressure_HPO_mean());
     pi::send_dpr_lox_pressures(&ctx, pressures);
-    p_tank = pressures.p_ota;
-    p_copv = pressures.p_hpo;
 
     pi::payload::dpr_lox_temps_ota temps_1_2{};
-//    temps_1_2.t1 = static_cast<float>(sensors.get_temperature_OTA_mean(0));
-//    temps_1_2.t2 = static_cast<float>(sensors.get_temperature_OTA_mean(1));
+    temps_1_2.t1 = static_cast<float>(sensors.get_temperature_OTA1_mean());
+    temps_1_2.t2 = static_cast<float>(sensors.get_temperature_OTA2_mean());
     pi::send_dpr_lox_temps_ota_1_2(&ctx, temps_1_2);
 
     pi::payload::dpr_lox_temps_ota temps_3_4{};
-//    temps_3_4.t1 = static_cast<float>(sensors.get_temperature_OTA_mean(2));
-//    temps_3_4.t2 = static_cast<float>(sensors.get_temperature_OTA_mean(3));
+    temps_3_4.t1 = static_cast<float>(sensors.get_temperature_OTA3_mean());
+    temps_3_4.t2 = static_cast<float>(sensors.get_temperature_OTA4_mean());
     pi::send_dpr_lox_temps_ota_3_4(&ctx, temps_3_4);
   } else {
     pi::send_dpr_eth_state(&ctx, state);
 
-    pi::payload::dpr_eth_pressures pressures{};
-//    pressures.p_eta = static_cast<float>(sensors.get_pressure_ETA_mean());
-//    pressures.p_hpe = static_cast<float>(sensors.get_pressure_HPE_mean());
-    pi::send_dpr_eth_pressures(&ctx, pressures);
-    p_tank = pressures.p_eta;
-    p_copv = pressures.p_hpe;
-  }
+    auto& sensors = PrcStore::get_instance().propSensorsStoreEth;
 
-  // printf("[PRC CAN] TX telemetry: tank=%.2f copv=%.2f\r\n", p_tank, p_copv);
+    pi::payload::dpr_eth_pressures pressures{};
+    pressures.p_eta = static_cast<float>(sensors.get_pressure_ETA_mean());
+    pressures.p_hpe = static_cast<float>(sensors.get_pressure_HPE_mean());
+    pi::send_dpr_eth_pressures(&ctx, pressures);
+  }
 }
 
 void Prc_Log_Forward(FDCAN_HandleTypeDef *hfdcan, const uint8_t *data, uint32_t length) {
