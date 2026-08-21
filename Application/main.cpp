@@ -15,7 +15,6 @@ extern "C" FDCAN_HandleTypeDef hfdcan1;
 #include "Data/propulsion/data.hpp"
 #include <stdio.h>
 
-#include "Modules/Sensors/impl/lox/fls.hpp"
 #include "Modules/Sensors/impl/lox/pressure_ota.hpp"
 #include "Modules/Sensors/impl/lox/pressure_hpo.hpp"
 #include "Modules/Sensors/impl/lox/temperature_ota.hpp"
@@ -53,7 +52,6 @@ static TemperatureOtaSensorModule1 t_ota1;   // T-OTA1       (Lox Tank, PT1000)
 static TemperatureOtaSensorModule2 t_ota2;   // T-OTA2       (Lox Tank, PT1000)
 static TemperatureOtaSensorModule3 t_ota3;   // T-OTA3       (Lox Tank, PT1000)
 static TemperatureOtaSensorModule4 t_ota4;   // T-OTA4       (Lox Tank, PT1000)
-static FLSModule fls_module;                 // FLS          (Inside Lox Tank, capacitive)
 
 // ── Pressurant bay 2 (Skinny Bay, PRC-ETH) ──────────────────────────────
 static PressureEtaSensorModule eta_module;   // P-ETA{1,2,3} (Eth Tank Ullage, Sensata PTE7300)
@@ -130,7 +128,7 @@ void prc::PropSensorsStoreLox::set_pressure_OTA3(double pressure_OTA3) {
 }
 void prc::PropSensorsStoreLox::set_pressure_OTA_mean(double pressure_OTA_mean) {
 	data_.pressure_OTA_mean = pressure_OTA_mean;
-	// 	printf("p_OTA_mean=%lf\r\n", pressure_OTA_mean);
+	printf("p_OTA_mean=%lf\r\n", pressure_OTA_mean);
 }
 void prc::PropSensorsStoreLox::set_pressure_HPO(double pressure_HPO) {
 	data_.pressure_HPO = pressure_HPO;
@@ -138,7 +136,7 @@ void prc::PropSensorsStoreLox::set_pressure_HPO(double pressure_HPO) {
 }
 void prc::PropSensorsStoreLox::set_pressure_HPO_mean(double pressure_HPO_mean) {
 	data_.pressure_HPO_mean = pressure_HPO_mean;
-	// 	printf("p_HPO_mean=%lf\r\n", pressure_HPO_mean);
+	printf("p_HPO_mean=%lf\r\n", pressure_HPO_mean);
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA1(double temperature_OTA1) {
 	data_.temperature_OTA1 = temperature_OTA1;
@@ -172,14 +170,6 @@ void prc::PropSensorsStoreLox::set_temperature_OTA4_mean(double temperature_OTA4
 	data_.temperature_OTA4_mean = temperature_OTA4_mean;
 	// 	printf("t_OTA4_mean=%lf\r\n", temperature_OTA4_mean);
 }
-void prc::PropSensorsStoreLox::set_FLS(double FLS) {
-	data_.FLS = FLS;
-	// 	printf("FLS=%lf\r\n", FLS);
-}
-void prc::PropSensorsStoreLox::set_FLS_mean(double FLS_mean) {
-	data_.FLS_mean = FLS_mean;
-	// 	printf("FLS_mean=%lf\r\n", FLS_mean);
-}
 
 // ---------------------------------------------------------------------------
 // Pressurant bay 2 (Eth) setters
@@ -199,7 +189,7 @@ void prc::PropSensorsStoreEth::set_pressure_ETA3(double pressure_ETA3) {
 }
 void prc::PropSensorsStoreEth::set_pressure_ETA_mean(double pressure_ETA_mean) {
 	data_.pressure_ETA_mean = pressure_ETA_mean;
-	// 	printf("p_ETA_mean=%lf\r\n", pressure_ETA_mean);
+	printf("p_ETA_mean=%lf\r\n", pressure_ETA_mean);
 }
 void prc::PropSensorsStoreEth::set_pressure_HPE(double pressure_HPE) {
 	data_.pressure_HPE = pressure_HPE;
@@ -207,7 +197,7 @@ void prc::PropSensorsStoreEth::set_pressure_HPE(double pressure_HPE) {
 }
 void prc::PropSensorsStoreEth::set_pressure_HPE_mean(double pressure_HPE_mean) {
 	data_.pressure_HPE_mean = pressure_HPE_mean;
-	// 	printf("p_HPE_mean=%lf\r\n", pressure_HPE_mean);
+	printf("p_HPE_mean=%lf\r\n", pressure_HPE_mean);
 }
 
 // ---------------------------------------------------------------------------
@@ -270,7 +260,6 @@ void main_init() {
 	t_ota2.init();
 	t_ota3.init();
 	t_ota4.init();
-	fls_module.init();
 
 	eta_module.init();
 	pressure_hpe.init();
@@ -295,7 +284,6 @@ void main_tick() {
 			t_ota2.tick();
 			t_ota3.tick();
 			t_ota4.tick();
-			fls_module.tick();
 			break;
 
 		case prc::BoardRole::DprEth:
@@ -310,5 +298,4 @@ void main_tick() {
 			break;
 	}
 
-	HAL_Delay(10);
 }

@@ -288,6 +288,7 @@ int main(void)
 
 
   static uint32_t lastPeriodicTick = 0;
+  static uint32_t lastTelemetryTick = 0;
   while (1)
   {
     /* USER CODE END WHILE */
@@ -316,6 +317,12 @@ int main(void)
 	    }
 	  }
 
+	  if (HAL_GetTick() - lastTelemetryTick >= 50)
+	  {
+	    lastTelemetryTick = HAL_GetTick();
+	    Prc_Can_SendTelemetry(&hfdcan1);
+	  }
+
 	  // Slow path: LED blink + sensor print, throttled to a human-readable
 	  // interval via HAL_GetTick() instead of a blocking HAL_Delay(), which
 	  // would otherwise stall CAN RX (above) for the same duration.
@@ -342,10 +349,6 @@ int main(void)
 	    } else {
 	      HAL_GPIO_WritePin(ETH_ON_GPIO_Port, ETH_ON_Pin, GPIO_PIN_RESET);
 	    }
-
-	    // Periodic DPR telemetry (tank + COPV pressures/temps), throttled to
-	    // this same 1s tick. See Application/FlightControl/prc_can.cpp.
-	    Prc_Can_SendTelemetry(&hfdcan1);
 
 	    //run_pte7300_hardware_test();
 	    //pte7300_print_data();
