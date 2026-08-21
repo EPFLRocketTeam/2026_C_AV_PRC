@@ -17,3 +17,4 @@ struct SdTimingStats {
     uint32_t max_batch;
     uint32_t last_error_code;  /* hsd->ErrorCode from last error callback */
 };
+static_assert(sizeof(SdTimingStats) == 64);

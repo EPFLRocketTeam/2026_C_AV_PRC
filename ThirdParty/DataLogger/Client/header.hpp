@@ -77,24 +77,24 @@ std::ostream& operator<<(std::ostream &os, const csv::header<T>& x) {
             return false;
         })();
 
-        if constexpr (skip) continue;
-
-        constexpr std::string_view name_view = ([member]() -> std::string_view {
-            for (auto anno : std::meta::annotations_of(member)) {
-                if (std::meta::remove_cv(std::meta::type_of(anno)) == ^^csv::rename) {
-                    auto renamed = std::meta::extract<csv::rename>(anno);
-                    return std::define_static_string(renamed.name());
+        if constexpr (!skip) {
+            constexpr std::string_view name_view = ([member]() -> std::string_view {
+                for (auto anno : std::meta::annotations_of(member)) {
+                    if (std::meta::remove_cv(std::meta::type_of(anno)) == ^^csv::rename) {
+                        auto renamed = std::meta::extract<csv::rename>(anno);
+                        return std::define_static_string(renamed.name());
+                    }
                 }
-            }
-            return std::meta::identifier_of(member);
-        })();
+                return std::meta::identifier_of(member);
+            })();
 
-        std::string name = std::string(name_view);
+            std::string name = std::string(name_view);
 
-        using FieldT = [: std::meta::type_of(member) :];
+            using FieldT = [: std::meta::type_of(member) :];
 
-        os << csv::header<FieldT>{ first, (x.field == "") ? name : (x.field + "." + name) };
-        first = false;
+            os << csv::header<FieldT>{ first, (x.field == "") ? name : (x.field + "." + name) };
+            first = false;
+        }
     }
 
     return os;

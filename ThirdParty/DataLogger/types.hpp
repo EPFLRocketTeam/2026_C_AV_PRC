@@ -5,6 +5,7 @@
 #include "Application/Data/engine_fsm.hpp"
 #include "Modules/Sensors/impl/std/multi.hpp"
 #include "Drivers/Plume/types.hpp"
+#include "Drivers/SensataPte7300/Types.hpp"
 
 constexpr uint8_t ENGINE_LOGGER_MAGIC = 0xA4;
 constexpr uint8_t LOX_LOGGER_MAGIC = 0xC1;
@@ -16,6 +17,7 @@ struct LogHeader {
     uint16_t length;
     uint32_t timestamp_us;
 };
+static_assert(sizeof(LogHeader) == 8);
 
 struct BaseStorageHealth {
     uint32_t bytes_written_ = 0;
@@ -24,24 +26,30 @@ struct BaseStorageHealth {
     uint32_t max_write_time_us_ = 0;
     uint32_t tick_count_ = 0;
 };
+static_assert(sizeof(BaseStorageHealth) == 20);
 
 struct StorageHealth {
     BaseStorageHealth health;
     SdTimingStats timing;
+    
+    CSV_IGNORE
+    uint8_t padding[4];
 
-    size_t disk_size_remaining;
-    size_t arena_used_bytes;
-    size_t arena_total_bytes;
+    uint64_t disk_size_remaining;
+    uint64_t arena_used_bytes;
+    uint64_t arena_total_bytes;
 };
 
 struct pressures_frame {
     double pressure;
     double pressure_mean;
 };
+static_assert(sizeof(pressures_frame) == 16);
 struct temperature_frame {
     double temperature;
     double temperature_mean;
 };
+static_assert(sizeof(temperature_frame) == 16);
 struct pressure_temperature_frame {
     double pressure;
     double pressure_mean;
@@ -49,16 +57,19 @@ struct pressure_temperature_frame {
     double temperature;
     double temperature_mean;
 };
+static_assert(sizeof(pressure_temperature_frame) == 32);
 
 struct engine_fsm_transition {
     prc::EngineState old_state;
     prc::EngineState new_state;
 };
+static_assert(sizeof(engine_fsm_transition) == 2);
 
 struct dpr_fsm_transition {
     prc::State old_state;
     prc::State new_state;
 };
+static_assert(sizeof(dpr_fsm_transition) == 2);
 
 namespace engine {
 
@@ -79,11 +90,15 @@ namespace engine {
         LOG_FSM_TRANSITION,
 
         LOG_CHAMBER_FRAME, // { P, T, P_mean, C_mean }
+        LOG_CHAMBER_ERROR,
 
         LOG_EIN_P_FRAME, // { P, P_mean }
         LOG_EIN_T_FRAME, // { T, T_mean }
         LOG_OIN_P_FRAME, // { P, P_mean }
         LOG_OIN_T_FRAME, // { T, T_mean }
+        
+        LOG_EIN_P_ERROR,
+        LOG_OIN_P_ERROR,
 
         LOG_ERROR // Send an EngineErrorKind
     };
@@ -96,13 +111,18 @@ namespace lox {
         multi::UseUnpack,
         3
     >;
+    static_assert(sizeof(OtaPressureFrame) == 80);
 
     struct OtaTemperatureFrame {
-        uint8_t sensor_id;
-        
         double temperature;
         double temperature_mean;
+
+        uint8_t sensor_id;
+
+        CSV_IGNORE
+        uint8_t padding[7];
     };
+    static_assert(sizeof(OtaTemperatureFrame) == 24);
 
     enum ErrorKind {
         FLS_ERROR,
@@ -128,8 +148,14 @@ namespace lox {
         LOG_FLS, // fill level
 
         LOG_HPO_FRAME, // { P, P_mean }
+        LOG_HPO_ERROR,
+
         LOG_OTA_P_FRAME, // OtaPressureFrame
         LOG_OTA_T_FRAME, // OtaTemperatureFrame
+
+        LOG_OTA1_P_ERROR,
+        LOG_OTA2_P_ERROR,
+        LOG_OTA3_P_ERROR,
 
         LOG_ERROR // Send a LoxErrorKind
     };
@@ -145,6 +171,7 @@ namespace eth {
         multi::UseUnpack,
         3
     >;
+    static_assert(sizeof(EtaPressureFrame) == 80);
 
     enum ErrorKind {
         FLS_ERROR,
@@ -164,7 +191,12 @@ namespace eth {
         LOG_FSM_TRANSITION,
 
         LOG_HPE_FRAME, // { P, P_mean }
+        LOG_HPE_ERROR,
+
         LOG_ETA_P_FRAME, // OtaPressureFrame
+        LOG_ETA1_P_ERROR,
+        LOG_ETA2_P_ERROR,
+        LOG_ETA3_P_ERROR,
         
         LOG_ERROR // Send a LoxErrorKind
     };

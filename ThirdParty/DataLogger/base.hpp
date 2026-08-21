@@ -29,12 +29,12 @@ protected:
         
         bool result;
         if (sizeof(LogHeader) + payload_len <= sizeof(buf)) {
-            memcpy(buf, &hdr, sizeof(hdr));
+        	memcpy(buf, &hdr, sizeof(hdr));
             memcpy(buf + sizeof(hdr), payload, payload_len);
             result = storage_.write(buf, sizeof(hdr) + payload_len);
         } else {
             // Large record: write header then payload separately
-            storage_.beginTransaction();
+        	storage_.beginTransaction();
             storage_.write(reinterpret_cast<const uint8_t*>(&hdr), sizeof(hdr));
             result = storage_.write(reinterpret_cast<const uint8_t*>(payload), payload_len);
             storage_.endTransaction();

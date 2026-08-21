@@ -94,12 +94,12 @@ std::ostream& operator<<(std::ostream &os, const csv::value<T>& x) {
             return false;
         })();
 
-        if constexpr (skip) continue;
-        
-        using FieldT = [: std::meta::type_of(member) :];
+        if constexpr (!skip) {    
+            using FieldT = [: std::meta::type_of(member) :];
 
-        os << csv::value<FieldT>{ x.value.[: member :], first };
-        first = false;
+            os << csv::value<FieldT>{ x.value.[: member :], first };
+            first = false;
+        }
     }
 
     return os;

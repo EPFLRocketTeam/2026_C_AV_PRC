@@ -10,7 +10,7 @@ const size_t FLS_WINDOW_SIZE = 10;
 // If changed, please update pipeline
 const size_t PRESSURE_OTA_NUMBER_SENSORS = 3;
 
-const double PRESSURE_OTA_MIN_VALUE = 0.;
+const double PRESSURE_OTA_MIN_VALUE = -0.25;
 const double PRESSURE_OTA_MAX_VALUE = 80.;
 
 // Keep two and remove the outlier.

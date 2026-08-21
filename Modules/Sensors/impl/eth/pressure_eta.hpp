@@ -8,6 +8,12 @@
 
 #include "Modules/Sensors/drivers/SensataSensor.hpp"
 
+struct OnSuccessEtaPressure {
+    void ingest (const auto &data) {
+    	getEthLogger().logETAPressureFrame(*((eth::EtaPressureFrame*) &data));
+    }
+};
+
 using PressureEtaSensorModule = multi::Module<
     CommonTimerPolicy,
     multi::PipelineParams<
@@ -34,16 +40,16 @@ using PressureEtaSensorModule = multi::Module<
     multi::PressureSensorParam<
         sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L1>>,
         ETH_SETTER_POLICY(prc::PropSensorsStoreEth::set_pressure_ETA1),
-        sensata::SensataErrorPipeline<ETA1_NAME>
+        sensata::SensataErrorPipeline<ETA1_NAME, &getEthLogger, &EthDataLogger<PlumeStorage>::logETA1PressureError>
     >,
     multi::PressureSensorParam<
         sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L2>>,
         ETH_SETTER_POLICY(prc::PropSensorsStoreEth::set_pressure_ETA2),
-        sensata::SensataErrorPipeline<ETA2_NAME>
+        sensata::SensataErrorPipeline<ETA2_NAME, &getEthLogger, &EthDataLogger<PlumeStorage>::logETA2PressureError>
     >,
     multi::PressureSensorParam<
         sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L4>>,
         ETH_SETTER_POLICY(prc::PropSensorsStoreEth::set_pressure_ETA3),
-        sensata::SensataErrorPipeline<ETA3_NAME>
+        sensata::SensataErrorPipeline<ETA3_NAME, &getEthLogger, &EthDataLogger<PlumeStorage>::logETA3PressureError>
     >
 >;

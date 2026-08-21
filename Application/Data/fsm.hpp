@@ -25,6 +25,7 @@ enum State : uint8_t {
   ABORT_ON_GROUND,
   ABORT_IN_FLIGHT, // step 1: Safety + Ball closed, then rejoins PASSIVATE via a timer
 };
+static_assert(sizeof(State) == 1);
 };
 
 #endif /* APP_PRC_FSM_H */
