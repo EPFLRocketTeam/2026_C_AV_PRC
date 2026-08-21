@@ -10,14 +10,11 @@
 
 struct OnSuccessOtaPressure {
     void ingest (const auto &data) {
-    	printf("Success OTA ?\n");
     	lox::OtaPressureFrame frame;
     	frame.pressure = data.pressure;
     	frame.temperature = data.temperature;
     	frame.valid = data.valid;
-    	printf("Start logging %d ?\n", sizeof(frame));
     	getLoxLogger().logOTAPressureFrame(frame);
-        printf("Success OTA\n");
     }
 };
 

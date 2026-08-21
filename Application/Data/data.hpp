@@ -4,6 +4,7 @@
 
 #include <cstdint>
 
+#include "ThirdParty/DataLogger/Client/annotations.hpp"
 #include "Application/Data/fsm.hpp"
 #include "./istore.hpp"
 #include "./propulsion/data.hpp"
@@ -26,6 +27,7 @@ enum class BoardRole : uint8_t {
   DprEth,
   EngineBay,
 };
+static_assert(sizeof(BoardRole) == 1);
 
 struct BoardIdentity {
   BoardRole role;
@@ -44,6 +46,7 @@ struct Valves {
 
   Valves();
 };
+static_assert(sizeof(Valves) == 7);
 
 // ---------------------------------------------------------------------------
 // Command received from the Flight Computer over the CAN link
@@ -56,8 +59,12 @@ struct IntranetCmd {
   uint16_t id;
   uint8_t value;
 
+  CSV_IGNORE
+  uint8_t padding;
+
   IntranetCmd();
 };
+static_assert(sizeof(IntranetCmd) == 4);
 
 // ---------------------------------------------------------------------------
 // Derived/latched conditions the FSM transitions on. Same division of
@@ -135,13 +142,15 @@ struct DataDump {
   uint32_t       prc_timestamp_ms;
   BoardIdentity  boardIdentity;
   Valves         valves;
-  IntranetCmd      intranetCmd;
+  IntranetCmd    intranetCmd;
   Event          event;
 
   PropSensorsEngine propSensorsEngine;
   PropSensorsEth    propSensorsEth;
   PropSensorsLox    propSensorsLox;
 };
+
+static_assert(sizeof(DataDump) == 24 + 128 + 96 + 48);
 
 // Aggregating singleton — mirrors flight_computer::GOATStore.
 class PrcStore {

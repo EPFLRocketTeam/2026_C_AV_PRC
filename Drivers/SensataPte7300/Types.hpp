@@ -21,6 +21,7 @@ enum class Status : uint8_t {
     Timeout,
     ProtocolNotDefined
 };
+static_assert(sizeof(Status) == 1);
 
 template <typename T>
 struct Result {
@@ -40,6 +41,7 @@ enum class Pte7300Step : uint8_t {
     ReadStatus,
     ReadSerial
 };
+static_assert(sizeof(Pte7300Step) == 1);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -94,9 +96,10 @@ struct pte7300_measurement {
     pte7300_status_frame      status;
 };
 
-enum SensataPollMode {
+enum SensataPollMode : uint8_t {
     PRESSURE, TEMPERATURE
 };
+static_assert(sizeof(SensataPollMode) == 1);
 
 struct SensataError {
     Status      status;
@@ -104,5 +107,6 @@ struct SensataError {
 
     SensataPollMode pollMode;
 };
+static_assert(sizeof(SensataError) == 3);
 
 };

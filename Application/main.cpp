@@ -236,6 +236,12 @@ void main_init() {
 	Prc_Fsm_Init();  /* latches board role from ENG_SETUP/ETH_SETUP/LOX_SETUP straps, see Drivers/PrcBoardId/PrcBoardId.hpp, also calls Valve_InitAll() */
 	Prc_Can_ConfigNodeFilter(&hfdcan1);  /* now that role is latched, accept this board's own DPR node ID, see Application/FlightControl/prc_can.cpp */
 
+
+	for (int i = 0; i < 10; i ++) {
+		printf("Booting on PRC, %d seconds remain.\n", 10 - i);
+		HAL_Delay(1000);
+	}
+
 	app_timebase_init();
 
 	if (!sd_interface.init_sd_card(&hsd1, plume_arena_buffer, plume_arena_length)) {

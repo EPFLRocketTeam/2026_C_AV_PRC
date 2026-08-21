@@ -90,6 +90,9 @@ namespace internal {
         temperature_type temperature;
 
         std::array<bool, NumberSensors> valid;
+        
+        CSV_IGNORE
+        uint8_t padding[(7 * NumberSensors) % 8];
     };
 
     template<typename Use, typename... RawPipelines>

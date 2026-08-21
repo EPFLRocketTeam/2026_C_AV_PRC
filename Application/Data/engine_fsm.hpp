@@ -51,6 +51,7 @@ enum class EngineState : uint8_t {
   AbortInFlightOxydant,   // close MO
   AbortInFlightEthanol,   // close ME -- then times out into WaitForPassivation
 };
+static_assert(sizeof(EngineState) == 1);
 
 } // namespace prc
 

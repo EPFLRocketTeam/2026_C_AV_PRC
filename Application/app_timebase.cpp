@@ -3,6 +3,27 @@
 #include "stm32h7xx_hal.h"
 #include <cstdio>
 
+#ifndef APP_ENABLE_RTOS_STORE_LOCKS
+#define APP_ENABLE_RTOS_STORE_LOCKS 0u
+#endif
+
+#if !defined(UNIT_TEST_ENV) && (APP_ENABLE_RTOS_STORE_LOCKS != 0u)
+#include "cmsis_os.h"
+#else
+using osMutexId_t = void *;
+constexpr uint32_t osWaitForever = 0xFFFFFFFFu;
+inline int32_t osMutexAcquire(osMutexId_t, uint32_t) { return 0; }
+inline int32_t osMutexRelease(osMutexId_t) { return 0; }
+#endif
+
+#if defined(UNIT_TEST_ENV) || (APP_ENABLE_RTOS_STORE_LOCKS == 0u)
+osMutexId_t eventStoreMutexHandle = nullptr;
+osMutexId_t navigationDataMutexHandle = nullptr;
+#else
+extern osMutexId_t eventStoreMutexHandle;
+extern osMutexId_t navigationDataMutexHandle;
+#endif
+
 namespace {
 
 struct AppTimebaseState {
@@ -18,6 +39,8 @@ struct AppTimebaseState {
 // issues when accessed from both main thread and ISR context.
 __attribute__((section(".dtcm_bss"))) AppTimebaseState g_app_timebase;
 
+bool g_app_timebase_initialized = false;
+
 // Diagnostic: capture DWT state at init for later printing
 static uint32_t g_timebase_init_hal_ms = 0;
 static uint32_t g_timebase_init_dwt_pre = 0;
@@ -25,6 +48,29 @@ static uint32_t g_timebase_init_dwt_ctrl_pre = 0;
 static uint32_t g_timebase_init_last_cycle = 0;
 static uint64_t g_timebase_init_acc_us = 0;
 
+inline void lock_event_store() {
+  if (eventStoreMutexHandle != nullptr) {
+    osMutexAcquire(eventStoreMutexHandle, osWaitForever);
+  }
+}
+
+inline void unlock_event_store() {
+  if (eventStoreMutexHandle != nullptr) {
+    osMutexRelease(eventStoreMutexHandle);
+  }
+}
+
+inline void lock_navigation_data() {
+  if (navigationDataMutexHandle != nullptr) {
+    osMutexAcquire(navigationDataMutexHandle, osWaitForever);
+  }
+}
+
+inline void unlock_navigation_data() {
+  if (navigationDataMutexHandle != nullptr) {
+    osMutexRelease(navigationDataMutexHandle);
+  }
+}
 
 #if !defined(UNIT_TEST_ENV)
 inline void app_timebase_enable_dwt() {
@@ -72,6 +118,8 @@ void app_timebase_init_locked() {
   if (g_app_timebase.initialized) {
     return;
   }
+
+  printf("Proper initialize !\n");
 
 #if !defined(UNIT_TEST_ENV)
   g_timebase_init_hal_ms = HAL_GetTick();
@@ -176,20 +224,26 @@ uint64_t app_timebase_now_us_locked() {
 } // namespace
 
 extern "C" void app_timebase_init(void) {
+  /*if (!g_app_timebase_initialized) {
+	  g_app_timebase_initialized = true;
+	  g_app_timebase = AppTimebaseState{};
+  }
+
   const uint32_t primask = app_timebase_enter_critical();
   app_timebase_init_locked();
-  app_timebase_exit_critical(primask);
+  app_timebase_exit_critical(primask);*/
 }
 
 extern "C" uint64_t app_timebase_now_us(void) {
-  const uint32_t primask = app_timebase_enter_critical();
-  const uint64_t now_us = app_timebase_now_us_locked();
-  app_timebase_exit_critical(primask);
-  return now_us;
+  //const uint32_t primask = app_timebase_enter_critical();
+  //const uint64_t now_us = app_timebase_now_us_locked();
+  //app_timebase_exit_critical(primask);
+  return 1000L * app_timebase_now_ms();
 }
 
 extern "C" uint32_t app_timebase_now_ms(void) {
-  return static_cast<uint32_t>(app_timebase_now_us() / 1000ULL);
+  return HAL_GetTick();
+	//return static_cast<uint32_t>(app_timebase_now_us() / 1000ULL);
 }
 
 extern "C" void app_timebase_print_init_diag(void) {
@@ -209,4 +263,3 @@ extern "C" void app_timebase_print_init_diag(void) {
          static_cast<unsigned long>(g_timebase_first_call_count));
 #endif
 }
-

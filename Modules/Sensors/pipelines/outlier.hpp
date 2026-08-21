@@ -5,6 +5,8 @@
 #include <tuple>
 #include <sigutils/outlier.hpp>
 
+#include "ThirdParty/DataLogger/Client/annotations.hpp"
+
 namespace outlier_pipeline {
 
 template<const size_t NumberInputs>
@@ -14,11 +16,25 @@ struct Frame {
     /* Whether the sensor is an outlier */
     std::array<bool, NumberInputs> is_outlier;
 
+    static_assert(sizeof(std::array<bool, NumberInputs>) == NumberInputs);
+
+    CSV_IGNORE
+    uint8_t padding[(7 * NumberInputs) % 8];
+
     /* Number of used data points */
-    size_t number_used;
+    uint64_t number_used;
     /* Final value computed */
     double value;
 };
+static_assert(sizeof(Frame<1>) == 32);
+static_assert(sizeof(Frame<2>) == 40);
+static_assert(sizeof(Frame<3>) == 48);
+static_assert(sizeof(Frame<4>) == 56);
+static_assert(sizeof(Frame<5>) == 64);
+static_assert(sizeof(Frame<6>) == 72);
+static_assert(sizeof(Frame<7>) == 80);
+static_assert(sizeof(Frame<8>) == 88);
+static_assert(sizeof(Frame<9>) == 104);
 
 template<
     const size_t NumberKept,

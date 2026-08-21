@@ -17,6 +17,7 @@ struct LogHeader {
     uint16_t length;
     uint32_t timestamp_us;
 };
+static_assert(sizeof(LogHeader) == 8);
 
 struct BaseStorageHealth {
     uint32_t bytes_written_ = 0;
@@ -25,24 +26,30 @@ struct BaseStorageHealth {
     uint32_t max_write_time_us_ = 0;
     uint32_t tick_count_ = 0;
 };
+static_assert(sizeof(BaseStorageHealth) == 20);
 
 struct StorageHealth {
     BaseStorageHealth health;
     SdTimingStats timing;
+    
+    CSV_IGNORE
+    uint8_t padding[4];
 
-    size_t disk_size_remaining;
-    size_t arena_used_bytes;
-    size_t arena_total_bytes;
+    uint64_t disk_size_remaining;
+    uint64_t arena_used_bytes;
+    uint64_t arena_total_bytes;
 };
 
 struct pressures_frame {
     double pressure;
     double pressure_mean;
 };
+static_assert(sizeof(pressures_frame) == 16);
 struct temperature_frame {
     double temperature;
     double temperature_mean;
 };
+static_assert(sizeof(temperature_frame) == 16);
 struct pressure_temperature_frame {
     double pressure;
     double pressure_mean;
@@ -50,16 +57,19 @@ struct pressure_temperature_frame {
     double temperature;
     double temperature_mean;
 };
+static_assert(sizeof(pressure_temperature_frame) == 32);
 
 struct engine_fsm_transition {
     prc::EngineState old_state;
     prc::EngineState new_state;
 };
+static_assert(sizeof(engine_fsm_transition) == 2);
 
 struct dpr_fsm_transition {
     prc::State old_state;
     prc::State new_state;
 };
+static_assert(sizeof(dpr_fsm_transition) == 2);
 
 namespace engine {
 
@@ -101,13 +111,18 @@ namespace lox {
         multi::UseUnpack,
         3
     >;
+    static_assert(sizeof(OtaPressureFrame) == 80);
 
     struct OtaTemperatureFrame {
-        uint8_t sensor_id;
-        
         double temperature;
         double temperature_mean;
+
+        uint8_t sensor_id;
+
+        CSV_IGNORE
+        uint8_t padding[7];
     };
+    static_assert(sizeof(OtaTemperatureFrame) == 24);
 
     enum ErrorKind {
         FLS_ERROR,
@@ -156,6 +171,7 @@ namespace eth {
         multi::UseUnpack,
         3
     >;
+    static_assert(sizeof(EtaPressureFrame) == 80);
 
     enum ErrorKind {
         FLS_ERROR,
