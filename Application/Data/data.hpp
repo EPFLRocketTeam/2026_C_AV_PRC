@@ -150,7 +150,7 @@ struct DataDump {
   PropSensorsLox    propSensorsLox;
 };
 
-static_assert(sizeof(DataDump) == 24 + 128 + 96 + 48);
+static_assert(sizeof(DataDump) == 24 + 112 + 96 + 48);
 
 // Aggregating singleton — mirrors flight_computer::GOATStore.
 class PrcStore {
