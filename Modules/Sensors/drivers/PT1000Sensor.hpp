@@ -2,6 +2,7 @@
 #pragma once
 #include "Drivers/PT1000/PT1000.hpp"
 #include "Modules/Sensors/impl/std/sensor.hpp"
+#include "Application/app_printf.h"
 
 extern "C" ADC_HandleTypeDef hadc3;
 
@@ -69,7 +70,7 @@ namespace pt1000 {
             // Silenced -- unwired bench channels (e.g. ota2-4) spam this
             // every poll. Re-enable if you need to see PT1000 read
             // failures again.
-            // printf("%s: read failed, raw_adc=%lu\r\n", SensorName, (unsigned long)error.raw_adc);
+            // app_printf("%s: read failed, raw_adc=%lu\r\n", SensorName, (unsigned long)error.raw_adc);
             (void)error;
         }
     };

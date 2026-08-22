@@ -9,7 +9,7 @@ extern "C" {
  * @brief Manual hardware test for the LMT85 temperature sensor (Vtemp, PB1).
  *
  * Reads the sensor in a loop and prints raw ADC, voltage, and temperature
- * via printf. Runs forever until the board is reset.
+ * via app_printf. Runs forever until the board is reset.
  *
  * @return 0 (never returns in practice).
  */

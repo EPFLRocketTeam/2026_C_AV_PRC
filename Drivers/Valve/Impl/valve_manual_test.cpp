@@ -1,6 +1,7 @@
 #include "../valve_manual_test.hpp"
 #include "../ValveList.hpp"
 
+#include "Application/app_printf.h"
 #include "stm32h7xx_hal.h"
 
 #include <cstdint>
@@ -13,11 +14,11 @@ static void exercise(ValveId id)
         return;
     }
 
-    printf("[Valve] %s: open\r\n", valve->name());
+    app_printf("[Valve] %s: open\r\n", valve->name());
     valve->open();
     HAL_Delay(2500);
 
-    printf("[Valve] %s: close\r\n", valve->name());
+    app_printf("[Valve] %s: close\r\n", valve->name());
     valve->close();
 
 }
@@ -36,7 +37,7 @@ static void exercise_ball_valve_positions()
     static const float percentages[] = { 0.0f, 25.0f, 50.0f, 75.0f, 100.0f, 0.0f };
 
     for (float percent_open : percentages) {
-        printf("[Valve] %s: set_position(%.0f%%)\r\n", ball_valve->name(), percent_open);
+        app_printf("[Valve] %s: set_position(%.0f%%)\r\n", ball_valve->name(), percent_open);
         ball_valve->set_position(percent_open);
         HAL_Delay(1000); // give the servo time to actually reach position
     }
@@ -44,7 +45,7 @@ static void exercise_ball_valve_positions()
 
 void Valve_ManualTest(void)
 {
-    printf("[Valve] Manual test started\r\n");
+    app_printf("[Valve] Manual test started\r\n");
 
     Valve_InitAll();
 
@@ -54,5 +55,5 @@ void Valve_ManualTest(void)
 
     exercise_ball_valve_positions();
 
-    printf("[Valve] Manual test done\r\n");
+    app_printf("[Valve] Manual test done\r\n");
 }

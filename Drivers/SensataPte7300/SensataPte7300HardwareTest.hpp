@@ -9,7 +9,7 @@ extern "C" {
  * @brief Manual hardware test for PT1000 temperature sensors.
  *
  * Reads all 4 PT1000 channels in a loop and prints resistance + temperature
- * via printf (redirected to UART/SWO). Runs forever until the board is reset.
+ * via app_printf (redirected to UART/SWO). Runs forever until the board is reset.
  *
  * @return 0 (never returns in practice).
  */
@@ -29,7 +29,7 @@ void pte7300_print_data();
  *
  * Selects each mux channel (0..7) in turn and probes every 7-bit address
  * in the standard scan range (0x03-0x77) with HAL_I2C_IsDeviceReady().
- * Any address that ACKs is logged via printf (redirected to UART/SWO).
+ * Any address that ACKs is logged via app_printf (redirected to UART/SWO).
  * After a full 8-channel pass, waits 500 ms and repeats forever.
  *
  * Note: the mux itself (default 0x70) will ACK on every channel since it

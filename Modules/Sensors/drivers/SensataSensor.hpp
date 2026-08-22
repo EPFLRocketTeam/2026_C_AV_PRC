@@ -3,6 +3,7 @@
 
 #include "Drivers/SensataPte7300/SensataPte7300.hpp"
 #include "Modules/Sensors/impl/std/sensor.hpp"
+#include "Application/app_printf.h"
 
 extern "C" I2C_HandleTypeDef hi2c1;
 
@@ -37,7 +38,8 @@ namespace sensata {
             typename Params,
             const bool PollTemperature,
             const bool PollPressure,
-            I2C_HandleTypeDef* hi2c = &hi2c1
+            I2C_HandleTypeDef* hi2c = &hi2c1,
+			int Multiplier = 1
         >
         struct SensataSensor {
         private:
@@ -80,7 +82,7 @@ namespace sensata {
                         return sensor_result::error(error);
                     }
 
-                    frame.pressure = result.value.pressure_bar;
+                    frame.pressure = result.value.pressure_bar * Multiplier;
                 }
 
                 if (PollTemperature) {
@@ -94,7 +96,7 @@ namespace sensata {
                         return sensor_result::error(error);
                     }
 
-                    frame.temperature = result.value.temperature_c;
+                    frame.temperature = result.value.temperature_c * Multiplier;
                 }
                 
                 return sensor_result::success(frame);
@@ -113,7 +115,7 @@ namespace sensata {
             // in Drivers/SensataPte7300/Types.hpp) -- no string table for
             // them exists yet, unlike poll_mode_str. Cross-reference the
             // number against that header if you need the name.
-            printf("[SENSATA] %s: FAIL status=%u step=%s mode=%s\r\n",
+            app_printf("[SENSATA] %s: FAIL status=%u step=%s mode=%s\r\n",
                    SensorName,
                    static_cast<unsigned>(error.status),
                    sensata::step_str(error.step),
@@ -125,10 +127,10 @@ namespace sensata {
     };
 
 
-    template<typename Params, I2C_HandleTypeDef* hi2c = &hi2c1>
-    using PressureSensata = internal::SensataSensor<Params, false, true, hi2c>;
-    template<typename Params, I2C_HandleTypeDef* hi2c = &hi2c1>
-    using TemperatureSensata = internal::SensataSensor<Params, true, false, hi2c>;
-    template<typename Params, I2C_HandleTypeDef* hi2c = &hi2c1>
-    using BothSensata = internal::SensataSensor<Params, true, true, hi2c>;
+    template<typename Params, int Multiplier = 1, I2C_HandleTypeDef* hi2c = &hi2c1>
+    using PressureSensata = internal::SensataSensor<Params, false, true, hi2c, Multiplier>;
+    template<typename Params, int Multiplier = 1, I2C_HandleTypeDef* hi2c = &hi2c1>
+    using TemperatureSensata = internal::SensataSensor<Params, true, false, hi2c, Multiplier>;
+    template<typename Params, int Multiplier = 1, I2C_HandleTypeDef* hi2c = &hi2c1>
+    using BothSensata = internal::SensataSensor<Params, true, true, hi2c, Multiplier>;
 };

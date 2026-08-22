@@ -2,6 +2,7 @@
 #include "Application/FlightControl/prc_fsm_c_api.h"
 #include "Application/FlightControl/engine_state.h"
 #include "Application/app_timebase.h"
+#include "Application/app_printf.h"
 #include "Application/Control/rst_controller.hpp"
 #include "Drivers/PrcBoardId/PrcBoardId.hpp"
 #include "Drivers/Valve/ValveList.hpp"
@@ -264,7 +265,7 @@ void PrcState::update(const DataDump &dump) {
   }
 
   if (currentState != previous_state) {
-    printf("[PRC FSM] %s -> %s\r\n",
+    app_printf("[PRC FSM] %s -> %s\r\n",
            stateToString(previous_state).c_str(),
            stateToString(currentState).c_str());
 
@@ -502,7 +503,7 @@ void Prc_Fsm_Init(void) {
   identity.role = role;
   PrcStore::get_instance().boardIdentityStore.set(identity);
 
-  printf("[PRC FSM] init: board role=%s\r\n", RoleToString(role));
+  app_printf("[PRC FSM] init: board role=%s\r\n", RoleToString(role));
 
   BeepBuzzer(BeepCountFor(role));
 

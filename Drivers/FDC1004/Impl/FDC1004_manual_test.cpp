@@ -3,6 +3,7 @@
 
 #include "../FDC1004_manual_test.h"
 #include "../FDC1004.h"
+#include "Application/app_printf.h"
 
 #include <cmath>
 #include <cstdio>
@@ -66,7 +67,7 @@ void FDC1004_ManualTest(I2C_HandleTypeDef *hi2c)
     }
   }
 
-  printf("FDC1004,%lu,%.4f,%.4f,%.4f,%.4f,%d,%d,%d,%d\r\n",
+  app_printf("FDC1004,%lu,%.4f,%.4f,%.4f,%.4f,%d,%d,%d,%d\r\n",
          (unsigned long)HAL_GetTick(),
          static_cast<double>(fdc_cap_ch0_pf),
          static_cast<double>(fdc_cap_ch1_pf),

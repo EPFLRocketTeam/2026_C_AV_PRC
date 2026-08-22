@@ -17,6 +17,8 @@ const size_t PRESSURE_ETA_NUMBER_KEPT = 2;
 // for the pressure data point to be logged. 
 const size_t PRESSURE_ETA_MIN_NUMBER  = 1;
 
+const int PRESSURE_HPE_MULTIPLIER = 4;
+
 static const char* ETA1_NAME = "eta1";
 static const char* ETA2_NAME = "eta2";
 static const char* ETA3_NAME = "eta3";

@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "Application/Data/data.hpp"
+#include "Application/app_printf.h"
 #include "Application/FlightControl/engine_state.h"
 #include "Application/FlightControl/prc_state.h"
 // #include "Application/FlightControl/intranet_cmd.hpp"
@@ -96,7 +97,7 @@ void ApplyCmdValves(pi::payload::cmd_valves cmd) noexcept {
       label = "CopvVent";
       applied = Prc_Fsm_ManualVentCopv(open);
     }
-    printf("[PRC CAN] cmd_valves: %s -> %s (%s)\r\n",
+    app_printf("[PRC CAN] cmd_valves: %s -> %s (%s)\r\n",
            label, open ? "open" : "closed",
            applied ? "applied" : "ignored, FSM not in MANUAL");
     return;
@@ -114,7 +115,7 @@ void ApplyCmdValves(pi::payload::cmd_valves cmd) noexcept {
   else if (cmd.state == pi::constants::VALVE_STATE_CLOSED) valve->close();
   else return;
 
-  printf("[PRC CAN] cmd_valves: %s -> %s\r\n", valve->name(), valve->is_open() ? "open" : "closed");
+  app_printf("[PRC CAN] cmd_valves: %s -> %s\r\n", valve->name(), valve->is_open() ? "open" : "closed");
 }
 
 void OnDprEthCmdValves(void*, pi::payload::cmd_valves cmd) noexcept {
@@ -125,7 +126,7 @@ void OnDprEthBallValve(void*, pi::payload::ball_valve_position pos) noexcept {
   if (CurrentRole() != BoardRole::DprEth) return;
   bool applied = Prc_Fsm_ManualSetBallValve(pos.percent_open);
   HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_5);
-  printf("[PRC CAN] ball_valve: %.1f%% (%s)\r\n", pos.percent_open, applied ? "applied" : "ignored, FSM not in MANUAL");
+  app_printf("[PRC CAN] ball_valve: %.1f%% (%s)\r\n", pos.percent_open, applied ? "applied" : "ignored, FSM not in MANUAL");
 }
 
 void OnDprLoxAbort(void*, pi::payload::safety_key key) noexcept {
@@ -152,7 +153,7 @@ void OnDprLoxCmdValves(void*, pi::payload::cmd_valves cmd) noexcept {
 void OnDprLoxBallValve(void*, pi::payload::ball_valve_position pos) noexcept {
   if (CurrentRole() != BoardRole::DprLox) return;
   bool applied = Prc_Fsm_ManualSetBallValve(pos.percent_open);
-  printf("[PRC CAN] ball_valve: %.1f%% (%s)\r\n", pos.percent_open, applied ? "applied" : "ignored, FSM not in MANUAL");
+  app_printf("[PRC CAN] ball_valve: %.1f%% (%s)\r\n", pos.percent_open, applied ? "applied" : "ignored, FSM not in MANUAL");
 }
 
 // Engine bay (PRC-P) commands -- consumed by PrcEngineState::fromXxx()
@@ -216,12 +217,12 @@ void CbSend(void* driver_ptr, uint16_t can_id, const uint8_t* buffer, uint32_t d
     // TEMPORARY: silenced -- expected/constant when this board is standalone
     // on the bench with no other CAN node to ACK frames, was drowning out
     // other prints (e.g. [SENSATA]). Re-enable once testing on the full bus.
-    // printf("[PRC CAN] TX failed, id=0x%X\r\n", can_id);
+    // app_printf("[PRC CAN] TX failed, id=0x%X\r\n", can_id);
   }
 }
 
 // log_aggregator::SendChunkFn: called once per 8-byte chunk of a
-// forwarded printf write. `ctx` is the prc_intranet context (same one
+// forwarded app_printf write. `ctx` is the prc_intranet context (same one
 // used for telemetry/RX), with driver_ptr already pointing at hfdcan
 // (set by Prc_Log_Forward below before chunking starts).
 void SendLogChunk(void* ctx, const uint8_t chunk[8]) noexcept {
@@ -318,7 +319,7 @@ void Prc_Can_ConfigNodeFilter(FDCAN_HandleTypeDef *hfdcan) {
   filter.FilterID2    = 0x0F0; // mask: only the node nibble must match
 
   if (HAL_FDCAN_ConfigFilter(hfdcan, &filter) != HAL_OK) {
-    printf("[PRC CAN] node filter config failed, node=0x%X\r\n", static_cast<uint8_t>(node));
+    app_printf("[PRC CAN] node filter config failed, node=0x%X\r\n", static_cast<uint8_t>(node));
   }
 }
 
@@ -417,7 +418,7 @@ void Prc_Log_Forward(FDCAN_HandleTypeDef *hfdcan, const uint8_t *data, uint32_t 
   }
 
   // Reentrancy guard: CbSend prints a warning on TX failure, and that
-  // printf would otherwise recurse straight back into this function via
+  // app_printf would otherwise recurse straight back into this function via
   // _write() -- if the underlying CAN TX condition that failed the first
   // send is still failing, that recursion never terminates. A failed
   // send while already forwarding just gets dropped instead of retried.

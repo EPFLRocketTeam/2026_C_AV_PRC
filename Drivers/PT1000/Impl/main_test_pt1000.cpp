@@ -2,6 +2,7 @@
 #include "../PT1000.hpp"
 #include "main.h"
 #include <cstdio>
+#include "Application/app_printf.h"
 
 using namespace Drivers::PT1000;
 
@@ -11,7 +12,7 @@ using namespace Drivers::PT1000;
  * Prerequisites:
  *   - ADC peripherals must be initialized by CubeMX-generated code
  *     (MX_ADC1_Init / MX_ADC3_Init or equivalent).
- *   - printf must be retargeted to UART or SWO for output.
+ *   - app_printf must be retargeted to UART or SWO for output.
  *   - HAL_Delay must be available.
  *
  * Usage:
@@ -72,27 +73,27 @@ int manual_test_pt1000() {
     // Initialize all sensors
     for (uint8_t i = 0; i < NUM_SENSORS; i++) {
         if (!sensors[i].init()) {
-            printf("[PT1000] ERROR: sensor %u init failed\r\n", i + 1);
+            app_printf("[PT1000] ERROR: sensor %u init failed\r\n", i + 1);
         }
     }
 
-    printf("[PT1000] Manual test started — reading 4 channels\r\n");
+    app_printf("[PT1000] Manual test started — reading 4 channels\r\n");
 
     // Infinite read loop
     while (1) {
         for (uint8_t i = 0; i < NUM_SENSORS; i++) {
             PT1000Data data;
             if (sensors[i].read(data)) {
-                printf("[PT1000-%u] ADC: %lu | R: %.1f Ohm | T: %.2f C\r\n",
+                app_printf("[PT1000-%u] ADC: %lu | R: %.1f Ohm | T: %.2f C\r\n",
                        i + 1,
                        (unsigned long)data.raw_adc,
                        data.resistance,
                        data.temperature);
             } else {
-                printf("[PT1000-%u] READ FAILED\r\n", i + 1);
+                app_printf("[PT1000-%u] READ FAILED\r\n", i + 1);
             }
         }
-        printf("---\r\n");
+        app_printf("---\r\n");
 
         HAL_Delay(1000);
     }

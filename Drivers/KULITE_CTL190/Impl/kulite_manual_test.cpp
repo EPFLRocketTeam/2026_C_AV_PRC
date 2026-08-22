@@ -3,6 +3,7 @@
 #include "../kulite_manual_test.hpp"
 #include <cstdio>
 #include <cstring>
+#include "Application/app_printf.h"
 
 
 extern ADC_HandleTypeDef hadc1;  // Kulite (PA4) is wired to ADC1 channel 18 -- see .ioc's PA4.GPIO_Label=Kulite / PA4.Signal=ADCx_INP18
@@ -96,24 +97,24 @@ static const char* status_to_string(Ctl190::Status status) {
  * Afficher la configuration courante
  */
 static void print_configuration() {
-    printf("\r\n--- Configuration CTL-190 ---\r\n");
-    printf("  ADC Resolution   : %d bits\r\n", ctl190_cfg.adc_resolution);
-    printf("  ADC Vref         : %.2f V\r\n", ctl190_cfg.adc_vref);
-    printf("  Amplifier Gain   : %.2f\r\n", ctl190_cfg.amp_gain);
-    printf("  FSO (nominal)    : %.2f mV\r\n", ctl190_cfg.fso_mv);
-    printf("  Pressure Rated   : %.2f %s\r\n",
+    app_printf("\r\n--- Configuration CTL-190 ---\r\n");
+    app_printf("  ADC Resolution   : %d bits\r\n", ctl190_cfg.adc_resolution);
+    app_printf("  ADC Vref         : %.2f V\r\n", ctl190_cfg.adc_vref);
+    app_printf("  Amplifier Gain   : %.2f\r\n", ctl190_cfg.amp_gain);
+    app_printf("  FSO (nominal)    : %.2f mV\r\n", ctl190_cfg.fso_mv);
+    app_printf("  Pressure Rated   : %.2f %s\r\n",
            ctl190_cfg.pressure_max,
            ctl190_cfg.unit == Ctl190::PressureUnit::PSI ? "PSI" : "BAR");
-    printf("  Max Overpressure : %.2f %s\r\n",
+    app_printf("  Max Overpressure : %.2f %s\r\n",
            ctl190_cfg.max_overpressure,
            ctl190_cfg.unit == Ctl190::PressureUnit::PSI ? "PSI" : "BAR");
-    printf("  Sensitivity      : %.4f mV/%s @ %.1f V excitation\r\n",
+    app_printf("  Sensitivity      : %.4f mV/%s @ %.1f V excitation\r\n",
            ctl190_cfg.sensitivity_mv_per_unit,
            ctl190_cfg.unit == Ctl190::PressureUnit::PSI ? "PSI" : "BAR",
            ctl190_cfg.calibration_excitation_v);
-    printf("  Actual Excitation: %.1f V\r\n", ctl190_cfg.actual_excitation_v);
-    printf("  Zero Offset      : %.2f mV\r\n", ctl190_handle.zero_offset_mv);
-    printf("\r\n");
+    app_printf("  Actual Excitation: %.1f V\r\n", ctl190_cfg.actual_excitation_v);
+    app_printf("  Zero Offset      : %.2f mV\r\n", ctl190_handle.zero_offset_mv);
+    app_printf("\r\n");
 }
 
 // Original phased test (Phase 1-9: config, sanity check, init, zero-cal,
@@ -123,10 +124,10 @@ static void print_configuration() {
 // 30s and returning, same shape as the LMT85/PT1000 manual tests.
 /*
 int manual_test_ctl190_phased() {
-    printf("\r\n");
+    app_printf("\r\n");
 
     // Phase 1: Configuration
-    printf("\r\n[Phase 1] Configuration ............. ");
+    app_printf("\r\n[Phase 1] Configuration ............. ");
     ctl190_cfg.adc_read       = ctl190_adc_read;
     ctl190_cfg.adc_resolution = 16;           // ADC1 configured for 16-bit on STM32H7
     ctl190_cfg.adc_vref       = 3.3f;         // 3.3V reference
@@ -134,70 +135,70 @@ int manual_test_ctl190_phased() {
     ctl190_cfg.fso_mv         = 100.0f;       // CTL-190 FSO
     ctl190_cfg.pressure_max   = 300.0f;       // 0-300 PSI
     ctl190_cfg.unit           = Ctl190::PressureUnit::PSI;
-    printf("OK\r\n");
+    app_printf("OK\r\n");
 
     // Phase 2: ADC Sanity Check
-    printf("[Phase 2] ADC sanity check ......... ");
+    app_printf("[Phase 2] ADC sanity check ......... ");
     uint32_t raw_test = 0;
     if (!ctl190_adc_read(&raw_test)) {
-        printf("FAIL (ADC read error)\r\n");
+        app_printf("FAIL (ADC read error)\r\n");
         return -1;
     }
-    printf("Raw = %lu\r\n", raw_test);
+    app_printf("Raw = %lu\r\n", raw_test);
 
     // Phase 3: Driver Initialization
-    printf("[Phase 3] Driver init ............. ");
+    app_printf("[Phase 3] Driver init ............. ");
     Ctl190::Status status = Ctl190::init(&ctl190_handle, ctl190_cfg);
     if (status != Ctl190::Status::OK) {
-        printf("FAIL (%s)\r\n", status_to_string(status));
+        app_printf("FAIL (%s)\r\n", status_to_string(status));
         return -1;
     }
     g_ctl190_initialized = true;
-    printf("OK\r\n");
+    app_printf("OK\r\n");
 
     print_configuration();
 
     // Phase 4: Zero Calibration
-    printf("[Phase 4] Zero calibration ........ ");
-    printf("(Keep sensor at atmospheric pressure)\r\n");
-    printf("          Waiting 2 seconds ... ");
+    app_printf("[Phase 4] Zero calibration ........ ");
+    app_printf("(Keep sensor at atmospheric pressure)\r\n");
+    app_printf("          Waiting 2 seconds ... ");
     fflush(stdout);
 
     HAL_Delay(2000);
 
     status = Ctl190::calibrate_zero(&ctl190_handle);
     if (status != Ctl190::Status::OK) {
-        printf("FAIL (%s)\r\n", status_to_string(status));
+        app_printf("FAIL (%s)\r\n", status_to_string(status));
         return -1;
     }
-    printf("OK\r\n");
-    printf("          Zero offset calibrated: %.2f mV\r\n", ctl190_handle.zero_offset_mv);
+    app_printf("OK\r\n");
+    app_printf("          Zero offset calibrated: %.2f mV\r\n", ctl190_handle.zero_offset_mv);
 
     // Phase 5: Raw Voltage Test
-    printf("\r\n[Phase 5] Raw voltage reading ..... ");
+    app_printf("\r\n[Phase 5] Raw voltage reading ..... ");
     float raw_mv = 0.0f;
     status = Ctl190::read_raw_mv(&ctl190_handle, &raw_mv);
     if (status != Ctl190::Status::OK) {
-        printf("FAIL (%s)\r\n", status_to_string(status));
+        app_printf("FAIL (%s)\r\n", status_to_string(status));
         return -1;
     }
-    printf("OK (%.2f mV)\r\n", raw_mv);
+    app_printf("OK (%.2f mV)\r\n", raw_mv);
 
     // Phase 6: Single Pressure Reading
-    printf("[Phase 6] Single pressure read .... ");
+    app_printf("[Phase 6] Single pressure read .... ");
     float pressure = 0.0f;
     status = Ctl190::read_pressure(&ctl190_handle, &pressure);
-    printf("%s (%.2f PSI)\r\n", status_to_string(status), pressure);
+    app_printf("%s (%.2f PSI)\r\n", status_to_string(status), pressure);
 
     if (status == Ctl190::Status::ERROR_OUT_OF_RANGE) {
-        printf("          WARNING: Out of range (expected if pressure != 0)\r\n");
+        app_printf("          WARNING: Out of range (expected if pressure != 0)\r\n");
     }
 
     // Phase 7: Continuous Streaming
-    printf("\r\n[Phase 7] Streaming at 10 Hz (30 seconds)\r\n");
-    printf("          Apply pressure variations and observe readings\r\n");
-    printf("          Format: [Count] Raw(ADC) | Voltage(mV) | Pressure(PSI) | Status\r\n");
-    printf("          ─────────────────────────────────────────────────────────────────\r\n");
+    app_printf("\r\n[Phase 7] Streaming at 10 Hz (30 seconds)\r\n");
+    app_printf("          Apply pressure variations and observe readings\r\n");
+    app_printf("          Format: [Count] Raw(ADC) | Voltage(mV) | Pressure(PSI) | Status\r\n");
+    app_printf("          ─────────────────────────────────────────────────────────────────\r\n");
 
     uint32_t start_time = HAL_GetTick();
     uint32_t read_count = 0;
@@ -222,7 +223,7 @@ int manual_test_ctl190_phased() {
 
         // Afficher tous les 5 readings (~500 ms)
         if (read_count % 5 == 0) {
-            printf("          [%3lu] ADC Raw: %4lu | Voltage: %6.2f mV | Pressure: %7.2f PSI | %s\r\n",
+            app_printf("          [%3lu] ADC Raw: %4lu | Voltage: %6.2f mV | Pressure: %7.2f PSI | %s\r\n",
                    read_count,
                    raw_test,  // Note: raw_test garde la dernière valeur
                    raw_mv,
@@ -243,34 +244,34 @@ int manual_test_ctl190_phased() {
     }
 
     // Phase 8: Summary
-    printf("\r\n[Phase 8] Test Summary\r\n");
-    printf("          ─────────────────────────────────────────────────────────────────\r\n");
-    printf("          Total readings    : %lu\r\n", read_count);
-    printf("          Min pressure      : %.2f PSI\r\n", min_pressure < 1e6f ? min_pressure : 0.0f);
-    printf("          Max pressure      : %.2f PSI\r\n", max_pressure > -1e6f ? max_pressure : 0.0f);
-    printf("          Out of range      : %d\r\n", out_of_range_count);
-    printf("          Success rate      : %.1f %%\r\n",
+    app_printf("\r\n[Phase 8] Test Summary\r\n");
+    app_printf("          ─────────────────────────────────────────────────────────────────\r\n");
+    app_printf("          Total readings    : %lu\r\n", read_count);
+    app_printf("          Min pressure      : %.2f PSI\r\n", min_pressure < 1e6f ? min_pressure : 0.0f);
+    app_printf("          Max pressure      : %.2f PSI\r\n", max_pressure > -1e6f ? max_pressure : 0.0f);
+    app_printf("          Out of range      : %d\r\n", out_of_range_count);
+    app_printf("          Success rate      : %.1f %%\r\n",
            100.0f * (read_count - out_of_range_count) / read_count);
 
     // Phase 9: Final Status
-    printf("\r\n[Phase 9] Final Status\r\n");
-    printf("          ─────────────────────────────────────────────────────────────────\r\n");
+    app_printf("\r\n[Phase 9] Final Status\r\n");
+    app_printf("          ─────────────────────────────────────────────────────────────────\r\n");
 
     if (g_ctl190_initialized && read_count > 0 && out_of_range_count == 0) {
-        printf("          ✓ CTL-190 Driver: OPERATIONAL\r\n");
-        printf("          ✓ ADC: WORKING\r\n");
-        printf("          ✓ Calibration: VALID\r\n");
-        printf("          ✓ All readings: IN RANGE\r\n");
-        printf("\r\n          TEST PASSED ✓\r\n");
+        app_printf("          ✓ CTL-190 Driver: OPERATIONAL\r\n");
+        app_printf("          ✓ ADC: WORKING\r\n");
+        app_printf("          ✓ Calibration: VALID\r\n");
+        app_printf("          ✓ All readings: IN RANGE\r\n");
+        app_printf("\r\n          TEST PASSED ✓\r\n");
         return 0;
     } else if (g_ctl190_initialized && read_count > 0) {
-        printf("          ✓ CTL-190 Driver: OPERATIONAL\r\n");
-        printf("          ⚠ Some readings out of range (expected if pressure applied)\r\n");
-        printf("\r\n          TEST PASSED WITH WARNINGS ⚠\r\n");
+        app_printf("          ✓ CTL-190 Driver: OPERATIONAL\r\n");
+        app_printf("          ⚠ Some readings out of range (expected if pressure applied)\r\n");
+        app_printf("\r\n          TEST PASSED WITH WARNINGS ⚠\r\n");
         return 0;
     } else {
-        printf("          ✗ CTL-190 Driver: FAILED\r\n");
-        printf("\r\n          TEST FAILED ✗\r\n");
+        app_printf("          ✗ CTL-190 Driver: FAILED\r\n");
+        app_printf("\r\n          TEST FAILED ✗\r\n");
         return -1;
     }
 }
@@ -284,7 +285,7 @@ int manual_test_ctl190_phased() {
  * practice (only returns -1 early if init/calibration fails).
  */
 int manual_test_ctl190() {
-    printf("\r\n[CTL190] Manual test starting...\r\n");
+    app_printf("\r\n[CTL190] Manual test starting...\r\n");
 
     ctl190_cfg.adc_read       = ctl190_adc_read;
     ctl190_cfg.adc_resolution = 16;           // ADC3 configured for 16-bit on STM32H7
@@ -300,24 +301,24 @@ int manual_test_ctl190() {
 
     Ctl190::Status status = Ctl190::init(&ctl190_handle, ctl190_cfg);
     if (status != Ctl190::Status::OK) {
-        printf("[CTL190] ERROR: init failed (%s)\r\n", status_to_string(status));
+        app_printf("[CTL190] ERROR: init failed (%s)\r\n", status_to_string(status));
         return -1;
     }
     g_ctl190_initialized = true;
 
     print_configuration();
 
-    printf("[CTL190] Zero calibration -- keep sensor at atmospheric pressure...\r\n");
+    app_printf("[CTL190] Zero calibration -- keep sensor at atmospheric pressure...\r\n");
     HAL_Delay(2000);
 
     status = Ctl190::calibrate_zero(&ctl190_handle);
     if (status != Ctl190::Status::OK) {
-        printf("[CTL190] ERROR: zero calibration failed (%s)\r\n", status_to_string(status));
+        app_printf("[CTL190] ERROR: zero calibration failed (%s)\r\n", status_to_string(status));
         return -1;
     }
-    printf("[CTL190] Zero offset: %.2f mV\r\n", ctl190_handle.zero_offset_mv);
+    app_printf("[CTL190] Zero offset: %.2f mV\r\n", ctl190_handle.zero_offset_mv);
 
-    printf("[CTL190] Streaming -- Raw(ADC) | Voltage(mV) | Pressure(PSI / bar) | Status\r\n");
+    app_printf("[CTL190] Streaming -- Raw(ADC) | Voltage(mV) | Pressure(PSI / bar) | Status\r\n");
 
     // Calibration data (sensitivity, rated/overpressure) is in PSI, per the
     // cal certificate -- kept as-is, not reworked into bar, to avoid
@@ -335,7 +336,7 @@ int manual_test_ctl190() {
         Ctl190::Status p_status = Ctl190::read_pressure(&ctl190_handle, &pressure_psi);
         const float pressure_bar = pressure_psi / kPsiPerBar;
 
-        printf("[CTL190] ADC: %lu | V: %.2f mV | P: %.2f PSI (%.3f bar) | %s\r\n",
+        app_printf("[CTL190] ADC: %lu | V: %.2f mV | P: %.2f PSI (%.3f bar) | %s\r\n",
                (unsigned long)raw, raw_mv, pressure_psi, pressure_bar, status_to_string(p_status));
 
         HAL_Delay(1000);
@@ -348,7 +349,7 @@ int manual_test_ctl190() {
  * Fonction pour relancer le test manuellement
  */
 int ctl190_test_reset() {
-    printf("\r\n[Reset] Reinitializing CTL-190 driver ...\r\n");
+    app_printf("\r\n[Reset] Reinitializing CTL-190 driver ...\r\n");
     g_ctl190_initialized = false;
     memset(&ctl190_handle, 0, sizeof(ctl190_handle));
     return manual_test_ctl190();
@@ -359,7 +360,7 @@ int ctl190_test_reset() {
  */
 int ctl190_test_get_status() {
     if (!g_ctl190_initialized) {
-        printf("CTL-190 not initialized\r\n");
+        app_printf("CTL-190 not initialized\r\n");
         return -1;
     }
 
@@ -368,17 +369,17 @@ int ctl190_test_get_status() {
 
     Ctl190::Status status = Ctl190::read_raw_mv(&ctl190_handle, &raw_mv);
     if (status != Ctl190::Status::OK) {
-        printf("Error reading raw voltage: %s\r\n", status_to_string(status));
+        app_printf("Error reading raw voltage: %s\r\n", status_to_string(status));
         return -1;
     }
 
     status = Ctl190::read_pressure(&ctl190_handle, &pressure);
 
-    printf("CTL-190 Status:\r\n");
-    printf("  Raw Voltage  : %.2f mV\r\n", raw_mv);
-    printf("  Pressure     : %.2f PSI\r\n", pressure);
-    printf("  Status       : %s\r\n", status_to_string(status));
-    printf("  Initialized  : %s\r\n", g_ctl190_initialized ? "Yes" : "No");
+    app_printf("CTL-190 Status:\r\n");
+    app_printf("  Raw Voltage  : %.2f mV\r\n", raw_mv);
+    app_printf("  Pressure     : %.2f PSI\r\n", pressure);
+    app_printf("  Status       : %s\r\n", status_to_string(status));
+    app_printf("  Initialized  : %s\r\n", g_ctl190_initialized ? "Yes" : "No");
 
     return 0;
 }

@@ -17,7 +17,7 @@ struct OnSuccessHpo {
 
 using PressureHpoSensorModule = PressureModule<
     CommonTimerPolicy,
-    sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L4>>,
+    sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L4>, PRESSURE_HPO_MULTIPLIER>,
 
     // raw setter
     LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_HPO),

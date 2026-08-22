@@ -9,7 +9,7 @@ extern "C" {
  * @brief Manual hardware test for PT1000 temperature sensors.
  *
  * Reads all 4 PT1000 channels in a loop and prints resistance + temperature
- * via printf (redirected to UART/SWO). Runs forever until the board is reset.
+ * via app_printf (redirected to UART/SWO). Runs forever until the board is reset.
  *
  * @return 0 (never returns in practice).
  */

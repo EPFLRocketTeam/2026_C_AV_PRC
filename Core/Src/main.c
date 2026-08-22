@@ -32,6 +32,7 @@
 #include "../../Drivers/Plume/Tests/Hardware/plume_manual_test.h"
 #include "../../Application/FlightControl/prc_fsm_c_api.h"
 #include "../../Application/FlightControl/prc_can.hpp"
+#include "../../Application/app_printf.h"
 #include "../../Application/main_app.h"
 #include "../../Drivers/Plume/sd_hardware_init.h"
 #include "CAN.h"
@@ -92,19 +93,22 @@ int _write(int file, char *ptr, int len) {
     // Wait until USB is ready, but never wedge: if the CDC endpoint stays
     // busy (host not draining, missed completion), drop the output instead
     // of spinning forever.
-	uint32_t start = HAL_GetTick();
-    while (CDC_Transmit_HS((uint8_t*)ptr, len) == USBD_BUSY) {
-        if (HAL_GetTick() - start > 100) {
-            break;
-        }
+    
+    if (app_printf_is_usb_enabled()) {
+      uint32_t start = HAL_GetTick();
+      while (CDC_Transmit_HS((uint8_t*)ptr, len) == USBD_BUSY) {
+          if (HAL_GetTick() - start > 100) {
+              break;
+          }
+      }
     }
 
-#ifdef ENABLE_LOG
-    // Relay the same bytes over CAN to FC, tagged with this board's role
-    // (see Application/FlightControl/prc_can.cpp). Local VCP output above
-    // is unaffected either way -- this is purely additive.
-    Prc_Log_Forward(&hfdcan1, (const uint8_t*)ptr, (uint32_t)len);
-#endif
+    if (app_printf_is_can_enabled()) {
+      // Relay the same bytes over CAN to FC, tagged with this board's role
+      // (see Application/FlightControl/prc_can.cpp). Local VCP output above
+      // is unaffected either way -- this is purely additive.
+      Prc_Log_Forward(&hfdcan1, (const uint8_t*)ptr, (uint32_t)len);
+    }
 
     return len;
 }
@@ -115,7 +119,7 @@ int _write(int file, char *ptr, int len) {
  * Runs forever, one full sweep per iteration, 500 ms between sweeps. */
 static void i2c_bus_scan(I2C_HandleTypeDef *hi2c)
 {
-    printf("=== I2C bus scan START (addr range 0x03-0x77) ===\r\n");
+    app_printf("=== I2C bus scan START (addr range 0x03-0x77) ===\r\n");
     while (1)
     {
         uint8_t foundCount = 0;
@@ -123,17 +127,17 @@ static void i2c_bus_scan(I2C_HandleTypeDef *hi2c)
         {
             if (HAL_I2C_IsDeviceReady(hi2c, (uint16_t)(addr << 1), 3, 10) == HAL_OK)
             {
-                printf("[I2C] found device at 0x%02X\r\n", addr);
+                app_printf("[I2C] found device at 0x%02X\r\n", addr);
                 foundCount++;
             }
         }
         if (foundCount == 0)
         {
-            printf("[I2C] no devices found\r\n");
+            app_printf("[I2C] no devices found\r\n");
         }
         else
         {
-            printf("[I2C] scan done, %u device(s) found\r\n", foundCount);
+            app_printf("[I2C] scan done, %u device(s) found\r\n", foundCount);
         }
         HAL_Delay(500);
     }
@@ -167,20 +171,20 @@ static void print_mcu_temperature(void)
 
     if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
     {
-        printf("[TEMP] ConfigChannel failed\r\n");
+        app_printf("[TEMP] ConfigChannel failed\r\n");
         return;
     }
 
     if (HAL_ADC_Start(&hadc3) != HAL_OK)
     {
-        printf("[TEMP] Start failed\r\n");
+        app_printf("[TEMP] Start failed\r\n");
         return;
     }
 
     if (HAL_ADC_PollForConversion(&hadc3, 100) != HAL_OK)
     {
         HAL_ADC_Stop(&hadc3);
-        printf("[TEMP] PollForConversion failed\r\n");
+        app_printf("[TEMP] PollForConversion failed\r\n");
         return;
     }
 
@@ -192,7 +196,7 @@ static void print_mcu_temperature(void)
                       / ((int32_t)(*TEMPSENSOR_CAL2_ADDR) - (int32_t)(*TEMPSENSOR_CAL1_ADDR))
                       + TEMPSENSOR_CAL1_TEMP;
 
-    printf("[TEMP] MCU internal temperature: %ld C (raw=%lu)\r\n",
+    app_printf("[TEMP] MCU internal temperature: %ld C (raw=%lu)\r\n",
            (long)temp_c, (unsigned long)raw16);
 }
 
@@ -266,7 +270,7 @@ int main(void)
    * isn't touched by anything in between, so reading it late is safe;
    * RMVF is never written, so flags accumulate across resets until an
    * actual power-on reset clears them. */
-  // printf("[RESET] RCC->RSR=0x%08lX%s%s%s%s%s%s%s%s%s\r\n",
+  // app_printf("[RESET] RCC->RSR=0x%08lX%s%s%s%s%s%s%s%s%s\r\n",
   //        (unsigned long)RCC->RSR,
   //        (RCC->RSR & RCC_RSR_PORRSTF)   ? " POR"   : "",
   //        (RCC->RSR & RCC_RSR_PINRSTF)   ? " PIN"   : "",
@@ -942,7 +946,7 @@ void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+     ex: app_printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

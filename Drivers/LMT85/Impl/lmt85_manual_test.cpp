@@ -2,6 +2,7 @@
 #include "../LMT85.hpp"
 #include "main.h"
 #include <cstdio>
+#include "Application/app_printf.h"
 
 using namespace Drivers::LMT85;
 
@@ -15,7 +16,7 @@ using namespace Drivers::LMT85;
  *     ADC1 is what's actually wired to this pin/channel here (fixed from
  *     this driver's original ADC2 reference, which doesn't exist in this
  *     project).
- *   - printf must be retargeted to UART/USB CDC for output.
+ *   - app_printf must be retargeted to UART/USB CDC for output.
  *
  * Usage:
  *   Call manual_test_lmt85() from main.c after all HAL/MX init functions.
@@ -39,20 +40,20 @@ int manual_test_lmt85() {
     LMT85Driver sensor(config);
 
     if (!sensor.init()) {
-        printf("[LMT85] ERROR: sensor init failed\r\n");
+        app_printf("[LMT85] ERROR: sensor init failed\r\n");
     }
 
-    printf("[LMT85] Manual test started — reading Vtemp (PB1 / ADC1 CH5)\r\n");
+    app_printf("[LMT85] Manual test started — reading Vtemp (PB1 / ADC1 CH5)\r\n");
 
     while (1) {
         LMT85Data data;
         if (sensor.read(data)) {
-            printf("[LMT85] ADC: %lu | V: %.1f mV | T: %.2f C\r\n",
+            app_printf("[LMT85] ADC: %lu | V: %.1f mV | T: %.2f C\r\n",
                    (unsigned long)data.raw_adc,
                    data.voltage_mv,
                    data.temperature);
         } else {
-            printf("[LMT85] READ FAILED\r\n");
+            app_printf("[LMT85] READ FAILED\r\n");
         }
 
         HAL_Delay(1000);

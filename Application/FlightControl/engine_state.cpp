@@ -1,5 +1,6 @@
 #include "Application/FlightControl/engine_state.h"
 #include "Application/app_timebase.h"
+#include "Application/app_printf.h"
 #include "Application/FlightControl/prc_can.hpp"
 
 #include "Drivers/Valve/ValveList.hpp"
@@ -111,24 +112,24 @@ static void ColdflowEnter(ColdflowState state) {
   g_coldflow_state_entry_ms = HAL_GetTick();
   switch (state) {
     case ColdflowState::Prechill:
-      printf("[COLDFLOW] -> PRECHILL\r\n");
+      app_printf("[COLDFLOW] -> PRECHILL\r\n");
       SetIgniter(false);
       SetMe(false);
       SetMo(true);
       break;
     case ColdflowState::Igniter:
-      printf("[COLDFLOW] PRECHILL -> IGNITER\r\n");
+      app_printf("[COLDFLOW] PRECHILL -> IGNITER\r\n");
       SetMo(false);
       SetIgniter(true);
       break;
     case ColdflowState::BurnOpen:
-      printf("[COLDFLOW] IGNITER -> BURN_OPEN\r\n");
+      app_printf("[COLDFLOW] IGNITER -> BURN_OPEN\r\n");
       SetIgniter(false);
       SetMo(true);
       SetMe(true);
       break;
     case ColdflowState::Idle:
-      printf("[COLDFLOW] BURN_OPEN -> IDLE (closed)\r\n");
+      app_printf("[COLDFLOW] BURN_OPEN -> IDLE (closed)\r\n");
       SetMo(false);
       SetMe(false);
       break;
@@ -390,7 +391,7 @@ void PrcEngineState::update(const DataDump &dump) {
   }
 
   if (currentState != previous_state) {
-    printf("[PRC ENGINE FSM] %s -> %s\r\n",
+    app_printf("[PRC ENGINE FSM] %s -> %s\r\n",
            stateToString(previous_state).c_str(),
            stateToString(currentState).c_str());
 
@@ -501,7 +502,7 @@ static PrcEngineState& engine_fsm_instance() {
 }
 
 void Prc_Engine_Fsm_Init() {
-  printf("[PRC ENGINE FSM] WARNING: ignition/burn/passivation timing "
+  app_printf("[PRC ENGINE FSM] WARNING: ignition/burn/passivation timing "
          "constants are all placeholders (uniform 10 s, not real values) "
          "-- see engine_state.cpp. DO NOT FLY.\r\n");
 }

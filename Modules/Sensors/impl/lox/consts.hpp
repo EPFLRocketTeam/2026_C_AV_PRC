@@ -19,6 +19,8 @@ const size_t PRESSURE_OTA_NUMBER_KEPT = 2;
 // for the pressure data point to be logged. 
 const size_t PRESSURE_OTA_MIN_NUMBER  = 1;
 
+const int PRESSURE_HPO_MULTIPLIER = 4;
+
 static const char* OTA1_NAME = "ota1";
 static const char* OTA2_NAME = "ota2";
 static const char* OTA3_NAME = "ota3";
