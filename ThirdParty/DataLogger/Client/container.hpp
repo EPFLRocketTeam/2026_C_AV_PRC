@@ -16,7 +16,7 @@
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_MAIN_LOX_TRANSITION, valve_transition,           "prc/engine/actuators/MO.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_MAIN_ETH_TRANSITION, valve_transition,           "prc/engine/actuators/ME.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_IGNITER,             igniter_transition,         "prc/engine/actuators/Igniter.csv") \
-    X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_CHAMBER_ERROR,       pressure_temperature_frame, "prc/engine/Errors/Chamber.csv") \
+    X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_CHAMBER_ERROR,       sensata::SensataError,      "prc/engine/Errors/Chamber.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_EIN_P_ERROR,         sensata::SensataError,      "prc/engine/Errors/EIN-P.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_OIN_P_ERROR,         sensata::SensataError,      "prc/engine/Errors/OIN-P.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_ERROR,               engine::ErrorKind,          "prc/engine/Errors.csv") \
