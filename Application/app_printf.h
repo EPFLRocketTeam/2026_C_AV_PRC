@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-#define ENABLE_CAN_LOG
+// #define ENABLE_CAN_LOG
 // #define ENABLE_USB_LOG
 
 void app_printf_use_can(bool use_can);

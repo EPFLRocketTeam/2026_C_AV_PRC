@@ -52,8 +52,8 @@ static constexpr uint32_t k_passivation_delay_no_com_ms = 140000u;
 
 // PRESSURIZATION_{LOX,FUEL}_SET_PRESSURE — TODO: values TBD. Selected at
 // runtime from BoardRole, not a build-time choice.
-static constexpr float k_lox_set_pressure_bar  =2.0f;
-static constexpr float k_fuel_set_pressure_bar = 2.0f;
+static constexpr float k_lox_set_pressure_bar  = 1.0f;
+static constexpr float k_fuel_set_pressure_bar = 1.0f;
 
 static float SetPressureBarFor(BoardRole role) {
   return (role == BoardRole::DprLox) ? k_lox_set_pressure_bar : k_fuel_set_pressure_bar;

@@ -24,10 +24,10 @@ namespace pi = prc_intranet;
 // these still at this placeholder value.
 // ---------------------------------------------------------------------------
 
-static constexpr uint32_t k_prechill_duration_ms			= 10000; // PRECHILL DURATION
-static constexpr uint32_t k_igniter_duration_ms           	= 10000; // IGNITER DURATION
-static constexpr uint32_t k_ignition_delay_ms              	= 10000; // IGNITION DELAY
-static constexpr uint32_t k_rampup_duration_ms             	= 10000; // RAMPUP DURATION
+static constexpr uint32_t k_prechill_duration_ms			= 200;  // PRECHILL DURATION
+static constexpr uint32_t k_igniter_duration_ms           	= 5000; // IGNITER DURATION
+static constexpr uint32_t k_ignition_delay_ms              	= 1000; // IGNITION DELAY
+static constexpr uint32_t k_rampup_duration_ms             	= 5000; // RAMPUP DURATION
 
 
 // "Total impulse + upper/lower bound timer" -- real cutoff should be
@@ -37,9 +37,9 @@ static constexpr uint32_t k_rampup_duration_ms             	= 10000; // RAMPUP D
 
 /// TOTAL IMPULSE    ?????????????????????
 
-static constexpr uint32_t k_burn_duration_lower_bound_ms	= 10000;  //IS THIS REALLY NEEDED THOUGH
-static constexpr uint32_t k_burn_duration_upper_bound_ms	= 10000;
-static constexpr uint32_t k_cutoff_delay_ms                 = 10000; // CUTOFF DELAY
+static constexpr uint32_t k_burn_duration_lower_bound_ms	= 5000;  //IS THIS REALLY NEEDED THOUGH
+static constexpr uint32_t k_burn_duration_upper_bound_ms	= 5000;
+static constexpr uint32_t k_cutoff_delay_ms                 = 5000; // CUTOFF DELAY
 // PASSIVATION_DELAY_NO_COM_PRC, comms-loss watchdog, same idea as DPR's
 // k_passivation_delay_no_com_ms (prc_state.cpp), no ported number here.
 static constexpr uint32_t k_passivation_delay_no_com_ms    	= 10000;

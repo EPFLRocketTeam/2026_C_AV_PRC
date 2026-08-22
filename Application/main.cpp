@@ -130,7 +130,7 @@ void prc::PropSensorsStoreLox::set_pressure_OTA3(double pressure_OTA3) {
 }
 void prc::PropSensorsStoreLox::set_pressure_OTA_mean(double pressure_OTA_mean) {
 	data_.pressure_OTA_mean = pressure_OTA_mean;
-	//  app_printf("p_OTA_mean=%lf\r\n", pressure_OTA_mean);
+	RUN_EVERY(1000) app_printf("p_OTA_mean=%lf\r\n", pressure_OTA_mean);
 }
 void prc::PropSensorsStoreLox::set_pressure_HPO(double pressure_HPO) {
 	data_.pressure_HPO = pressure_HPO;
@@ -138,7 +138,7 @@ void prc::PropSensorsStoreLox::set_pressure_HPO(double pressure_HPO) {
 }
 void prc::PropSensorsStoreLox::set_pressure_HPO_mean(double pressure_HPO_mean) {
 	data_.pressure_HPO_mean = pressure_HPO_mean;
-	//  app_printf("p_HPO_mean=%lf\r\n", pressure_HPO_mean);
+	RUN_EVERY(1000) app_printf("p_HPO_mean=%lf\r\n", pressure_HPO_mean);
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA1(double temperature_OTA1) {
 	data_.temperature_OTA1 = temperature_OTA1;
@@ -191,11 +191,11 @@ void prc::PropSensorsStoreEth::set_pressure_ETA3(double pressure_ETA3) {
 }
 void prc::PropSensorsStoreEth::set_pressure_ETA_mean(double pressure_ETA_mean) {
 	data_.pressure_ETA_mean = pressure_ETA_mean;
-	app_printf("p_ETA_mean=%lf\r\n", pressure_ETA_mean);
+	RUN_EVERY(1000) app_printf("p_ETA_mean=%lf\r\n", pressure_ETA_mean);
 }
 void prc::PropSensorsStoreEth::set_pressure_HPE(double pressure_HPE) {
 	data_.pressure_HPE = pressure_HPE;
-	// 	app_printf("p_HPE=%lf\r\n", pressure_HPE);
+	RUN_EVERY(1000)	app_printf("p_HPE=%lf\r\n", pressure_HPE);
 }
 void prc::PropSensorsStoreEth::set_pressure_HPE_mean(double pressure_HPE_mean) {
 	data_.pressure_HPE_mean = pressure_HPE_mean;
@@ -232,58 +232,58 @@ const char* open_to_string (bool open) {
 void valves_callbacks::onChange_MO (bool old_open, bool new_open) {
 	engineLogger.logMainLoxTransition({ old_open, new_open });
 	prc::PrcStore::get_instance().valvesStore.set_valve_main_lox(new_open);
-	app_printf("[PRC-ENG time=%d ms] Main Lox %s -> %s\n",
-		open_to_string(old_open), open_to_string(new_open));
+	//app_printf("[PRC-ENG time=%d ms] Main Lox %s -> %s\n",
+	//	open_to_string(old_open), open_to_string(new_open));
 }
 void valves_callbacks::onChange_ME (bool old_open, bool new_open) {
 	engineLogger.logMainEthTransition({ old_open, new_open });
 	prc::PrcStore::get_instance().valvesStore.set_valve_main_fuel(new_open);
-	app_printf("[PRC-ENG time=%d ms] Main Fuel %s -> %s\n",
-		open_to_string(old_open), open_to_string(new_open));
+	//app_printf("[PRC-ENG time=%d ms] Main Fuel %s -> %s\n",
+	//	open_to_string(old_open), open_to_string(new_open));
 }
 
 // LOX
 void valves_callbacks::onChange_VO (bool old_open, bool new_open) {
 	loxLogger.logVentLoxTransition({ old_open, new_open });
 	prc::PrcStore::get_instance().valvesStore.set_valve_vent_lox(new_open);
-	app_printf("[DPR-LOX time=%d ms] Vent Lox %s -> %s\n",
-		open_to_string(old_open), open_to_string(new_open));
+	//app_printf("[DPR-LOX time=%d ms] Vent Lox %s -> %s\n",
+	//	open_to_string(old_open), open_to_string(new_open));
 }
 void valves_callbacks::onChange_SO (bool old_open, bool new_open) {
 	loxLogger.logSafetyLoxTransition({ old_open, new_open });
 	prc::PrcStore::get_instance().valvesStore.set_valve_safety_lox(new_open);
-	app_printf("[DPR-LOX time=%d ms] Safety Lox %s -> %s\n",
-		open_to_string(old_open), open_to_string(new_open));
+	//app_printf("[DPR-LOX time=%d ms] Safety Lox %s -> %s\n",
+	//	open_to_string(old_open), open_to_string(new_open));
 }
 void valves_callbacks::onChange_BO (float old_open, float new_open) {
 	loxLogger.logBallValveLoxTransition({ old_open, new_open });
 	prc::PrcStore::get_instance().valvesStore.set_ball_valve_lox(new_open);
 	
 	// Cap prints of ball valve at 10 Hz
-	RUN_EVERY(100)
-		app_printf("[DPR-LOX time=%d ms] Ball Valve Lox %s\n", new_open);
+	//RUN_EVERY(100)
+	//	app_printf("[DPR-LOX time=%d ms] Ball Valve Lox %s\n", new_open);
 }
 
 // ETH
 void valves_callbacks::onChange_VE (bool old_open, bool new_open) {
 	ethLogger.logVentEthTransition({ old_open, new_open });
 	prc::PrcStore::get_instance().valvesStore.set_valve_vent_fuel(new_open);
-	app_printf("[DPR-ETH time=%d ms] Vent Eth %s -> %s\n",
-		open_to_string(old_open), open_to_string(new_open));
+	//app_printf("[DPR-ETH time=%d ms] Vent Eth %s -> %s\n",
+	//	open_to_string(old_open), open_to_string(new_open));
 }
 void valves_callbacks::onChange_SE (bool old_open, bool new_open) {
 	ethLogger.logSafetyEthTransition({ old_open, new_open });
 	prc::PrcStore::get_instance().valvesStore.set_valve_safety_fuel(new_open);
-	app_printf("[DPR-ETH time=%d ms] Safety Eth %s -> %s\n",
-		open_to_string(old_open), open_to_string(new_open));
+	//app_printf("[DPR-ETH time=%d ms] Safety Eth %s -> %s\n",
+	//	open_to_string(old_open), open_to_string(new_open));
 }
 void valves_callbacks::onChange_BE (float old_open, float new_open) {
 	ethLogger.logBallValveEthTransition({ old_open, new_open });
 	prc::PrcStore::get_instance().valvesStore.set_ball_valve_fuel(new_open);
 	
 	// Cap prints of ball valve at 10 Hz
-	RUN_EVERY(100)
-		app_printf("[DPR-ETH time=%d ms] Ball Valve Eth %s\n", new_open);
+	//RUN_EVERY(100)
+	//	app_printf("[DPR-ETH time=%d ms] Ball Valve Eth %s\n", new_open);
 }
 
 void main_init() {
