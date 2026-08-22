@@ -90,11 +90,15 @@ public:
     bool        is_open() const override;
     const char* name() const override;
 
+    void setCallback(void (*callback)(bool old_open, bool new_open));
+
 private:
     void set_energized(bool energized);
 
     SolenoidValveConfig config_;
     bool                is_open_;
+
+    void (*callback_)(bool old_open, bool new_open) = nullptr;
 };
 
 // ---------------------------------------------------------------------------
@@ -141,12 +145,16 @@ public:
     // control loop instead of settling it. Leave it true (default) for
     // manual commands and one-shot state-entry positions.
     ValveStatus set_position(float percent_open, bool dither = true);
+    
+    void setCallback(void (*callback)(float old_open, float new_open));
 
 private:
     void write_pulse_us(uint32_t pulse_us);
 
     ServoBallValveConfig config_;
     float                commanded_percent_open_;
+
+    void (*callback_)(float old_open, float new_open) = nullptr;
 };
 
 #endif // DRIVERS_VALVE_VALVE_H

@@ -46,6 +46,12 @@ public:
     void logFsmTransition (engine_fsm_transition frame) {
         this->writeRecord(engine::RecordType::LOG_FSM_TRANSITION, &frame, sizeof(frame));
     }
+    void logMainLoxTransition (valve_transition frame) {
+        this->writeRecord(engine::RecordType::LOG_MAIN_LOX_TRANSITION, &frame, sizeof(frame));
+    }
+    void logMainEthTransition (valve_transition frame) {
+        this->writeRecord(engine::RecordType::LOG_MAIN_ETH_TRANSITION, &frame, sizeof(frame));
+    }
 
     void logError (engine::ErrorKind kind) {
         this->writeRecord(engine::RecordType::LOG_ERROR, &kind, sizeof(kind));

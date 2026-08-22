@@ -369,11 +369,11 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
     return;
   }
 
-  auto& valves  = PrcStore::get_instance().valvesStore;
+  ValvesStore& valves  = PrcStore::get_instance().valvesStore;
   const bool is_lox = (role == BoardRole::DprLox);
 
-  const bool safety_open = is_lox ? valves.get_valve_dpr_pressure_lox() : valves.get_valve_dpr_pressure_fuel();
-  const bool vent_open   = is_lox ? valves.get_valve_dpr_vent_lox()     : valves.get_valve_dpr_vent_fuel();
+  const bool safety_open = is_lox ? valves.get_valve_safety_lox() : valves.get_valve_safety_fuel();
+  const bool vent_open   = is_lox ? valves.get_valve_vent_lox()   : valves.get_valve_vent_fuel();
 
   pi::payload::dpr_state state{};
   state.fsm_state = static_cast<uint8_t>(PrcStore::get_instance().stateStore.get());

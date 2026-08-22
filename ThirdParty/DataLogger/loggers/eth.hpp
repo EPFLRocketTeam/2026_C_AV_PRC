@@ -38,6 +38,15 @@ public:
     void logFsmTransition (dpr_fsm_transition frame) {
         this->writeRecord(eth::RecordType::LOG_FSM_TRANSITION, &frame, sizeof(frame));
     }
+    void logVentEthTransition (valve_transition frame) {
+        this->writeRecord(eth::RecordType::LOG_VENT_TRANSITION, &frame, sizeof(frame));
+    }
+    void logSafetyEthTransition (valve_transition frame) {
+        this->writeRecord(eth::RecordType::LOG_SAFETY_TRANSITION, &frame, sizeof(frame));
+    }
+    void logBallValveEthTransition (ball_valve_transition frame) {
+        this->writeRecord(eth::RecordType::LOG_BALL_TRANSITION, &frame, sizeof(frame));
+    }
 
     void logError (eth::ErrorKind kind) {
         this->writeRecord(eth::RecordType::LOG_ERROR, &kind, sizeof(kind));

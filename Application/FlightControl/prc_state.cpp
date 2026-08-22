@@ -296,32 +296,6 @@ static PrcState& fsm_instance() {
   return inst;
 }
 
-// ---------------------------------------------------------------------------
-// Valve mapping: per DPR bay (LOX or Ethanol), there are exactly 2
-// solenoids + 1 ball valve, translated onto this project's Valves fields
-// (adopted field-for-field from FC):
-//   Safety (ETH Safety DPR / LOX Safety DPR, per-bay, NOT shared between
-//       the two boards) -- gates the ball valve's regulation path, open
-//       during tank pressurization + regulation + the COPV-venting phase
-//       of passivation; closed in idle/PRESSURIZE_OFF and the
-//       tank-only-venting phase of passivation.
-//     -> valve_dpr_pressure_lox / valve_dpr_pressure_fuel
-//   Vent (Ethanol Tank Venting / LOX Tank Venting) -- opens whenever
-//       venting to atmosphere.
-//     -> valve_dpr_vent_lox / valve_dpr_vent_fuel
-// The ball valve itself (Ethanol Tank DPR / LOX Tank DPR) is this board's
-// proportional pressure-regulation element, driven directly via
-// ServoBallValve::set_position() and BDPR's actual RST pole-placement
-// controller + characterized flow->angle lookup table (see
-// Application/Control/rst_controller.hpp and the RST controller comment
-// below), not through these 2 on/off solenoids and not a linear %open law.
-// valve_dpr_vent_copv is left unused here -- no valve in this board's set
-// maps to it.
-// ---------------------------------------------------------------------------
-
-static constexpr ValveId k_valve_safety = ValveId::SafetyDpr;
-static constexpr ValveId k_valve_vent   = ValveId::Vent;
-
 // Ball valve position driven by the RST pole-placement controller +
 // characterized flow->angle table, ported from 2026_C_PR_BDPR
 // (Application/Control/rst_controller.hpp) -- replaces the earlier
@@ -357,14 +331,10 @@ static float BallValvePercentFor(RstController &rst, float target_bar, float cur
 
 static void SetSafety(bool open, bool is_lox, ValvesStore &valvesStore) {
   if (IValve* v = Valve_Get(k_valve_safety)) { if (open) v->open(); else v->close(); }
-  if (is_lox) valvesStore.set_valve_dpr_pressure_lox(open);
-  else        valvesStore.set_valve_dpr_pressure_fuel(open);
 }
 
 static void SetVent(bool open, bool is_lox, ValvesStore &valvesStore) {
   if (IValve* v = Valve_Get(k_valve_vent)) { if (open) v->open(); else v->close(); }
-  if (is_lox) valvesStore.set_valve_dpr_vent_lox(open);
-  else        valvesStore.set_valve_dpr_vent_fuel(open);
 }
 
 static void ValveActions(State state, State previous_state, const DataDump &dump,

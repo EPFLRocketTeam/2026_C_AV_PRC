@@ -71,6 +71,18 @@ struct dpr_fsm_transition {
 };
 static_assert(sizeof(dpr_fsm_transition) == 2);
 
+struct valve_transition {
+    bool old_open;
+    bool new_open;
+};
+static_assert(sizeof(valve_transition) == 2);
+
+struct ball_valve_transition {
+    float old_percent_open;
+    float new_percent_open;
+};
+static_assert(sizeof(ball_valve_transition) == 8);
+
 namespace engine {
 
     enum ErrorKind {
@@ -88,6 +100,9 @@ namespace engine {
 
         LOG_DATA_DUMP,
         LOG_FSM_TRANSITION,
+
+        LOG_MAIN_LOX_TRANSITION,
+        LOG_MAIN_ETH_TRANSITION,
 
         LOG_CHAMBER_FRAME, // { P, T, P_mean, C_mean }
         LOG_CHAMBER_ERROR,
@@ -144,6 +159,9 @@ namespace lox {
         LOG_HEALTH,
         LOG_DATA_DUMP,
         LOG_FSM_TRANSITION,
+        LOG_VENT_TRANSITION,
+        LOG_BALL_TRANSITION,
+        LOG_SAFETY_TRANSITION,
 
         LOG_FLS, // fill level
 
@@ -189,6 +207,10 @@ namespace eth {
 
         LOG_DATA_DUMP,
         LOG_FSM_TRANSITION,
+        
+        LOG_VENT_TRANSITION,
+        LOG_BALL_TRANSITION,
+        LOG_SAFETY_TRANSITION,
 
         LOG_HPE_FRAME, // { P, P_mean }
         LOG_HPE_ERROR,

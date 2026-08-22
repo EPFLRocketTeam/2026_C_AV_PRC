@@ -36,17 +36,24 @@ struct BoardIdentity {
 };
 
 struct Valves {
-  bool valve_dpr_pressure_lox;
-  bool valve_dpr_pressure_fuel;
-  bool valve_dpr_vent_copv;
-  bool valve_dpr_vent_lox;
-  bool valve_dpr_vent_fuel;
-  bool valve_prb_main_lox;
-  bool valve_prb_main_fuel;
+  bool valve_safety_lox;
+  bool valve_safety_fuel;
+
+  bool valve_vent_lox;
+  bool valve_vent_fuel;
+
+  bool valve_main_lox;
+  bool valve_main_fuel;
+
+  CSV_IGNORE
+  uint8_t padding[2];
+
+  float ball_valve_lox;
+  float ball_valve_fuel;
 
   Valves();
 };
-static_assert(sizeof(Valves) == 7);
+static_assert(sizeof(Valves) == 16);
 
 // ---------------------------------------------------------------------------
 // Command received from the Flight Computer over the CAN link
@@ -97,26 +104,29 @@ class ValvesStore : public IStore<Valves> {
 public:
   ValvesStore();
 
-  bool get_valve_dpr_pressure_lox() const;
-  void set_valve_dpr_pressure_lox(bool value);
-
-  bool get_valve_dpr_pressure_fuel() const;
-  void set_valve_dpr_pressure_fuel(bool value);
-
-  bool get_valve_dpr_vent_copv() const;
-  void set_valve_dpr_vent_copv(bool value);
-
-  bool get_valve_dpr_vent_lox() const;
-  void set_valve_dpr_vent_lox(bool value);
-
-  bool get_valve_dpr_vent_fuel() const;
-  void set_valve_dpr_vent_fuel(bool value);
-
-  bool get_valve_prb_main_lox() const;
-  void set_valve_prb_main_lox(bool value);
-
-  bool get_valve_prb_main_fuel() const;
-  void set_valve_prb_main_fuel(bool value);
+  bool get_valve_safety_lox () const;
+  void set_valve_safety_lox(bool value);
+  
+  bool get_valve_safety_fuel () const;
+  void set_valve_safety_fuel(bool value);
+  
+  bool get_valve_vent_lox () const;
+  void set_valve_vent_lox(bool value);
+  
+  bool get_valve_vent_fuel () const;
+  void set_valve_vent_fuel(bool value);
+  
+  bool get_valve_main_lox () const;
+  void set_valve_main_lox(bool value);
+  
+  bool get_valve_main_fuel () const;
+  void set_valve_main_fuel(bool value);
+  
+  float get_ball_valve_lox () const;
+  void set_ball_valve_lox(float value);
+  
+  float get_ball_valve_fuel () const;
+  void set_ball_valve_fuel(float value);
 };
 
 class IntranetCmdStore : public IStore<IntranetCmd> {
@@ -139,6 +149,9 @@ public:
 
 struct DataDump {
   State          prc_state;
+  CSV_IGNORE
+  uint8_t        pad_state[7];
+
   uint32_t       prc_timestamp_ms;
   BoardIdentity  boardIdentity;
   Valves         valves;
@@ -150,7 +163,14 @@ struct DataDump {
   PropSensorsLox    propSensorsLox;
 };
 
-static_assert(sizeof(DataDump) == 24 + 112 + 96 + 48);
+static_assert(offsetof(DataDump, prc_state) == 0);
+static_assert(offsetof(DataDump, pad_state) == 1);
+static_assert(offsetof(DataDump, prc_timestamp_ms) == 8);
+static_assert(offsetof(DataDump, boardIdentity) == 12);
+static_assert(offsetof(DataDump, valves) == 16);
+static_assert(offsetof(DataDump, intranetCmd) == 32);
+static_assert(offsetof(DataDump, event) == 36);
+static_assert(sizeof(DataDump) == 40 + 112 + 96 + 48);
 
 // Aggregating singleton — mirrors flight_computer::GOATStore.
 class PrcStore {

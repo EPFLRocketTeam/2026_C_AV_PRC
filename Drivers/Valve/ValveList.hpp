@@ -36,6 +36,7 @@
 #define DRIVERS_VALVE_VALVE_LIST_H
 
 #include "Drivers/Valve/Valve.hpp"
+#include "Application/Data/data.hpp"
 
 enum class ValveId : uint8_t {
     Vent,      // Sol2_ctrl, PE8 — solenoid, NO (Ethanol Tank Venting / LOX Tank Venting)
@@ -51,6 +52,27 @@ enum class ValveId : uint8_t {
 // any valve is used.
 void Valve_InitAll();
 
+// Create callbacks on the valves to log whenever their value change
+void Valve_SetupCallbacks (prc::BoardRole role);
+
+namespace valves_callbacks {
+
+// Engine
+void onChange_MO (bool old_open, bool new_open);
+void onChange_ME (bool old_open, bool new_open);
+
+// LOX
+void onChange_VO (bool old_open, bool new_open);
+void onChange_SO (bool old_open, bool new_open);
+void onChange_BO (float old_open, float new_open);
+
+// ETH
+void onChange_VE (bool old_open, bool new_open);
+void onChange_SE (bool old_open, bool new_open);
+void onChange_BE (float old_open, float new_open);
+
+} // namespace valves_callbacks
+
 // Returns nullptr if called before Valve_InitAll() or for an out-of-range id.
 IValve* Valve_Get(ValveId id);
 
@@ -59,5 +81,41 @@ IValve* Valve_Get(ValveId id);
 // IValve open()/close() exposes — e.g. bench testing intermediate positions.
 // Returns nullptr if called before Valve_InitAll().
 ServoBallValve* Valve_GetBallValve();
+
+
+// ---------------------------------------------------------------------------
+// Valve mapping: per DPR bay (LOX or Ethanol), there are exactly 2
+// solenoids + 1 ball valve, translated onto this project's Valves fields
+// (adopted field-for-field from FC):
+//   Safety (ETH Safety DPR / LOX Safety DPR, per-bay, NOT shared between
+//       the two boards) -- gates the ball valve's regulation path, open
+//       during tank pressurization + regulation + the COPV-venting phase
+//       of passivation; closed in idle/PRESSURIZE_OFF and the
+//       tank-only-venting phase of passivation.
+//     -> valve_dpr_pressure_lox / valve_dpr_pressure_fuel
+//   Vent (Ethanol Tank Venting / LOX Tank Venting) -- opens whenever
+//       venting to atmosphere.
+//     -> valve_dpr_vent_lox / valve_dpr_vent_fuel
+// The ball valve itself (Ethanol Tank DPR / LOX Tank DPR) is this board's
+// proportional pressure-regulation element, driven directly via
+// ServoBallValve::set_position() and BDPR's actual RST pole-placement
+// controller + characterized flow->angle lookup table (see
+// Application/Control/rst_controller.hpp and the RST controller comment
+// below), not through these 2 on/off solenoids and not a linear %open law.
+// valve_dpr_vent_copv is left unused here -- no valve in this board's set
+// maps to it.
+// ---------------------------------------------------------------------------
+
+static constexpr ValveId k_valve_safety = ValveId::SafetyDpr;
+static constexpr ValveId k_valve_vent   = ValveId::Vent;
+
+// ---------------------------------------------------------------------------
+// Valve mapping: MO (Main Oxidizer) / ME (Main Ethanol) -- same Sol3/Sol4
+// bench-test hookup already established in prc_can.cpp's ApplyCmdValves
+// ("LOX main"/"Ethanol main"). Not a confirmed real mission mapping either
+// (see that comment), just the one convention this codebase already uses.
+// ---------------------------------------------------------------------------
+static constexpr ValveId k_valve_mo = ValveId::Sol3;
+static constexpr ValveId k_valve_me = ValveId::Sol4;
 
 #endif // DRIVERS_VALVE_VALVE_LIST_H

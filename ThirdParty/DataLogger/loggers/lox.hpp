@@ -45,6 +45,15 @@ public:
     void logFsmTransition (dpr_fsm_transition frame) {
         this->writeRecord(lox::RecordType::LOG_FSM_TRANSITION, &frame, sizeof(frame));
     }
+    void logVentLoxTransition (valve_transition frame) {
+        this->writeRecord(lox::RecordType::LOG_VENT_TRANSITION, &frame, sizeof(frame));
+    }
+    void logSafetyLoxTransition (valve_transition frame) {
+        this->writeRecord(lox::RecordType::LOG_SAFETY_TRANSITION, &frame, sizeof(frame));
+    }
+    void logBallValveLoxTransition (ball_valve_transition frame) {
+        this->writeRecord(lox::RecordType::LOG_BALL_TRANSITION, &frame, sizeof(frame));
+    }
 
     void logError (lox::ErrorKind kind) {
         this->writeRecord(lox::RecordType::LOG_ERROR, &kind, sizeof(kind));

@@ -52,15 +52,6 @@ static constexpr uint32_t k_interlude_duration_ms          	= 10000; // INTERLUD
 static constexpr uint32_t k_passivation_ox_duration_ms     	= 10000; // PASSIVATION OX DURATION
 static constexpr uint32_t k_depressurize_delay_ms          	= 10000; // DEPRESSURIZE DELAY
 
-// ---------------------------------------------------------------------------
-// Valve mapping: MO (Main Oxidizer) / ME (Main Ethanol) -- same Sol3/Sol4
-// bench-test hookup already established in prc_can.cpp's ApplyCmdValves
-// ("LOX main"/"Ethanol main"). Not a confirmed real mission mapping either
-// (see that comment), just the one convention this codebase already uses.
-// ---------------------------------------------------------------------------
-static constexpr ValveId k_valve_mo = ValveId::Sol3;
-static constexpr ValveId k_valve_me = ValveId::Sol4;
-
 static void SetMo(bool open) {
   if (IValve* v = Valve_Get(k_valve_mo)) { if (open) v->open(); else v->close(); }
 }
