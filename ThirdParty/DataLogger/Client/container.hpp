@@ -27,7 +27,7 @@
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_HPO_FRAME,         pressures_frame,            "prc/lox/sensors/HPO.csv") \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_OTA_P_FRAME,       lox::OtaPressureFrame,      "prc/lox/sensors/OTA-P.csv") \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_OTA_T_FRAME,       lox::OtaTemperatureFrame,   "prc/lox/sensors/OTA-T.csv") \
-    X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_VENT_FRAME,        valve_transition,           "prc/lox/actuators/VentLox.csv") \
+    X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_VENT_TRANSITION,   valve_transition,           "prc/lox/actuators/VentLox.csv") \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_SAFETY_TRANSITION, valve_transition,           "prc/lox/actuators/SafetyLox.csv") \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_BALL_TRANSITION,   ball_valve_transition,      "prc/lox/actuators/BallValveLox.csv") \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_HPO_ERROR,         sensata::SensataError,      "prc/lox/errors/HPO.csv") \
@@ -41,7 +41,7 @@
     X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_FSM_TRANSITION,    dpr_fsm_transition,         "prc/eth/FsmTransitions.csv") \
     X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_HPE_FRAME,         pressures_frame,            "prc/eth/sensors/HPE.csv") \
     X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_ETA_P_FRAME,       eth::EtaPressureFrame,      "prc/eth/sensors/ETA.csv") \
-    X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_VENT_FRAME,        valve_transition,           "prc/eth/actuators/VentEth.csv") \
+    X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_VENT_TRANSITION,   valve_transition,           "prc/eth/actuators/VentEth.csv") \
     X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_SAFETY_TRANSITION, valve_transition,           "prc/eth/actuators/SafetyEth.csv") \
     X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_BALL_TRANSITION,   ball_valve_transition,      "prc/eth/actuators/BallValveEth.csv") \
     X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_HPE_ERROR,         sensata::SensataError,      "prc/eth/errors/HPE.csv") \
