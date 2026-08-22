@@ -52,6 +52,9 @@ public:
     void logMainEthTransition (valve_transition frame) {
         this->writeRecord(engine::RecordType::LOG_MAIN_ETH_TRANSITION, &frame, sizeof(frame));
     }
+    void logIgniterTransition (igniter_transition frame) {
+        this->writeRecord(engine::RecordType::LOG_IGNITER, &frame, sizeof(frame));
+    }
 
     void logError (engine::ErrorKind kind) {
         this->writeRecord(engine::RecordType::LOG_ERROR, &kind, sizeof(kind));

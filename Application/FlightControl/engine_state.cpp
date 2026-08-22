@@ -4,7 +4,9 @@
 #include "Application/FlightControl/prc_can.hpp"
 
 #include "Drivers/Valve/ValveList.hpp"
+#include "Drivers/Plume/plume_storage.hpp"
 #include "Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include/prc_intranet/const.hpp"
+#include "Modules/Sensors/impl/common.hpp"
 
 #include "main.h"
 #include "stm32h7xx_hal.h"
@@ -66,6 +68,7 @@ static void SetMe(bool open) {
 // TODO, confirm before relying on this live.
 static void SetIgniter(bool on) {
   HAL_GPIO_WritePin(Igniter_GPIO_Port, Igniter_Pin, on ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  getEngineLogger().logIgniterTransition({ on });
 }
 
 // ---------------------------------------------------------------------------
@@ -387,6 +390,8 @@ void PrcEngineState::update(const DataDump &dump) {
            stateToString(currentState).c_str());
 
     state_entry_ms_ = HAL_GetTick();
+
+    getEngineLogger().logFsmTransition({ previous_state, currentState });
   }
 }
 

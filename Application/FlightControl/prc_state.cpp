@@ -6,7 +6,9 @@
 #include "Application/Control/rst_controller.hpp"
 #include "Drivers/PrcBoardId/PrcBoardId.hpp"
 #include "Drivers/Valve/ValveList.hpp"
+#include "Drivers/Plume/plume_storage.hpp"
 #include "Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include/prc_intranet/const.hpp"
+#include "Modules/Sensors/impl/common.hpp"
 
 #include "main.h"
 #include "stm32h7xx_hal.h"
@@ -268,6 +270,11 @@ void PrcState::update(const DataDump &dump) {
     app_printf("[PRC FSM] %s -> %s\r\n",
            stateToString(previous_state).c_str(),
            stateToString(currentState).c_str());
+
+    const bool is_lox = IsLox(dump.boardIdentity.role);
+
+    if (is_lox) getLoxLogger().logFsmTransition({ previous_state, currentState });
+    else getEthLogger().logFsmTransition({ previous_state, currentState });
 
     const uint32_t now_ms = HAL_GetTick();
     if (currentState == State::PRESSURIZE_ON)  pressurize_on_entry_ms_  = now_ms;

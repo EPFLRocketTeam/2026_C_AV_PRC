@@ -83,6 +83,11 @@ struct ball_valve_transition {
 };
 static_assert(sizeof(ball_valve_transition) == 8);
 
+struct igniter_transition {
+    bool is_enabled;
+};
+static_assert(sizeof(igniter_transition) == 1);
+
 namespace engine {
 
     enum ErrorKind {
@@ -103,6 +108,8 @@ namespace engine {
 
         LOG_MAIN_LOX_TRANSITION,
         LOG_MAIN_ETH_TRANSITION,
+
+        LOG_IGNITER,
 
         LOG_CHAMBER_FRAME, // { P, T, P_mean, C_mean }
         LOG_CHAMBER_ERROR,
