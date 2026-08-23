@@ -19,6 +19,10 @@ void SolenoidValve::set_energized(bool energized)
 ValveStatus SolenoidValve::open()
 {
     // NC valve opens when energized; NO valve opens when de-energized.
+    if (callback_ != nullptr) {
+        callback_(is_open_, true);
+    }
+
     bool energize = (config_.fail_safe == FailSafeState::NormallyClosed);
     set_energized(energize);
     is_open_ = true;
@@ -28,6 +32,10 @@ ValveStatus SolenoidValve::open()
 ValveStatus SolenoidValve::close()
 {
     // NC valve closes when de-energized; NO valve closes when energized.
+    if (callback_ != nullptr) {
+        callback_(is_open_, false);
+    }
+
     bool energize = (config_.fail_safe == FailSafeState::NormallyOpen);
     set_energized(energize);
     is_open_ = false;
@@ -42,6 +50,14 @@ bool SolenoidValve::is_open() const
 const char* SolenoidValve::name() const
 {
     return config_.name;
+}
+
+void SolenoidValve::setCallback(void (*callback)(bool old_open, bool new_open)) {
+    callback_ = callback;
+
+    if (callback_ != nullptr) {
+        callback_(is_open_, is_open_);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -117,6 +133,10 @@ ValveStatus ServoBallValve::set_position(float percent_open, bool dither)
 
     constexpr float kDitherAmount = 1.0f;
 
+    if (callback_ != nullptr) {
+        callback_(commanded_percent_open_, percent_open);
+    }
+
     if (dither) {
         // Nudges past the target and back before settling -- breaks static
         // friction so the mechanism actually reaches the commanded position
@@ -137,4 +157,12 @@ ValveStatus ServoBallValve::set_position(float percent_open, bool dither)
     write_pulse_us(PulseUsForPercent(config_, percent_open));
     commanded_percent_open_ = percent_open;
     return ValveStatus::Ok;
+}
+
+void ServoBallValve::setCallback(void (*callback)(float old_open, float new_open)) {
+    callback_ = callback;
+    
+    if (callback_ != nullptr) {
+        callback_(commanded_percent_open_, commanded_percent_open_);
+    }
 }

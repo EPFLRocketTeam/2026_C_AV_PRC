@@ -102,9 +102,10 @@ private:
 // Valve characterization (flow -> servo angle) -- from BVDPR_lib.cpp/.h.
 // ---------------------------------------------------------------------------
 
-constexpr float kServoMinAngleDeg  = 0.0f;
-constexpr float kServoMaxAngleDeg  = 70.0f;
-constexpr float kServoZeroAngleDeg = 16.0f; // below this, characterized flow is ~0 (dead-band)
+constexpr float kServoMinAngleDeg    = 0.0f;
+constexpr float kServoMaxAngleDeg    = 90.0f;
+//constexpr float kServoClosedAngleDeg = 13.0f; // Anything below kServoZeroAngleDeg gets mapped to this.
+constexpr float kServoZeroAngleDeg   = 16.0f; // below this, characterized flow is ~0 (dead-band)
 
 // Converts the RST controller's raw output ("phi", a flow-proxy value) to
 // a servo angle in degrees, via linear interpolation over BDPR's

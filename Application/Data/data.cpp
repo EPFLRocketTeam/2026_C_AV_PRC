@@ -11,6 +11,9 @@ const DataDump &PrcStore::get(uint32_t timestamp) const {
   data_.valves            = valvesStore.get();
   data_.intranetCmd         = intranetCmdStore.get();
   data_.event             = eventStore.get();
+  data_.propSensorsEngine = propSensorsStoreEngine.get();
+  data_.propSensorsEth    = propSensorsStoreEth.get();
+  data_.propSensorsLox    = propSensorsStoreLox.get();
   return data_;
 }
 

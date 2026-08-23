@@ -4,7 +4,9 @@
 #include "Application/FlightControl/prc_can.hpp"
 
 #include "Drivers/Valve/ValveList.hpp"
+#include "Drivers/Plume/plume_storage.hpp"
 #include "Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include/prc_intranet/const.hpp"
+#include "Modules/Sensors/impl/common.hpp"
 
 #include "main.h"
 #include "stm32h7xx_hal.h"
@@ -24,10 +26,10 @@ namespace pi = prc_intranet;
 // these still at this placeholder value.
 // ---------------------------------------------------------------------------
 
-static constexpr uint32_t k_prechill_duration_ms			= 10000; // PRECHILL DURATION
-static constexpr uint32_t k_igniter_duration_ms           	= 10000; // IGNITER DURATION
-static constexpr uint32_t k_ignition_delay_ms              	= 10000; // IGNITION DELAY
-static constexpr uint32_t k_rampup_duration_ms             	= 10000; // RAMPUP DURATION
+static constexpr uint32_t k_prechill_duration_ms			= 200;  // PRECHILL DURATION
+static constexpr uint32_t k_igniter_duration_ms           	= 5000; // IGNITER DURATION
+static constexpr uint32_t k_ignition_delay_ms              	= 1000; // IGNITION DELAY
+static constexpr uint32_t k_rampup_duration_ms             	= 5000; // RAMPUP DURATION
 
 
 // "Total impulse + upper/lower bound timer" -- real cutoff should be
@@ -37,12 +39,12 @@ static constexpr uint32_t k_rampup_duration_ms             	= 10000; // RAMPUP D
 
 /// TOTAL IMPULSE    ?????????????????????
 
-static constexpr uint32_t k_burn_duration_lower_bound_ms	= 10000;  //IS THIS REALLY NEEDED THOUGH
-static constexpr uint32_t k_burn_duration_upper_bound_ms	= 10000;
-static constexpr uint32_t k_cutoff_delay_ms                 = 10000; // CUTOFF DELAY
+static constexpr uint32_t k_burn_duration_lower_bound_ms	= 5000;  //IS THIS REALLY NEEDED THOUGH
+static constexpr uint32_t k_burn_duration_upper_bound_ms	= 5000;
+static constexpr uint32_t k_cutoff_delay_ms                 = 5000; // CUTOFF DELAY
 // PASSIVATION_DELAY_NO_COM_PRC, comms-loss watchdog, same idea as DPR's
 // k_passivation_delay_no_com_ms (prc_state.cpp), no ported number here.
-static constexpr uint32_t k_passivation_delay_no_com_ms    	= 10000;
+static constexpr uint32_t k_passivation_delay_no_com_ms    	= 300000;
 // In-flight-abort-only "timer" before rejoining WaitForPassivation --
 // distinct arrow from PASSIVATION_DELAY_NO_COM_PRC on the diagram.
 static constexpr uint32_t k_abort_in_flight_timer_ms       	= 10000;
@@ -51,15 +53,6 @@ static constexpr uint32_t k_passivation_fuel_duration_ms   	= 10000; // PASSIVAT
 static constexpr uint32_t k_interlude_duration_ms          	= 10000; // INTERLUDE DURATION
 static constexpr uint32_t k_passivation_ox_duration_ms     	= 10000; // PASSIVATION OX DURATION
 static constexpr uint32_t k_depressurize_delay_ms          	= 10000; // DEPRESSURIZE DELAY
-
-// ---------------------------------------------------------------------------
-// Valve mapping: MO (Main Oxidizer) / ME (Main Ethanol) -- same Sol3/Sol4
-// bench-test hookup already established in prc_can.cpp's ApplyCmdValves
-// ("LOX main"/"Ethanol main"). Not a confirmed real mission mapping either
-// (see that comment), just the one convention this codebase already uses.
-// ---------------------------------------------------------------------------
-static constexpr ValveId k_valve_mo = ValveId::Sol3;
-static constexpr ValveId k_valve_me = ValveId::Sol4;
 
 static void SetMo(bool open) {
   if (IValve* v = Valve_Get(k_valve_mo)) { if (open) v->open(); else v->close(); }
@@ -75,6 +68,7 @@ static void SetMe(bool open) {
 // TODO, confirm before relying on this live.
 static void SetIgniter(bool on) {
   HAL_GPIO_WritePin(Igniter_GPIO_Port, Igniter_Pin, on ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  getEngineLogger().logIgniterTransition({ on });
 }
 
 // ---------------------------------------------------------------------------
@@ -396,6 +390,8 @@ void PrcEngineState::update(const DataDump &dump) {
            stateToString(currentState).c_str());
 
     state_entry_ms_ = HAL_GetTick();
+
+    getEngineLogger().logFsmTransition({ previous_state, currentState });
   }
 }
 

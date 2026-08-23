@@ -91,3 +91,25 @@ ServoBallValve* Valve_GetBallValve()
 {
     return s_initialized ? s_servo : nullptr;
 }
+
+void Valve_SetupCallbacks (prc::BoardRole role) {
+    switch (role) {
+        case prc::BoardRole::EngineBay:
+            ((SolenoidValve*) Valve_Get(k_valve_mo))->setCallback(&valves_callbacks::onChange_MO);
+            ((SolenoidValve*) Valve_Get(k_valve_me))->setCallback(&valves_callbacks::onChange_ME);
+            break ;
+        case prc::BoardRole::DprEth:
+            ((SolenoidValve*) Valve_Get(k_valve_vent))->setCallback(&valves_callbacks::onChange_VE);
+            ((SolenoidValve*) Valve_Get(k_valve_safety))->setCallback(&valves_callbacks::onChange_SE);
+            Valve_GetBallValve()->setCallback(&valves_callbacks::onChange_BE);
+            break ;
+        case prc::BoardRole::DprLox:
+            ((SolenoidValve*) Valve_Get(k_valve_vent))->setCallback(&valves_callbacks::onChange_VO);
+            ((SolenoidValve*) Valve_Get(k_valve_safety))->setCallback(&valves_callbacks::onChange_SO);
+            Valve_GetBallValve()->setCallback(&valves_callbacks::onChange_BO);
+            break ;
+        case prc::BoardRole::Unknown:
+        default:
+            break ;
+    }
+}

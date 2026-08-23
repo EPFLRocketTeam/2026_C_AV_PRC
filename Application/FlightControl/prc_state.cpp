@@ -6,7 +6,9 @@
 #include "Application/Control/rst_controller.hpp"
 #include "Drivers/PrcBoardId/PrcBoardId.hpp"
 #include "Drivers/Valve/ValveList.hpp"
+#include "Drivers/Plume/plume_storage.hpp"
 #include "Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include/prc_intranet/const.hpp"
+#include "Modules/Sensors/impl/common.hpp"
 
 #include "main.h"
 #include "stm32h7xx_hal.h"
@@ -48,12 +50,12 @@ static constexpr uint32_t k_pressurize_on_bypass_delay_ms = 5000u;
 // variant. Comms-loss watchdog: if PRESSURIZE_OFF sits this long without an
 // explicit PASSIVATE command, autonomously passivate anyway (ported
 // directly from the old code's PRESSURIZATION_OFF state).
-static constexpr uint32_t k_passivation_delay_no_com_ms = 140000u;
+static constexpr uint32_t k_passivation_delay_no_com_ms = 300000u;
 
 // PRESSURIZATION_{LOX,FUEL}_SET_PRESSURE — TODO: values TBD. Selected at
 // runtime from BoardRole, not a build-time choice.
-static constexpr float k_lox_set_pressure_bar  =2.0f;
-static constexpr float k_fuel_set_pressure_bar = 2.0f;
+static constexpr float k_lox_set_pressure_bar  = 1.0f;
+static constexpr float k_fuel_set_pressure_bar = 1.0f;
 
 static float SetPressureBarFor(BoardRole role) {
   return (role == BoardRole::DprLox) ? k_lox_set_pressure_bar : k_fuel_set_pressure_bar;
@@ -269,6 +271,11 @@ void PrcState::update(const DataDump &dump) {
            stateToString(previous_state).c_str(),
            stateToString(currentState).c_str());
 
+    const bool is_lox = IsLox(dump.boardIdentity.role);
+
+    if (is_lox) getLoxLogger().logFsmTransition({ previous_state, currentState });
+    else getEthLogger().logFsmTransition({ previous_state, currentState });
+
     const uint32_t now_ms = HAL_GetTick();
     if (currentState == State::PRESSURIZE_ON)  pressurize_on_entry_ms_  = now_ms;
     if (currentState == State::PRESSURIZE_OFF) pressurize_off_entry_ms_ = now_ms;
@@ -295,32 +302,6 @@ static PrcState& fsm_instance() {
   static PrcState inst;
   return inst;
 }
-
-// ---------------------------------------------------------------------------
-// Valve mapping: per DPR bay (LOX or Ethanol), there are exactly 2
-// solenoids + 1 ball valve, translated onto this project's Valves fields
-// (adopted field-for-field from FC):
-//   Safety (ETH Safety DPR / LOX Safety DPR, per-bay, NOT shared between
-//       the two boards) -- gates the ball valve's regulation path, open
-//       during tank pressurization + regulation + the COPV-venting phase
-//       of passivation; closed in idle/PRESSURIZE_OFF and the
-//       tank-only-venting phase of passivation.
-//     -> valve_dpr_pressure_lox / valve_dpr_pressure_fuel
-//   Vent (Ethanol Tank Venting / LOX Tank Venting) -- opens whenever
-//       venting to atmosphere.
-//     -> valve_dpr_vent_lox / valve_dpr_vent_fuel
-// The ball valve itself (Ethanol Tank DPR / LOX Tank DPR) is this board's
-// proportional pressure-regulation element, driven directly via
-// ServoBallValve::set_position() and BDPR's actual RST pole-placement
-// controller + characterized flow->angle lookup table (see
-// Application/Control/rst_controller.hpp and the RST controller comment
-// below), not through these 2 on/off solenoids and not a linear %open law.
-// valve_dpr_vent_copv is left unused here -- no valve in this board's set
-// maps to it.
-// ---------------------------------------------------------------------------
-
-static constexpr ValveId k_valve_safety = ValveId::SafetyDpr;
-static constexpr ValveId k_valve_vent   = ValveId::Vent;
 
 // Ball valve position driven by the RST pole-placement controller +
 // characterized flow->angle table, ported from 2026_C_PR_BDPR
@@ -357,14 +338,10 @@ static float BallValvePercentFor(RstController &rst, float target_bar, float cur
 
 static void SetSafety(bool open, bool is_lox, ValvesStore &valvesStore) {
   if (IValve* v = Valve_Get(k_valve_safety)) { if (open) v->open(); else v->close(); }
-  if (is_lox) valvesStore.set_valve_dpr_pressure_lox(open);
-  else        valvesStore.set_valve_dpr_pressure_fuel(open);
 }
 
 static void SetVent(bool open, bool is_lox, ValvesStore &valvesStore) {
   if (IValve* v = Valve_Get(k_valve_vent)) { if (open) v->open(); else v->close(); }
-  if (is_lox) valvesStore.set_valve_dpr_vent_lox(open);
-  else        valvesStore.set_valve_dpr_vent_fuel(open);
 }
 
 static void ValveActions(State state, State previous_state, const DataDump &dump,
@@ -436,9 +413,13 @@ static void ValveActions(State state, State previous_state, const DataDump &dump
     // one either, since fromPressurizeOn() already leaves this state once
     // pressure is within k_ramp_exit_threshold_ratio of final_target_bar,
     // before the reference can climb meaningfully past it.
-    const float target_bar = (state == State::PRESSURIZE_ON)
+    float target_bar = (state == State::PRESSURIZE_ON)
         ? g_ramp_p0_bar + static_cast<float>(HAL_GetTick() - g_ramp_t0_ms) * k_ramp_rate_bar_per_ms
         : final_target_bar;
+    // Fix the rampup
+    if (target_bar > final_target_bar) {
+    	target_bar = final_target_bar;
+    }
 
     RstController &rst = (state == State::REGULATE) ? g_regulate_rst : g_ramp_rst;
     if (ServoBallValve* ball = Valve_GetBallValve()) {
