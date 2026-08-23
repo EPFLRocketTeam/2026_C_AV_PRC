@@ -122,8 +122,8 @@ struct ServoBallValveConfig {
     GPIO_TypeDef* enable_port = nullptr;
     uint16_t      enable_pin  = 0;
 
-    uint32_t            open_pulse_us   = 2100;
-    uint32_t            closed_pulse_us = 900;
+    uint32_t            open_pulse_us   = 2200;
+    uint32_t            closed_pulse_us = 800;
     const char*         name            = "";
 };
 

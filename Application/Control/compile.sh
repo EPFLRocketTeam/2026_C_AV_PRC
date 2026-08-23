@@ -1,0 +1,1 @@
+g++ -o out rst_test.cpp rst_controller.cpp -I../../ -DTEST_RST_CONTROLLER

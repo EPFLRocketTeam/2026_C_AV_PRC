@@ -413,9 +413,13 @@ static void ValveActions(State state, State previous_state, const DataDump &dump
     // one either, since fromPressurizeOn() already leaves this state once
     // pressure is within k_ramp_exit_threshold_ratio of final_target_bar,
     // before the reference can climb meaningfully past it.
-    const float target_bar = (state == State::PRESSURIZE_ON)
+    float target_bar = (state == State::PRESSURIZE_ON)
         ? g_ramp_p0_bar + static_cast<float>(HAL_GetTick() - g_ramp_t0_ms) * k_ramp_rate_bar_per_ms
         : final_target_bar;
+    // Fix the rampup
+    if (target_bar > final_target_bar) {
+    	target_bar = final_target_bar;
+    }
 
     RstController &rst = (state == State::REGULATE) ? g_regulate_rst : g_ramp_rst;
     if (ServoBallValve* ball = Valve_GetBallValve()) {
