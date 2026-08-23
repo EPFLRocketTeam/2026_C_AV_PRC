@@ -44,7 +44,7 @@ static constexpr uint32_t k_burn_duration_upper_bound_ms	= 5000;
 static constexpr uint32_t k_cutoff_delay_ms                 = 5000; // CUTOFF DELAY
 // PASSIVATION_DELAY_NO_COM_PRC, comms-loss watchdog, same idea as DPR's
 // k_passivation_delay_no_com_ms (prc_state.cpp), no ported number here.
-static constexpr uint32_t k_passivation_delay_no_com_ms    	= 10000;
+static constexpr uint32_t k_passivation_delay_no_com_ms    	= 300000;
 // In-flight-abort-only "timer" before rejoining WaitForPassivation --
 // distinct arrow from PASSIVATION_DELAY_NO_COM_PRC on the diagram.
 static constexpr uint32_t k_abort_in_flight_timer_ms       	= 10000;

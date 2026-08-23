@@ -50,7 +50,7 @@ static constexpr uint32_t k_pressurize_on_bypass_delay_ms = 5000u;
 // variant. Comms-loss watchdog: if PRESSURIZE_OFF sits this long without an
 // explicit PASSIVATE command, autonomously passivate anyway (ported
 // directly from the old code's PRESSURIZATION_OFF state).
-static constexpr uint32_t k_passivation_delay_no_com_ms = 140000u;
+static constexpr uint32_t k_passivation_delay_no_com_ms = 300000u;
 
 // PRESSURIZATION_{LOX,FUEL}_SET_PRESSURE — TODO: values TBD. Selected at
 // runtime from BoardRole, not a build-time choice.
