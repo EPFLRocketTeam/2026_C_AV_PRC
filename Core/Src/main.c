@@ -261,7 +261,13 @@ int main(void)
   //Valve_ManualTest();
   HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_4);
 
+  // reset mux
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, GPIO_PIN_RESET);
+  HAL_Delay(1000);
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, GPIO_PIN_SET);
+
   main_init();
+  // i2c_bus_scan(&hi2c1);
 
   /* Reset cause. Printed here (after Prc_Fsm_Init()'s buzzer delays), not
    * right after MX_USB_DEVICE_Init(), because USB CDC hasn't finished

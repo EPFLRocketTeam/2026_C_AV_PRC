@@ -115,9 +115,9 @@ namespace sensata {
             // in Drivers/SensataPte7300/Types.hpp) -- no string table for
             // them exists yet, unlike poll_mode_str. Cross-reference the
             // number against that header if you need the name.
-            app_printf("[SENSATA] %s: FAIL status=%u step=%s mode=%s\r\n",
+            app_printf("[SENSATA] %s: FAIL status=%s step=%s mode=%s\r\n",
                    SensorName,
-                   static_cast<unsigned>(error.status),
+                   sensata::status_str(error.status),
                    sensata::step_str(error.step),
                    internal::poll_mode_str(error.pollMode));
 
