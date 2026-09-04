@@ -1,6 +1,7 @@
 #include "Application/FlightControl/prc_state.h"
 #include "Application/FlightControl/prc_fsm_c_api.h"
 #include "Application/FlightControl/engine_state.h"
+#include "Application/Config/config.hpp"
 #include "Application/app_timebase.h"
 #include "Application/app_printf.h"
 #include "Application/Control/rst_controller.hpp"
@@ -28,13 +29,17 @@
 // leaves the phase once measured pressure is within k_ramp_exit_threshold
 // of the final set pressure (see fromPressurizeOn() and
 // ApplyValveActions()'s PRESSURIZE_ON case).
+// TODO port this as a computed parameter ?
+//   Or maybe as a FIXED param ? IDK...
 static constexpr float k_ramp_rate_bar_per_ms = 50.0e-3f; // DESIRED_DP, BVDPR_lib.h:19
 
 // Ramp exit threshold -- ported from BDPR's tankPress() exit check
 // (`pressureData(TANK_SENSOR) >= 0.98 * (P_REF - 1.0)`, BVDPR.ino:517).
+// TODO port this as FIXED param into the params
 static constexpr float k_ramp_exit_threshold_ratio = 0.98f;
 
 // TEMPORARY bench override delay -- see fromPressurizeOn().
+// TODO wtf is this ?
 static constexpr uint32_t k_pressurize_on_bypass_delay_ms = 5000u;
 
 // PASSIVATION_DURATION_DPR — confirmed: 300 s, every flight variant. Not
@@ -50,15 +55,17 @@ static constexpr uint32_t k_pressurize_on_bypass_delay_ms = 5000u;
 // variant. Comms-loss watchdog: if PRESSURIZE_OFF sits this long without an
 // explicit PASSIVATE command, autonomously passivate anyway (ported
 // directly from the old code's PRESSURIZATION_OFF state).
-static constexpr uint32_t k_passivation_delay_no_com_ms = 300000u;
+// static constexpr uint32_t k_passivation_delay_no_com_ms = 300000u;
 
 // PRESSURIZATION_{LOX,FUEL}_SET_PRESSURE — TODO: values TBD. Selected at
 // runtime from BoardRole, not a build-time choice.
-static constexpr float k_lox_set_pressure_bar  = 1.0f;
-static constexpr float k_fuel_set_pressure_bar = 1.0f;
+// static constexpr float k_lox_set_pressure_bar  = 1.0f;
+// static constexpr float k_fuel_set_pressure_bar = 1.0f;
 
 static float SetPressureBarFor(BoardRole role) {
-  return (role == BoardRole::DprLox) ? k_lox_set_pressure_bar : k_fuel_set_pressure_bar;
+  return (role == BoardRole::DprLox)
+    ? config::get().Pressurization.LoxSetPressure
+    : config::get().Pressurization.FuelSetPressure;
 }
 
 static bool IsLox(BoardRole role) { return role == BoardRole::DprLox; }
@@ -153,6 +160,7 @@ State PrcState::fromPressurizeOn(DataDump const &dump) {
   // measured tank pressure never actually reaches k_ramp_exit_threshold_ratio
   // of the set pressure, so PRESSURIZE_ON would otherwise never exit on its
   // own. Remove this early return to restore the real behavior.
+  // TODO wtf is this ?
   if (HAL_GetTick() - pressurize_on_entry_ms_ >= k_pressurize_on_bypass_delay_ms) {
     return State::REGULATE;
   }
@@ -196,7 +204,8 @@ State PrcState::fromPressurizeOff(DataDump const &dump) {
   // Comms-loss watchdog (ported from the old code's PRESSURIZATION_OFF
   // case): no explicit PASSIVATE command for this long -> passivate anyway.
   const uint32_t elapsed_ms = HAL_GetTick() - pressurize_off_entry_ms_;
-  if (elapsed_ms >= k_passivation_delay_no_com_ms) {
+  // TODO Should be depressurize right ?
+  if (elapsed_ms >= config::get().Descent.DepressurizeDelayNoComMs /* k_passivation_delay_no_com_ms */) {
     return State::PASSIVATE;
   }
 
@@ -231,7 +240,8 @@ State PrcState::fromAbortInFlight(DataDump const &dump) {
   // the same depressurize/passivation chain PRESSURIZE_OFF uses, per the
   // DPR FSM diagram (Abort-in-Flight --Timer--> DEPRESSURIZE), rather than
   // a separate abort-only passivation path.
-  if (HAL_GetTick() - abort_in_flight_entry_ms_ >= k_abort_in_flight_dpr_delay_ms) {
+  // TODO depressurize right ?
+  if (HAL_GetTick() - abort_in_flight_entry_ms_ >= config::get().AIF.DepressurizeTimerMs /* k_abort_in_flight_dpr_delay_ms */) {
     return State::PASSIVATE;
   }
   return currentState;
