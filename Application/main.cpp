@@ -69,7 +69,7 @@ void prc::PropSensorsStoreEngine::set_pressure_C(double pressure_C) {
 }
 void prc::PropSensorsStoreEngine::set_pressure_C_mean(double pressure_C_mean) {
 	data_.pressure_C_mean = pressure_C_mean;
-	// 	app_printf("p_C_mean=%lf\r\n", pressure_C_mean);
+	RUN_EVERY(1000) app_printf("p_C_mean=%lf\r\n", pressure_C_mean);
 }
 void prc::PropSensorsStoreEngine::set_temperature_C(double temperature_C) {
 	data_.temperature_C = temperature_C;
@@ -77,7 +77,7 @@ void prc::PropSensorsStoreEngine::set_temperature_C(double temperature_C) {
 }
 void prc::PropSensorsStoreEngine::set_temperature_C_mean(double temperature_C_mean) {
 	data_.temperature_C_mean = temperature_C_mean;
-	// 	app_printf("t_C_mean=%lf\r\n", temperature_C_mean);
+	RUN_EVERY(1000) app_printf("t_C_mean=%lf\r\n", temperature_C_mean);
 }
 void prc::PropSensorsStoreEngine::set_pressure_OIN(double pressure_OIN) {
 	data_.pressure_OIN = pressure_OIN;
@@ -85,7 +85,7 @@ void prc::PropSensorsStoreEngine::set_pressure_OIN(double pressure_OIN) {
 }
 void prc::PropSensorsStoreEngine::set_pressure_OIN_mean(double pressure_OIN_mean) {
 	data_.pressure_OIN_mean = pressure_OIN_mean;
-	// 	app_printf("p_OIN_mean=%lf\r\n", pressure_OIN_mean);
+	RUN_EVERY(1000) app_printf("p_OIN_mean=%lf\r\n", pressure_OIN_mean);
 }
 void prc::PropSensorsStoreEngine::set_pressure_EIN(double pressure_EIN) {
 	data_.pressure_EIN = pressure_EIN;
@@ -93,7 +93,7 @@ void prc::PropSensorsStoreEngine::set_pressure_EIN(double pressure_EIN) {
 }
 void prc::PropSensorsStoreEngine::set_pressure_EIN_mean(double pressure_EIN_mean) {
 	data_.pressure_EIN_mean = pressure_EIN_mean;
-	// 	app_printf("p_EIN_mean=%lf\r\n", pressure_EIN_mean);
+	RUN_EVERY(1000) app_printf("p_EIN_mean=%lf\r\n", pressure_EIN_mean);
 }
 void prc::PropSensorsStoreEngine::set_temperature_OIN(double temperature_OIN) {
 	data_.temperature_OIN = temperature_OIN;
@@ -101,7 +101,7 @@ void prc::PropSensorsStoreEngine::set_temperature_OIN(double temperature_OIN) {
 }
 void prc::PropSensorsStoreEngine::set_temperature_OIN_mean(double temperature_OIN_mean) {
 	data_.temperature_OIN_mean = temperature_OIN_mean;
-	// 	app_printf("t_OIN_mean=%lf\r\n", temperature_OIN_mean);
+	RUN_EVERY(1000) app_printf("t_OIN_mean=%lf\r\n", temperature_OIN_mean);
 }
 void prc::PropSensorsStoreEngine::set_temperature_EIN(double temperature_EIN) {
 	data_.temperature_EIN = temperature_EIN;
@@ -109,7 +109,7 @@ void prc::PropSensorsStoreEngine::set_temperature_EIN(double temperature_EIN) {
 }
 void prc::PropSensorsStoreEngine::set_temperature_EIN_mean(double temperature_EIN_mean) {
 	data_.temperature_EIN_mean = temperature_EIN_mean;
-	// 	app_printf("t_EIN_mean=%lf\r\n", temperature_EIN_mean);
+	RUN_EVERY(1000) app_printf("t_EIN_mean=%lf\r\n", temperature_EIN_mean);
 }
 
 // ---------------------------------------------------------------------------
@@ -146,7 +146,7 @@ void prc::PropSensorsStoreLox::set_temperature_OTA1(double temperature_OTA1) {
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA1_mean(double temperature_OTA1_mean) {
 	data_.temperature_OTA1_mean = temperature_OTA1_mean;
-	// 	app_printf("t_OTA1_mean=%lf\r\n", temperature_OTA1_mean);
+	RUN_EVERY(1000) app_printf("t_OTA1_mean=%lf\r\n", temperature_OTA1_mean);
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA2(double temperature_OTA2) {
 	data_.temperature_OTA2 = temperature_OTA2;
@@ -154,7 +154,7 @@ void prc::PropSensorsStoreLox::set_temperature_OTA2(double temperature_OTA2) {
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA2_mean(double temperature_OTA2_mean) {
 	data_.temperature_OTA2_mean = temperature_OTA2_mean;
-	// 	app_printf("t_OTA2_mean=%lf\r\n", temperature_OTA2_mean);
+	RUN_EVERY(1000) app_printf("t_OTA2_mean=%lf\r\n", temperature_OTA2_mean);
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA3(double temperature_OTA3) {
 	data_.temperature_OTA3 = temperature_OTA3;
@@ -162,7 +162,7 @@ void prc::PropSensorsStoreLox::set_temperature_OTA3(double temperature_OTA3) {
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA3_mean(double temperature_OTA3_mean) {
 	data_.temperature_OTA3_mean = temperature_OTA3_mean;
-	// 	app_printf("t_OTA3_mean=%lf\r\n", temperature_OTA3_mean);
+	RUN_EVERY(1000) app_printf("t_OTA3_mean=%lf\r\n", temperature_OTA3_mean);
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA4(double temperature_OTA4) {
 	data_.temperature_OTA4 = temperature_OTA4;
@@ -170,7 +170,7 @@ void prc::PropSensorsStoreLox::set_temperature_OTA4(double temperature_OTA4) {
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA4_mean(double temperature_OTA4_mean) {
 	data_.temperature_OTA4_mean = temperature_OTA4_mean;
-	// 	app_printf("t_OTA4_mean=%lf\r\n", temperature_OTA4_mean);
+	RUN_EVERY(1000) app_printf("t_OTA4_mean=%lf\r\n", temperature_OTA4_mean);
 }
 
 // ---------------------------------------------------------------------------
@@ -195,11 +195,11 @@ void prc::PropSensorsStoreEth::set_pressure_ETA_mean(double pressure_ETA_mean) {
 }
 void prc::PropSensorsStoreEth::set_pressure_HPE(double pressure_HPE) {
 	data_.pressure_HPE = pressure_HPE;
-	RUN_EVERY(1000)	app_printf("p_HPE=%lf\r\n", pressure_HPE);
+	// app_printf("p_HPE=%lf\r\n", pressure_HPE);
 }
 void prc::PropSensorsStoreEth::set_pressure_HPE_mean(double pressure_HPE_mean) {
 	data_.pressure_HPE_mean = pressure_HPE_mean;
-	//  app_printf("p_HPE_mean=%lf\r\n", pressure_HPE_mean);
+	RUN_EVERY(1000) app_printf("p_HPE_mean=%lf\r\n", pressure_HPE_mean);
 }
 
 // ---------------------------------------------------------------------------
