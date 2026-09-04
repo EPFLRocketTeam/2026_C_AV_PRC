@@ -298,17 +298,21 @@ void main_init() {
 
 	app_timebase_init();
 
+	app_printf("Try to create SD card...\n");
+
 	if (!sd_interface.init_sd_card(&hsd1, plume_arena_buffer, plume_arena_length)) {
 		app_printf("Could not init SD card.\n");
 		return ;
 	}
+
+	app_printf("Try to open file...\n");
 
 	if (!sd_interface.open_file()) {
 		app_printf("Could not open a file on the SD card.\n");
 		return ;
 	}
 
-	//app_printf("Setup storage.\n");
+	app_printf("SD card was initialized...\n");
 
 	storage = PlumeStorage(&sd_interface);
 	
@@ -329,6 +333,8 @@ void main_init() {
 			// rather than guessing which bay's sensors to poll.
 			break;
 	}
+
+	app_printf("Created storage instance.\n");
 
 	switch (prc::PrcStore::get_instance().boardIdentityStore.get_role()) {
 		case prc::BoardRole::EngineBay:
@@ -362,7 +368,7 @@ void main_init() {
 }
 
 void main_tick() {
-	//app_printf("Tick\n");
+	// RUN_EVERY (1000) app_printf("Tick\n");
 
 	switch (prc::PrcStore::get_instance().boardIdentityStore.get_role()) {
 		case prc::BoardRole::EngineBay:

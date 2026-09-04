@@ -48,7 +48,7 @@ using PressureEtaSensorModule = multi::Module<
         sensata::SensataErrorPipeline<ETA2_NAME, &getEthLogger, &EthDataLogger<PlumeStorage>::logETA2PressureError>
     >,
     multi::PressureSensorParam<
-        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L4>>,
+        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L3>>,
         ETH_SETTER_POLICY(prc::PropSensorsStoreEth::set_pressure_ETA3),
         sensata::SensataErrorPipeline<ETA3_NAME, &getEthLogger, &EthDataLogger<PlumeStorage>::logETA3PressureError>
     >
