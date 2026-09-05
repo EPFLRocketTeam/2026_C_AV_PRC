@@ -52,6 +52,7 @@ private:
   EngineState fromAbortInFlightOxydant(DataDump const &dump);
   EngineState fromAbortInFlightEthanol(DataDump const &dump);
   EngineState fromDepressurizeOpen(DataDump const &dump);
+  EngineState fromDepressurizeClose(DataDump const &dump);
 
   EngineState currentState;
 

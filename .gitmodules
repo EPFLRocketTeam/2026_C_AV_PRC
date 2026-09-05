@@ -10,3 +10,6 @@
 [submodule "Drivers/Plume/2026_C_AV_PLUME"]
 	path = Drivers/Plume/2026_C_AV_PLUME
 	url = https://github.com/EPFLRocketTeam/2026_C_AV_PLUME.git
+[submodule "Application/Config/2026_C_AV_FLIGHT_PARAMS"]
+	path = Application/Config/2026_C_AV_FLIGHT_PARAMS
+	url = https://github.com/EPFLRocketTeam/2026_C_AV_FLIGHT_PARAMS.git

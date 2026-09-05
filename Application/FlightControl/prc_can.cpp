@@ -5,8 +5,10 @@
 
 #include "Application/Data/data.hpp"
 #include "Application/app_printf.h"
+#include "Application/app_timebase.h"
 #include "Application/FlightControl/engine_state.h"
 #include "Application/FlightControl/prc_state.h"
+#include "Application/Config/config.hpp"
 // #include "Application/FlightControl/intranet_cmd.hpp"
 #include "Drivers/Valve/ValveList.hpp"
 #include "log_aggregator/chunker.hpp"
@@ -189,6 +191,29 @@ void OnPrcColdflow(void*, pi::payload::empty) noexcept {
   g_coldflow_trigger_pending = true;
 }
 
+pi::payload::board_id GetBoardIdFromRole () noexcept {
+  if (CurrentRole() == BoardRole::DprEth) return pi::payload::board_id::DPR_ETH;
+  if (CurrentRole() == BoardRole::DprLox) return pi::payload::board_id::DPR_LOX;
+  if (CurrentRole() == BoardRole::EngineBay) return pi::payload::board_id::ENGINE;
+  return pi::payload::board_id::ENGINE;
+}
+
+void OnLogConfig (void*, pi::payload::log_config conf) noexcept {
+  if (CurrentRole() == BoardRole::Unknown) return ;
+  if (GetBoardIdFromRole() != conf.board) return ;
+  if (conf.channel == pi::payload::log_channel::CAN) app_printf_use_can(conf.enabled);
+  else app_printf_use_usb(conf.enabled);
+}
+
+void OnConfigSendData (void*, pi::payload::config_chunk conf) noexcept {
+  config::internal::put(conf.offset, conf.buffer, sizeof(conf.buffer));
+}
+void OnConfigSendCommit (void*, pi::payload::config_commit conf) noexcept {
+  if (CurrentRole() == BoardRole::Unknown) return ;
+  if (GetBoardIdFromRole() != conf.board) return ;
+  config::internal::commit();
+}
+
 // HAL_FDCAN_AddMessageToTxFifoQ word-copies from this buffer regardless of
 // dlc (see 2026_C_AV_FC's main.c TX test comment), so pad to the full
 // word-aligned MAX_PAYLOAD_SIZE rather than passing `buffer` (only
@@ -271,6 +296,9 @@ pi::context& Ctx() {
     driver.on_prc_reset          = OnPrcReset;
     driver.on_prc_cmd_valves     = OnPrcCmdValves;
     driver.on_prc_coldflow       = OnPrcColdflow;
+    driver.on_log_config         = OnLogConfig;
+    driver.on_config_send_commit = OnConfigSendCommit;
+    driver.on_config_send_data   = OnConfigSendData;
     return pi::create_context(driver);
   }();
   return ctx;
@@ -331,6 +359,19 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
 
   pi::context& ctx = Ctx();
   ctx.driver.driver_ptr = hfdcan;
+
+  RUN_EVERY(1000) {
+    pi::payload::config_crc conf;
+    conf.crc_buffer   = config::internal::crc_buffer();
+    conf.crc_commited = config::internal::crc_commited();
+    
+    if (role == BoardRole::EngineBay && Prc_Engine_Fsm_GetState() == prc::EngineState::Idle)
+      pi::send_config_crc_prc_engine(&ctx, conf);
+    if (role == BoardRole::DprLox && PrcStore::get_instance().stateStore.get() == prc::State::MANUAL)
+      pi::send_config_crc_dpr_lox(&ctx, conf);
+    if (role == BoardRole::DprEth && PrcStore::get_instance().stateStore.get() == prc::State::MANUAL)
+      pi::send_config_crc_dpr_eth(&ctx, conf);
+  }
 
   if (role == BoardRole::EngineBay) {
     // MO/ME are the engine board's own on/off main valves (see
