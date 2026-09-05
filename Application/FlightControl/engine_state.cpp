@@ -1,4 +1,3 @@
-#define uint32_t int
 #include "Application/FlightControl/engine_state.h"
 #include "Application/app_timebase.h"
 #include "Application/app_printf.h"

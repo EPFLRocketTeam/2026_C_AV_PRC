@@ -47,15 +47,6 @@ public:
    */
   std::string stateToString(State state);
 
-  /**
-   * @brief HAL_GetTick() timestamp of the most recent entry into PASSIVATE
-   * (0 if never entered). Not currently consumed by anything -- PASSIVATE's
-   * venting phases are now driven by live pressure readings each tick (see
-   * ApplyValveActions in prc_state.cpp), not elapsed time. Kept for
-   * telemetry/logging ("how long have we been passivating").
-   */
-  uint32_t getPassivateEntryMs() const { return passivate_entry_ms_; }
-
 private:
   State fromManual(DataDump const &dump);
   State fromPressurizeOn(DataDump const &dump);
