@@ -19,7 +19,8 @@ enum State : uint8_t {
   PRESSURIZE_ON,
   REGULATE,
   PRESSURIZE_OFF,
-  PASSIVATE,
+  DEPRESSURIZE_ON,
+  DEPRESSURIZE_OFF,
 
   /* ============== Error States ============== */
   ABORT_ON_GROUND,

@@ -61,7 +61,8 @@ private:
   State fromPressurizeOn(DataDump const &dump);
   State fromRegulate(DataDump const &dump);
   State fromPressurizeOff(DataDump const &dump);
-  State fromPassivate(DataDump const &dump);
+  State fromDepressurizeOn(DataDump const &dump);
+  State fromDepressurizeOff(DataDump const &dump);
   State fromAbortOnGround(DataDump const &dump);
   State fromAbortInFlight(DataDump const &dump);
 
@@ -79,8 +80,8 @@ private:
   // hold, comms-loss watchdog). Set on entry to the corresponding state in
   // update().
   uint32_t pressurize_on_entry_ms_  = 0;
-  uint32_t passivate_entry_ms_      = 0;
   uint32_t pressurize_off_entry_ms_ = 0; // drives the comms-loss auto-passivate watchdog
+  uint32_t depressurize_on_entry_ms_ = 0;
   uint32_t abort_in_flight_entry_ms_ = 0; // drives the ABORT_IN_FLIGHT -> PASSIVATE timer
 };
 

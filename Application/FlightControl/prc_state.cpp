@@ -31,16 +31,16 @@
 // ApplyValveActions()'s PRESSURIZE_ON case).
 // TODO port this as a computed parameter ?
 //   Or maybe as a FIXED param ? IDK...
-static constexpr float k_ramp_rate_bar_per_ms = 50.0e-3f; // DESIRED_DP, BVDPR_lib.h:19
+// static constexpr float k_ramp_rate_bar_per_ms = 50.0e-3f; // DESIRED_DP, BVDPR_lib.h:19
 
 // Ramp exit threshold -- ported from BDPR's tankPress() exit check
 // (`pressureData(TANK_SENSOR) >= 0.98 * (P_REF - 1.0)`, BVDPR.ino:517).
 // TODO port this as FIXED param into the params
-static constexpr float k_ramp_exit_threshold_ratio = 0.98f;
+// static constexpr float k_ramp_exit_threshold_ratio = 0.98f;
 
 // TEMPORARY bench override delay -- see fromPressurizeOn().
 // TODO wtf is this ?
-static constexpr uint32_t k_pressurize_on_bypass_delay_ms = 5000u;
+// static constexpr uint32_t k_pressurize_on_bypass_delay_ms = 5000u;
 
 // PASSIVATION_DURATION_DPR — confirmed: 300 s, every flight variant. Not
 // currently used: PASSIVATE's venting is now driven by live tank/COPV
@@ -64,8 +64,8 @@ static constexpr uint32_t k_pressurize_on_bypass_delay_ms = 5000u;
 
 static float SetPressureBarFor(BoardRole role) {
   return (role == BoardRole::DprLox)
-    ? config::get().Pressurization.LoxSetPressure
-    : config::get().Pressurization.FuelSetPressure;
+    ? config::get().Pressurization.TargetPressureLox
+    : config::get().Pressurization.TargetPressureFuel;
 }
 
 static bool IsLox(BoardRole role) { return role == BoardRole::DprLox; }
@@ -125,7 +125,7 @@ static float CurrentCopvPressureBar(const DataDump &dump) {
 // drain sequence takes (engine_state.cpp's AbortInFlight through Shutoff).
 // The boards don't share progress over CAN, so this is a timer, not a real
 // sync. Same 10 s placeholder convention as engine_state.cpp's constants.
-static constexpr uint32_t k_abort_in_flight_dpr_delay_ms = 10000u;
+// static constexpr uint32_t k_abort_in_flight_dpr_delay_ms = 10000u;
 
 PrcState::PrcState() { this->currentState = State::MANUAL; }
 
@@ -155,23 +155,13 @@ State PrcState::fromPressurizeOn(DataDump const &dump) {
     return State::ABORT_ON_GROUND;
   }
 
-  // TEMPORARY bench override: go to REGULATE after a fixed delay instead of
-  // waiting for the real exit condition below. Without real pressurant,
-  // measured tank pressure never actually reaches k_ramp_exit_threshold_ratio
-  // of the set pressure, so PRESSURIZE_ON would otherwise never exit on its
-  // own. Remove this early return to restore the real behavior.
-  // TODO wtf is this ?
-  if (HAL_GetTick() - pressurize_on_entry_ms_ >= k_pressurize_on_bypass_delay_ms) {
-    return State::REGULATE;
-  }
-
   // Real behavior: exit the open-loop ramp once measured tank pressure is
   // within k_ramp_exit_threshold_ratio of the final set pressure -- ported
   // from BDPR's tankPress() exit check (BVDPR.ino:517), not a fixed
   // duration.
   const float target_bar  = SetPressureBarFor(dump.boardIdentity.role);
   const float current_bar = CurrentTankPressureBar(dump);
-  if (current_bar >= k_ramp_exit_threshold_ratio * target_bar) {
+  if (current_bar >= config::get().Pressurization.RampExitThresholdRatio * target_bar) {
     return State::REGULATE;
   }
 
@@ -198,21 +188,28 @@ State PrcState::fromPressurizeOff(DataDump const &dump) {
   }
 
   if (dump.intranetCmd.id == (uint16_t)PassivateIdFor(dump.boardIdentity.role)) {
-    return State::PASSIVATE;
+    return State::DEPRESSURIZE_ON;
   }
 
   // Comms-loss watchdog (ported from the old code's PRESSURIZATION_OFF
   // case): no explicit PASSIVATE command for this long -> passivate anyway.
   const uint32_t elapsed_ms = HAL_GetTick() - pressurize_off_entry_ms_;
-  // TODO Should be depressurize right ?
-  if (elapsed_ms >= config::get().Descent.DepressurizeDelayNoComMs /* k_passivation_delay_no_com_ms */) {
-    return State::PASSIVATE;
+  if (elapsed_ms >= config::get().Descent.Depressurize.DPR.DelayNoComMs) {
+    return State::DEPRESSURIZE_ON;
   }
 
   return currentState;
 }
 
-State PrcState::fromPassivate(DataDump const &dump) {
+State PrcState::fromDepressurizeOn(DataDump const &dump) {
+  const uint32_t elapsed_ms = HAL_GetTick() - depressurize_on_entry_ms_;
+  if (elapsed_ms >= config::get().Descent.Depressurize.DPR.DurationMs) {
+    return State::DEPRESSURIZE_ON;
+  }
+
+  return currentState;
+}
+State PrcState::fromDepressurizeOff(DataDump const &dump) {
   // Reachable from both the nominal PRESSURIZE_OFF exit and, after the
   // abort timer, from ABORT_IN_FLIGHT -- same depressurize chain either
   // way, per the DPR FSM diagram. RESET works here (not just from
@@ -242,7 +239,7 @@ State PrcState::fromAbortInFlight(DataDump const &dump) {
   // a separate abort-only passivation path.
   // TODO depressurize right ?
   if (HAL_GetTick() - abort_in_flight_entry_ms_ >= config::get().AIF.DepressurizeTimerMs /* k_abort_in_flight_dpr_delay_ms */) {
-    return State::PASSIVATE;
+    return State::DEPRESSURIZE_ON;
   }
   return currentState;
 }
@@ -263,8 +260,11 @@ void PrcState::update(const DataDump &dump) {
     case State::PRESSURIZE_OFF:
       currentState = fromPressurizeOff(dump);
       break;
-    case State::PASSIVATE:
-      currentState = fromPassivate(dump);
+    case State::DEPRESSURIZE_ON:
+      currentState = fromDepressurizeOn(dump);
+      break;
+    case State::DEPRESSURIZE_OFF:
+      currentState = fromDepressurizeOff(dump);
       break;
     case State::ABORT_ON_GROUND:
       currentState = fromAbortOnGround(dump);
@@ -289,7 +289,7 @@ void PrcState::update(const DataDump &dump) {
     const uint32_t now_ms = HAL_GetTick();
     if (currentState == State::PRESSURIZE_ON)  pressurize_on_entry_ms_  = now_ms;
     if (currentState == State::PRESSURIZE_OFF) pressurize_off_entry_ms_ = now_ms;
-    if (currentState == State::PASSIVATE)      passivate_entry_ms_      = now_ms;
+    if (currentState == State::DEPRESSURIZE_ON) depressurize_on_entry_ms_ = now_ms;
     if (currentState == State::ABORT_IN_FLIGHT) abort_in_flight_entry_ms_ = now_ms;
   }
 }
@@ -300,7 +300,8 @@ std::string PrcState::stateToString(State state) {
     case State::PRESSURIZE_ON:           return "PRESSURIZE_ON";
     case State::REGULATE:                return "REGULATE";
     case State::PRESSURIZE_OFF:          return "PRESSURIZE_OFF";
-    case State::PASSIVATE:               return "PASSIVATE";
+    case State::DEPRESSURIZE_ON:         return "DEPRESSURIZE_ON";
+    case State::DEPRESSURIZE_OFF:        return "DEPRESSURIZE_OFF";
     case State::ABORT_ON_GROUND:         return "ABORT_ON_GROUND";
     case State::ABORT_IN_FLIGHT:         return "ABORT_IN_FLIGHT";
     default:                             return "ERROR";
@@ -424,7 +425,7 @@ static void ValveActions(State state, State previous_state, const DataDump &dump
     // pressure is within k_ramp_exit_threshold_ratio of final_target_bar,
     // before the reference can climb meaningfully past it.
     float target_bar = (state == State::PRESSURIZE_ON)
-        ? g_ramp_p0_bar + static_cast<float>(HAL_GetTick() - g_ramp_t0_ms) * k_ramp_rate_bar_per_ms
+        ? g_ramp_p0_bar + static_cast<float>(HAL_GetTick() - g_ramp_t0_ms) * config::get().Pressurization.RampRate
         : final_target_bar;
     // Fix the rampup
     if (target_bar > final_target_bar) {
@@ -444,12 +445,16 @@ static void ValveActions(State state, State previous_state, const DataDump &dump
       SetSafety(true, is_lox, valvesStore);
       SetVent(false, is_lox, valvesStore);
     }
-  } else if (state == State::PASSIVATE) {
+  } else if (state == State::DEPRESSURIZE_ON) {
     // Simplified from BDPR's two-phase passivation() (tank-then-COPV,
     // live-pressure-driven): just open everything at once instead.
     SetSafety(true, is_lox, valvesStore);
     SetVent(true, is_lox, valvesStore);
-    if (ServoBallValve* ball = Valve_GetBallValve()) ball->set_position(100.0f);
+    if (ServoBallValve* ball = Valve_GetBallValve()) ball->set_position(config::get().Descent.Depressurize.DPR.BallValveOpening);
+  } else if (state == State::DEPRESSURIZE_OFF) {
+    SetSafety(false, is_lox, valvesStore);
+    SetVent(true, is_lox, valvesStore);
+    if (ServoBallValve* ball = Valve_GetBallValve()) ball->set_position(0);
   }
 }
 

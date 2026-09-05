@@ -29,8 +29,8 @@ enum class EngineState : uint8_t {
   BurnStopMe,             // close ME
   WaitForPassivation,
 
-  // PASSIVATION SQ
-  PassivationSeparationDelay, // wait only, no valve action
+  /* PASSIVATION SQ */ 
+  PassivationSeparationDelay, // PASSIVATION SQ
   PassivationEth,         // open ME
   PassivationCloseMe,     // close ME
   PassivationLox,         // open MO
@@ -42,6 +42,7 @@ enum class EngineState : uint8_t {
   // FC is the one that then commands the DPR boards to depressurize (see
   // the FC-level FSM diagram), not this board. Terminal.
   DepressurizeOpen,       // open MO + ME
+  DepressurizeClose,
 
   AbortOnGround,
   AbortOnGroundOxydant,   // close MO
