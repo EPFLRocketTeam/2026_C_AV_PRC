@@ -186,6 +186,10 @@ State PrcState::fromPressurizeOff(DataDump const &dump) {
   if (IsAbortCmd(dump)) {
     return State::ABORT_IN_FLIGHT;
   }
+  if (dump.intranetCmd.id == (uint16_t)ResetIdFor(dump.boardIdentity.role)
+   && config::get().ColdflowMode) {
+    return State::MANUAL;
+  }
 
   if (dump.intranetCmd.id == (uint16_t)PassivateIdFor(dump.boardIdentity.role)) {
     return State::DEPRESSURIZE_ON;

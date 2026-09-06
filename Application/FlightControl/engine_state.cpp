@@ -254,6 +254,9 @@ EngineState PrcEngineState::fromBurnStopMe(DataDump const &dump) {
 
 EngineState PrcEngineState::fromWaitForPassivation(DataDump const &dump) {
   if (AbortCmd(dump)) return EngineState::AbortInFlight;
+  if (CmdIs(dump, pi::constants::MessageId::prc_reset) && config::get().ColdflowMode) {
+    return EngineState::Idle;
+  }
   if (CmdIs(dump, pi::constants::MessageId::prc_passivate)) {
     return EngineState::PassivationSeparationDelay;
   }
@@ -457,6 +460,10 @@ static void ApplyEngineValveActions(EngineState state, EngineState previous_stat
   if (state == previous_state) return;
 
   switch (state) {
+    case EngineState::Idle:
+      SetMo(false);
+      SetMe(false);
+      break ;
     case EngineState::IgnitionPrechill:
       SetMo(true);
       break;
