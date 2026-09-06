@@ -374,7 +374,7 @@ EngineState PrcEngineState::fromAbortInFlightEthanol(DataDump const &dump) {
   // toward passivation on its own, never back to Idle.
   // TODO check that this is indeed PassivateTimerMs
   if (HAL_GetTick() - state_entry_ms_ >= config::get().AIF.PassivateTimerMs /* k_abort_in_flight_timer_ms */) {
-    return EngineState::WaitForPassivation;
+    return EngineState::PassivationSeparationDelay;
   }
   return currentState;
 }
