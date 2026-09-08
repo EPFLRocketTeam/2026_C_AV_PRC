@@ -370,17 +370,12 @@ static void ValveActions(State state, State previous_state, const DataDump &dump
         // the open-loop ramp.
         SetVent(false, is_lox, valvesStore);
         SetSafety(true, is_lox, valvesStore);
-
-        // One-time RST setup on entry to the ramp phase (matches BDPR
-        // calling updateRST()+RST_p.set() once per phase-entry, not every
-        // tick, see the RST controller comment above).
-        {
-          const float copv_bar = CurrentCopvPressureBar(dump);
-          UpdateRstPolynomials(g_ramp_r, g_ramp_s, g_ramp_t, copv_bar);
-          const float current_bar = CurrentTankPressureBar(dump);
-          g_ramp_rst.reset(current_bar);
-          g_ramp_p0_bar = current_bar;
-          g_ramp_t0_ms  = HAL_GetTick();
+        if (ServoBallValve* ball = Valve_GetBallValve()) {
+          ball->set_position(
+            is_lox
+              ? config::get().Pressurization.RampBVOpeningLox
+              : config::get().Pressurization.RampBVOpeningFuel
+          );
         }
         break;
       }
@@ -417,24 +412,26 @@ static void ValveActions(State state, State previous_state, const DataDump &dump
     }
   }
 
-  // Continuous (every tick, not just on entry):
   if (state == State::PRESSURIZE_ON || state == State::REGULATE) {
-    const float final_target_bar = SetPressureBarFor(dump.boardIdentity.role);
     const float current_bar = CurrentTankPressureBar(dump);
 
-    // PRESSURIZE_ON tracks a climbing ramp reference (ported from BDPR's
-    // pressurisationTask(), BVDPR.ino:270); REGULATE targets the final set
-    // pressure directly. No clamp on the ramp value, BDPR's doesn't have
-    // one either, since fromPressurizeOn() already leaves this state once
-    // pressure is within k_ramp_exit_threshold_ratio of final_target_bar,
-    // before the reference can climb meaningfully past it.
-    float target_bar = (state == State::PRESSURIZE_ON)
-        ? g_ramp_p0_bar + static_cast<float>(HAL_GetTick() - g_ramp_t0_ms) * config::get().Pressurization.RampRate
-        : final_target_bar;
-    // Fix the rampup
-    if (target_bar > final_target_bar) {
-    	target_bar = final_target_bar;
-    }
+    const float bbdpr_safety_close =
+      is_lox
+        ? config::get().Pressurization.SafetyLoxBBDPRCloseThreshold()
+        : config::get().Pressurization.SafetyFuelBBDPRCloseThreshold();
+    const float bbdpr_safety_open =
+      is_lox
+        ? config::get().Pressurization.SafetyLoxBBDPROpenThreshold()
+        : config::get().Pressurization.SafetyFuelBBDPROpenThreshold();
+      
+    if (current_bar >= bbdpr_safety_close) SetSafety(false, is_lox, valvesStore);
+    if (current_bar <= bbdpr_safety_open)  SetSafety(true,  is_lox, valvesStore);
+  }
+
+  // Continuous (every tick, not just on entry):
+  if (state == State::REGULATE) {
+    const float target_bar  = SetPressureBarFor(dump.boardIdentity.role);
+    const float current_bar = CurrentTankPressureBar(dump);
 
     RstController &rst = (state == State::REGULATE) ? g_regulate_rst : g_ramp_rst;
     if (ServoBallValve* ball = Valve_GetBallValve()) {
