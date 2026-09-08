@@ -430,21 +430,17 @@ static void ValveActions(State state, State previous_state, const DataDump &dump
 
   // Continuous (every tick, not just on entry):
   if (state == State::REGULATE) {
-    const float target_bar  = SetPressureBarFor(dump.boardIdentity.role);
-    const float current_bar = CurrentTankPressureBar(dump);
+    // Cap at 100 Hz the regulation
+    RUN_EVERY(10) {
+      const float target_bar  = SetPressureBarFor(dump.boardIdentity.role);
+      const float current_bar = CurrentTankPressureBar(dump);
 
-    RstController &rst = (state == State::REGULATE) ? g_regulate_rst : g_ramp_rst;
-    if (ServoBallValve* ball = Valve_GetBallValve()) {
-      // dither=false: this runs every tick, dithering here would fight the
-      // control loop instead of settling it (see Valve.hpp's comment).
-      ball->set_position(BallValvePercentFor(rst, target_bar, current_bar), false);
-    }
-
-    if (state == State::REGULATE) {
-      // SAFETY stays open in closed-loop regulation (was already opened on
-      // PRESSURIZE_ON entry above); VENT stays closed.
-      SetSafety(true, is_lox, valvesStore);
-      SetVent(false, is_lox, valvesStore);
+      RstController &rst = (state == State::REGULATE) ? g_regulate_rst : g_ramp_rst;
+      if (ServoBallValve* ball = Valve_GetBallValve()) {
+        // dither=false: this runs every tick, dithering here would fight the
+        // control loop instead of settling it (see Valve.hpp's comment).
+        ball->set_position(BallValvePercentFor(rst, target_bar, current_bar), false);
+      }
     }
   } else if (state == State::DEPRESSURIZE_ON) {
     // Simplified from BDPR's two-phase passivation() (tank-then-COPV,
