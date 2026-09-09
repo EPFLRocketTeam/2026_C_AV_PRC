@@ -257,6 +257,12 @@ EngineState PrcEngineState::fromWaitForPassivation(DataDump const &dump) {
   if (CmdIs(dump, pi::constants::MessageId::prc_reset) && config::get().ColdflowMode) {
     return EngineState::Idle;
   }
+
+  // If in coldflow mode, never start passivation sequence
+  if (config::get().ColdflowMode) {
+    return currentState;
+  }
+
   if (CmdIs(dump, pi::constants::MessageId::prc_passivate)) {
     return EngineState::PassivationSeparationDelay;
   }

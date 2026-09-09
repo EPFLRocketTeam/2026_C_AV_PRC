@@ -195,6 +195,11 @@ State PrcState::fromPressurizeOff(DataDump const &dump) {
     return State::MANUAL;
   }
 
+  // If in coldflow mode, never start depressurize_on
+  if (config::get().ColdflowMode) {
+    return currentState;
+  }
+
   if (dump.intranetCmd.id == (uint16_t)PassivateIdFor(dump.boardIdentity.role)) {
     return State::DEPRESSURIZE_ON;
   }
