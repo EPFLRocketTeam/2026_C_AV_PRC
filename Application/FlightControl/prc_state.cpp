@@ -161,7 +161,11 @@ State PrcState::fromPressurizeOn(DataDump const &dump) {
   // duration.
   const float target_bar  = SetPressureBarFor(dump.boardIdentity.role);
   const float current_bar = CurrentTankPressureBar(dump);
-  if (current_bar >= config::get().Pressurization.RampExitThresholdRatio * target_bar) {
+
+  const float min_bar_target = dump.boardIdentity.role == BoardRole::DprLox
+    ? config::get().Pressurization.MinLoxNominalPressure
+    : config::get().Pressurization.MinFuelNominalPressure;
+  if (current_bar >= min_bar_target) {
     return State::REGULATE;
   }
 
