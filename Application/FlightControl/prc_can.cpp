@@ -217,7 +217,16 @@ void OnConfigSendCommit (void*, pi::payload::config_commit conf) noexcept {
 void OnPrcPreburn (void*, pi::payload::preburn pb) noexcept {
   if (CurrentRole() == BoardRole::Unknown) return ;
   if (GetBoardIdFromRole() != pb.board) return ;
-  preburnRegulator.registerOpen(HAL_GetTick());
+  if (CurrentRole() == BoardRole::DprLox) {
+    preburnRegulator.registerOpen(
+      HAL_GetTick() + config::get().Pressurization.PreburnDurationLoxMs
+    );
+  }
+  if (CurrentRole() == BoardRole::DprEth) {
+    preburnRegulator.registerOpen(
+      HAL_GetTick() + config::get().Pressurization.PreburnDurationFuelMs
+    );
+  }
 }
 
 // HAL_FDCAN_AddMessageToTxFifoQ word-copies from this buffer regardless of
