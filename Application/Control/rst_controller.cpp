@@ -191,14 +191,14 @@ constexpr float kPhiData[kFlowTablePoints] = {
 float AngleDegToFlow (float angle_deg) {
   float phi;
 
-  if (angle_deg < kPhiData[0]) {
-    phi = kThetaData[0];
-  } else if (angle_deg > kPhiData[kFlowTablePoints - 1]) {
-    phi = kThetaData[kFlowTablePoints - 1];
+  if (angle_deg < kThetaData[0]) {
+    phi = kPhiData[0];
+  } else if (angle_deg > kThetaData[kFlowTablePoints - 1]) {
+    phi = kPhiData[kFlowTablePoints - 1];
   } else {
-    angle_deg = kThetaData[0];
+    phi = kPhiData[0];
     for (int i = 1; i < kFlowTablePoints; ++i) {
-      if (phi <= kThetaData[i]) {
+      if (angle_deg <= kThetaData[i]) {
         float phi1 = kPhiData[i - 1];
         float phi2 = kPhiData[i];
         float theta1 = kThetaData[i - 1];
