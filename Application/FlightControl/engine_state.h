@@ -28,6 +28,14 @@ public:
   void update(const DataDump &dump);
 
   static std::string stateToString(EngineState state);
+  
+  // HAL_GetTick() timestamp of entry into currentState -- refreshed in
+  // update() any time currentState actually changes. Almost every state
+  // here has its own duration-based auto-transition (unlike PrcState,
+  // which only needed a handful of named timestamps), so one generic
+  // "time we entered the current state" value is simpler than a member
+  // per state.
+  uint32_t state_entry_ms_ = 0;
 
 private:
   EngineState fromIdle(DataDump const &dump);
@@ -55,14 +63,6 @@ private:
   EngineState fromDepressurizeClose(DataDump const &dump);
 
   EngineState currentState;
-
-  // HAL_GetTick() timestamp of entry into currentState -- refreshed in
-  // update() any time currentState actually changes. Almost every state
-  // here has its own duration-based auto-transition (unlike PrcState,
-  // which only needed a handful of named timestamps), so one generic
-  // "time we entered the current state" value is simpler than a member
-  // per state.
-  uint32_t state_entry_ms_ = 0;
 };
 
 // C++ entry points, called from PrcState's Prc_Fsm_Init()/Prc_Fsm_Tick()

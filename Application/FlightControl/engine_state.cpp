@@ -3,6 +3,7 @@
 #include "Application/app_printf.h"
 #include "Application/FlightControl/prc_can.hpp"
 #include "Application/Config/config.hpp"
+#include "Application/FlightControl/prc_can.h"
 
 #include "Drivers/Valve/ValveList.hpp"
 #include "Drivers/Plume/plume_storage.hpp"
@@ -543,6 +544,8 @@ void Prc_Engine_Fsm_Init() {
          "-- see engine_state.cpp. DO NOT FLY.\r\n");
 }
 
+static bool g_preburn_lox_sent  = false;
+static bool g_preburn_fuel_sent = false;
 void Prc_Engine_Fsm_Tick() {
   auto& store = PrcStore::get_instance();
   DataDump dump = store.get(app_timebase_now_ms());
@@ -558,6 +561,41 @@ void Prc_Engine_Fsm_Tick() {
   // Separate manual bench sequence, runs in parallel with the real FSM
   // above -- see ColdflowSequence comment.
   // ColdflowTick();
+  
+  // preburn system
+  if (new_state == EngineState::IgnitionIgniter) {
+    g_preburn_lox_sent  = false;
+    g_preburn_fuel_sent = false;
+  }
+
+  const float SendPreburnLoxDelayMs =
+    config::get().Ignition.IgniterDurationMs - config::get().Pressurization.PreburnDurationLoxMs;
+  const float IgniterSendPreburnFuelDelayMs =
+    config::get().Ignition.IgniterDurationMs + config::get().Ignition.DelayMs
+    - config::get().Pressurization.PreburnDurationFuelMs;
+  const float StartMoSendPreburnFuelDelayMs =
+    config::get().Ignition.DelayMs - config::get().Pressurization.PreburnDurationFuelMs;
+
+  if (new_state == EngineState::IgnitionIgniter && !g_preburn_lox_sent) {
+    if (HAL_GetTick() - fsm.state_entry_ms_ >= SendPreburnLoxDelayMs) {
+      g_preburn_lox_sent = true;
+      Prc_Can_SendPreburnLox();
+    }
+  }
+
+  if (new_state == EngineState::IgnitionIgniter && !g_preburn_fuel_sent) {
+    if (HAL_GetTick() - fsm.state_entry_ms_ >= IgniterSendPreburnFuelDelayMs) {
+      g_preburn_fuel_sent = true;
+      Prc_Can_SendPreburnFuel();
+    }
+  }
+
+  if (new_state == EngineState::IgnitionBurnStartMo && !g_preburn_fuel_sent) {
+    if (HAL_GetTick() - fsm.state_entry_ms_ >= StartMoSendPreburnFuelDelayMs) {
+      g_preburn_fuel_sent = true;
+      Prc_Can_SendPreburnFuel();
+    }
+  }
 }
 
 EngineState Prc_Engine_Fsm_GetState() {

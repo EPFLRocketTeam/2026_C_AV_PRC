@@ -5,6 +5,7 @@
 #include "Application/app_timebase.h"
 #include "Application/app_printf.h"
 #include "Application/Control/rst_controller.hpp"
+#include "Application/Control/preburn.hpp"
 #include "Drivers/PrcBoardId/PrcBoardId.hpp"
 #include "Drivers/Valve/ValveList.hpp"
 #include "Drivers/Plume/plume_storage.hpp"
@@ -420,25 +421,40 @@ static void ValveActions(State state, State previous_state, const DataDump &dump
         break;
     }
   }
+  
+  const float current_bar = CurrentTankPressureBar(dump);
 
-  if (state == State::PRESSURIZE_ON || state == State::REGULATE) {
-    const float current_bar = CurrentTankPressureBar(dump);
+  const float bbdpr_safety_close =
+    is_lox
+      ? config::get().Pressurization.SafetyLoxBBDPRCloseThreshold()
+      : config::get().Pressurization.SafetyFuelBBDPRCloseThreshold();
+  const float bbdpr_safety_open =
+    is_lox
+      ? config::get().Pressurization.SafetyLoxBBDPROpenThreshold()
+      : config::get().Pressurization.SafetyFuelBBDPROpenThreshold();
 
-    const float bbdpr_safety_close =
-      is_lox
-        ? config::get().Pressurization.SafetyLoxBBDPRCloseThreshold()
-        : config::get().Pressurization.SafetyFuelBBDPRCloseThreshold();
-    const float bbdpr_safety_open =
-      is_lox
-        ? config::get().Pressurization.SafetyLoxBBDPROpenThreshold()
-        : config::get().Pressurization.SafetyFuelBBDPROpenThreshold();
-      
+  bool disableRegulate = false;
+  if (state == State::REGULATE && preburnRegulator.isRunning(HAL_GetTick())) {
+    if (preburnRegulator.isFirstTick()) {
+      SetSafety(false, is_lox, valvesStore);
+    }
+    disableRegulate = true;
+    g_regulate_rst.reset_angle(
+      current_bar,
+        is_lox
+        ? config::get().Pressurization.StableBVOpeningLox
+        : config::get().Pressurization.StableBVOpeningFuel
+    );
+  } else if (state == State::REGULATE && preburnRegulator.isEndTick()) {
+    if (current_bar >= bbdpr_safety_close) SetSafety(false, is_lox, valvesStore);
+    else SetSafety(true,  is_lox, valvesStore);
+  } else if (state == State::PRESSURIZE_ON || state == State::REGULATE) {
     if (current_bar >= bbdpr_safety_close) SetSafety(false, is_lox, valvesStore);
     if (current_bar <= bbdpr_safety_open)  SetSafety(true,  is_lox, valvesStore);
   }
 
   // Continuous (every tick, not just on entry):
-  if (state == State::REGULATE) {
+  if (state == State::REGULATE && !disableRegulate) {
     // Cap at 100 Hz the regulation
     RUN_EVERY(10) {
       const float target_bar  = SetPressureBarFor(dump.boardIdentity.role);

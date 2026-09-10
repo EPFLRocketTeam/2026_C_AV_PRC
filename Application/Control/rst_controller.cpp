@@ -1,4 +1,7 @@
 #include "Application/Control/rst_controller.hpp"
+#include "Application/Control/preburn.hpp"
+
+PreburnRegulator preburnRegulator;
 
 #include <cstddef>
 
@@ -185,6 +188,29 @@ constexpr float kPhiData[kFlowTablePoints] = {
     6.632663e-06f};
 } // namespace
 
+float AngleDegToFlow (float angle_deg) {
+  float phi;
+
+  if (angle_deg < kPhiData[0]) {
+    phi = kThetaData[0];
+  } else if (angle_deg > kPhiData[kFlowTablePoints - 1]) {
+    phi = kThetaData[kFlowTablePoints - 1];
+  } else {
+    angle_deg = kThetaData[0];
+    for (int i = 1; i < kFlowTablePoints; ++i) {
+      if (phi <= kThetaData[i]) {
+        float phi1 = kPhiData[i - 1];
+        float phi2 = kPhiData[i];
+        float theta1 = kThetaData[i - 1];
+        float theta2 = kThetaData[i];
+        phi = phi1 + (phi2 - phi1) * (angle_deg - theta1) / (theta2 - theta1);
+        break;
+      }
+    }
+  }
+
+  return phi;
+}
 float FlowToAngleDeg(float phi) {
   float angle_deg;
 
@@ -220,6 +246,10 @@ float AngleDegToPercentOpen(float angle_deg) {
   if (angle_deg < kServoMinAngleDeg) angle_deg = kServoMinAngleDeg;
   if (angle_deg > kServoMaxAngleDeg) angle_deg = kServoMaxAngleDeg;
   return (angle_deg / kServoMaxAngleDeg) * 100.0f;
+}
+
+void RstController::reset_angle(float current_measurement, float angle0) {
+  reset(current_measurement, AngleDegToFlow(angle0));
 }
 
 } // namespace prc

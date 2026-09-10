@@ -452,6 +452,22 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
   }
 }
 
+extern FDCAN_HandleTypeDef hfdcan1;
+void Prc_Can_SendPreburnLox () {
+  pi::payload::preburn pb;
+  pb.board = pi::payload::board_id::DPR_LOX;
+  pi::context& ctx = Ctx();
+  ctx.driver.driver_ptr = &hfdcan1;
+  pi::send_prc_preburn(&ctx, pb);
+}
+void Prc_Can_SendPreburnFuel () {
+  pi::payload::preburn pb;
+  pb.board = pi::payload::board_id::DPR_ETH;
+  pi::context& ctx = Ctx();
+  ctx.driver.driver_ptr = &hfdcan1;
+  pi::send_prc_preburn(&ctx, pb);
+}
+
 void Prc_Log_Forward(FDCAN_HandleTypeDef *hfdcan, const uint8_t *data, uint32_t length) {
   const BoardRole role = CurrentRole();
   if (role != BoardRole::DprLox && role != BoardRole::DprEth && role != BoardRole::EngineBay) {
