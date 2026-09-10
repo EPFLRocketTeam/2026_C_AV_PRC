@@ -8,6 +8,7 @@
 #include "Application/app_timebase.h"
 #include "Application/FlightControl/engine_state.h"
 #include "Application/FlightControl/prc_state.h"
+#include "Application/Control/preburn.hpp"
 #include "Application/Config/config.hpp"
 // #include "Application/FlightControl/intranet_cmd.hpp"
 #include "Drivers/Valve/ValveList.hpp"
@@ -213,6 +214,11 @@ void OnConfigSendCommit (void*, pi::payload::config_commit conf) noexcept {
   if (GetBoardIdFromRole() != conf.board) return ;
   config::internal::commit();
 }
+void OnPrcPreburn (void*, pi::payload::preburn pb) noexcept {
+  if (CurrentRole() == BoardRole::Unknown) return ;
+  if (GetBoardIdFromRole() != pb.board) return ;
+  preburnRegulator.registerOpen(HAL_GetTick());
+}
 
 // HAL_FDCAN_AddMessageToTxFifoQ word-copies from this buffer regardless of
 // dlc (see 2026_C_AV_FC's main.c TX test comment), so pad to the full
@@ -290,6 +296,7 @@ pi::context& Ctx() {
     driver.on_dpr_lox_reset      = OnDprLoxReset;
     driver.on_dpr_lox_cmd_valves = OnDprLoxCmdValves;
     driver.on_dpr_lox_ball_valve = OnDprLoxBallValve;
+    driver.on_prc_preburn        = OnPrcPreburn;
     driver.on_prc_clear_to_ignite = OnPrcClearToIgnite;
     driver.on_prc_ignite         = OnPrcIgnite;
     driver.on_prc_passivate      = OnPrcPassivate;
