@@ -3,7 +3,6 @@
 #include "Application/app_printf.h"
 #include "Application/FlightControl/prc_can.hpp"
 #include "Application/Config/config.hpp"
-#include "Application/FlightControl/prc_can.h"
 
 #include "Drivers/Valve/ValveList.hpp"
 #include "Drivers/Plume/plume_storage.hpp"
