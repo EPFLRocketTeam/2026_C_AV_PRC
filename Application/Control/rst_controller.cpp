@@ -160,6 +160,11 @@ float RstController::update(float reference, float measurement) {
   for (int i = 0; i < kRstNR_V; ++i) control -= r_[i] * d_y_[i];
 
   for (int i = kRstNR_V - 1; i > 0; --i) d_u_[i] = d_u_[i - 1];
+
+  // anti wind-up
+  if (control < 0) control = 0;
+  if (control > 7e-06f) control = 7e-06f;
+
   d_u_[0] = control;
 
   return control;
