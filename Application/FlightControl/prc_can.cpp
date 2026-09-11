@@ -215,14 +215,18 @@ void OnConfigSendCommit (void*, pi::payload::config_commit conf) noexcept {
   config::internal::commit();
 }
 void OnPrcPreburn (void*, pi::payload::preburn pb) noexcept {
+  printf("Preburn for %u.\n", (int) pb.board);
   if (CurrentRole() == BoardRole::Unknown) return ;
   if (GetBoardIdFromRole() != pb.board) return ;
+  app_printf("Received preburn.\n");
   if (CurrentRole() == BoardRole::DprLox) {
+    app_printf("Register LOX %u -> %u", HAL_GetTick(), HAL_GetTick() + config::get().Pressurization.PreburnDurationLoxMs);
     preburnRegulator.registerOpen(
       HAL_GetTick() + config::get().Pressurization.PreburnDurationLoxMs
     );
   }
   if (CurrentRole() == BoardRole::DprEth) {
+    app_printf("Register FUEL %u -> %u", HAL_GetTick(), HAL_GetTick() + config::get().Pressurization.PreburnDurationFuelMs);
     preburnRegulator.registerOpen(
       HAL_GetTick() + config::get().Pressurization.PreburnDurationFuelMs
     );
@@ -470,6 +474,7 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
 
 extern FDCAN_HandleTypeDef hfdcan1;
 void Prc_Can_SendPreburnLox () {
+  app_printf("Send preburn lox.\n");
   pi::payload::preburn pb;
   pb.board = pi::payload::board_id::DPR_LOX;
   pi::context& ctx = Ctx();
@@ -477,6 +482,7 @@ void Prc_Can_SendPreburnLox () {
   pi::send_prc_preburn(&ctx, pb);
 }
 void Prc_Can_SendPreburnFuel () {
+  app_printf("Send preburn fuel.\n");
   pi::payload::preburn pb;
   pb.board = pi::payload::board_id::DPR_ETH;
   pi::context& ctx = Ctx();

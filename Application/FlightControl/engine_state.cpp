@@ -562,20 +562,23 @@ void Prc_Engine_Fsm_Tick() {
   // ColdflowTick();
   
   // preburn system
-  if (new_state == EngineState::IgnitionIgniter) {
+  if (new_state == EngineState::IgnitionPrechill) {
     g_preburn_lox_sent  = false;
     g_preburn_fuel_sent = false;
   }
 
-  const float SendPreburnLoxDelayMs =
+  const uint32_t SendPreburnLoxDelayMs =
     config::get().Ignition.IgniterDurationMs - config::get().Pressurization.PreburnDurationLoxMs;
-  const float IgniterSendPreburnFuelDelayMs =
+  const uint32_t IgniterSendPreburnFuelDelayMs =
     config::get().Ignition.IgniterDurationMs + config::get().Ignition.DelayMs
     - config::get().Pressurization.PreburnDurationFuelMs;
-  const float StartMoSendPreburnFuelDelayMs =
+  const uint32_t StartMoSendPreburnFuelDelayMs =
     config::get().Ignition.DelayMs - config::get().Pressurization.PreburnDurationFuelMs;
+  RUN_EVERY(1000) 
+    app_printf("%u %u %u\n", SendPreburnLoxDelayMs, IgniterSendPreburnFuelDelayMs, StartMoSendPreburnFuelDelayMs);
 
   if (new_state == EngineState::IgnitionIgniter && !g_preburn_lox_sent) {
+    app_printf("Lox delay: %u %u\n", HAL_GetTick() - fsm.state_entry_ms_, SendPreburnLoxDelayMs);
     if (HAL_GetTick() - fsm.state_entry_ms_ >= SendPreburnLoxDelayMs) {
       g_preburn_lox_sent = true;
       Prc_Can_SendPreburnLox();

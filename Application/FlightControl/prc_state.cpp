@@ -436,16 +436,29 @@ static void ValveActions(State state, State previous_state, const DataDump &dump
   bool disableRegulate = false;
   if (state == State::REGULATE && preburnRegulator.isRunning(HAL_GetTick())) {
     if (preburnRegulator.isFirstTick()) {
+      app_printf("Preburn Regulator: Start\n");
       SetSafety(false, is_lox, valvesStore);
     }
     disableRegulate = true;
     g_regulate_rst.reset_angle(
       current_bar,
-        is_lox
+      // To angle
+      (is_lox
         ? config::get().Pressurization.StableBVOpeningLox
-        : config::get().Pressurization.StableBVOpeningFuel
+        : config::get().Pressurization.StableBVOpeningFuel) * 0.9
     );
+    if (ServoBallValve* ball = Valve_GetBallValve()) {
+      // dither=false: this runs every tick, dithering here would fight the
+      // control loop instead of settling it (see Valve.hpp's comment).
+      ball->set_position(
+        is_lox
+          ? config::get().Pressurization.StableBVOpeningLox
+          : config::get().Pressurization.StableBVOpeningFuel,
+        false
+      );
+    }
   } else if (state == State::REGULATE && preburnRegulator.isEndTick()) {
+      app_printf("Preburn Regulator: Ended\n");
     if (current_bar >= bbdpr_safety_close) SetSafety(false, is_lox, valvesStore);
     else SetSafety(true,  is_lox, valvesStore);
   } else if (state == State::PRESSURIZE_ON || state == State::REGULATE) {
