@@ -254,6 +254,15 @@ EngineState PrcEngineState::fromBurnStopMe(DataDump const &dump) {
 
 EngineState PrcEngineState::fromWaitForPassivation(DataDump const &dump) {
   if (AbortCmd(dump)) return EngineState::AbortInFlight;
+  if (CmdIs(dump, pi::constants::MessageId::prc_reset) && config::get().ColdflowMode) {
+    return EngineState::Idle;
+  }
+
+  // If in coldflow mode, never start passivation sequence
+  if (config::get().ColdflowMode) {
+    return currentState;
+  }
+
   if (CmdIs(dump, pi::constants::MessageId::prc_passivate)) {
     return EngineState::PassivationSeparationDelay;
   }
@@ -371,7 +380,7 @@ EngineState PrcEngineState::fromAbortInFlightEthanol(DataDump const &dump) {
   // toward passivation on its own, never back to Idle.
   // TODO check that this is indeed PassivateTimerMs
   if (HAL_GetTick() - state_entry_ms_ >= config::get().AIF.PassivateTimerMs /* k_abort_in_flight_timer_ms */) {
-    return EngineState::WaitForPassivation;
+    return EngineState::PassivationSeparationDelay;
   }
   return currentState;
 }
@@ -457,6 +466,10 @@ static void ApplyEngineValveActions(EngineState state, EngineState previous_stat
   if (state == previous_state) return;
 
   switch (state) {
+    case EngineState::Idle:
+      SetMo(false);
+      SetMe(false);
+      break ;
     case EngineState::IgnitionPrechill:
       SetMo(true);
       break;
@@ -530,6 +543,8 @@ void Prc_Engine_Fsm_Init() {
          "-- see engine_state.cpp. DO NOT FLY.\r\n");
 }
 
+static bool g_preburn_lox_sent  = false;
+static bool g_preburn_fuel_sent = false;
 void Prc_Engine_Fsm_Tick() {
   auto& store = PrcStore::get_instance();
   DataDump dump = store.get(app_timebase_now_ms());
@@ -545,6 +560,44 @@ void Prc_Engine_Fsm_Tick() {
   // Separate manual bench sequence, runs in parallel with the real FSM
   // above -- see ColdflowSequence comment.
   // ColdflowTick();
+  
+  // preburn system
+  if (new_state == EngineState::IgnitionPrechill) {
+    g_preburn_lox_sent  = false;
+    g_preburn_fuel_sent = false;
+  }
+
+  const uint32_t SendPreburnLoxDelayMs =
+    config::get().Ignition.IgniterDurationMs - config::get().Pressurization.PreburnDurationLoxMs;
+  const uint32_t IgniterSendPreburnFuelDelayMs =
+    config::get().Ignition.IgniterDurationMs + config::get().Ignition.DelayMs
+    - config::get().Pressurization.PreburnDurationFuelMs;
+  const uint32_t StartMoSendPreburnFuelDelayMs =
+    config::get().Ignition.DelayMs - config::get().Pressurization.PreburnDurationFuelMs;
+  RUN_EVERY(1000) 
+    app_printf("%u %u %u\n", SendPreburnLoxDelayMs, IgniterSendPreburnFuelDelayMs, StartMoSendPreburnFuelDelayMs);
+
+  if (new_state == EngineState::IgnitionIgniter && !g_preburn_lox_sent) {
+    app_printf("Lox delay: %u %u\n", HAL_GetTick() - fsm.state_entry_ms_, SendPreburnLoxDelayMs);
+    if (HAL_GetTick() - fsm.state_entry_ms_ >= SendPreburnLoxDelayMs) {
+      g_preburn_lox_sent = true;
+      Prc_Can_SendPreburnLox();
+    }
+  }
+
+  if (new_state == EngineState::IgnitionIgniter && !g_preburn_fuel_sent) {
+    if (HAL_GetTick() - fsm.state_entry_ms_ >= IgniterSendPreburnFuelDelayMs) {
+      g_preburn_fuel_sent = true;
+      Prc_Can_SendPreburnFuel();
+    }
+  }
+
+  if (new_state == EngineState::IgnitionBurnStartMo && !g_preburn_fuel_sent) {
+    if (HAL_GetTick() - fsm.state_entry_ms_ >= StartMoSendPreburnFuelDelayMs) {
+      g_preburn_fuel_sent = true;
+      Prc_Can_SendPreburnFuel();
+    }
+  }
 }
 
 EngineState Prc_Engine_Fsm_GetState() {

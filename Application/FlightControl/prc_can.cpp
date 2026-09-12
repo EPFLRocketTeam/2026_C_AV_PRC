@@ -8,6 +8,7 @@
 #include "Application/app_timebase.h"
 #include "Application/FlightControl/engine_state.h"
 #include "Application/FlightControl/prc_state.h"
+#include "Application/Control/preburn.hpp"
 #include "Application/Config/config.hpp"
 // #include "Application/FlightControl/intranet_cmd.hpp"
 #include "Drivers/Valve/ValveList.hpp"
@@ -213,6 +214,24 @@ void OnConfigSendCommit (void*, pi::payload::config_commit conf) noexcept {
   if (GetBoardIdFromRole() != conf.board) return ;
   config::internal::commit();
 }
+void OnPrcPreburn (void*, pi::payload::preburn pb) noexcept {
+  printf("Preburn for %u.\n", (int) pb.board);
+  if (CurrentRole() == BoardRole::Unknown) return ;
+  if (GetBoardIdFromRole() != pb.board) return ;
+  app_printf("Received preburn.\n");
+  if (CurrentRole() == BoardRole::DprLox) {
+    app_printf("Register LOX %u -> %u", HAL_GetTick(), HAL_GetTick() + config::get().Pressurization.PreburnDurationLoxMs);
+    preburnRegulator.registerOpen(
+      HAL_GetTick() + config::get().Pressurization.PreburnDurationLoxMs
+    );
+  }
+  if (CurrentRole() == BoardRole::DprEth) {
+    app_printf("Register FUEL %u -> %u", HAL_GetTick(), HAL_GetTick() + config::get().Pressurization.PreburnDurationFuelMs);
+    preburnRegulator.registerOpen(
+      HAL_GetTick() + config::get().Pressurization.PreburnDurationFuelMs
+    );
+  }
+}
 
 // HAL_FDCAN_AddMessageToTxFifoQ word-copies from this buffer regardless of
 // dlc (see 2026_C_AV_FC's main.c TX test comment), so pad to the full
@@ -290,6 +309,7 @@ pi::context& Ctx() {
     driver.on_dpr_lox_reset      = OnDprLoxReset;
     driver.on_dpr_lox_cmd_valves = OnDprLoxCmdValves;
     driver.on_dpr_lox_ball_valve = OnDprLoxBallValve;
+    driver.on_prc_preburn        = OnPrcPreburn;
     driver.on_prc_clear_to_ignite = OnPrcClearToIgnite;
     driver.on_prc_ignite         = OnPrcIgnite;
     driver.on_prc_passivate      = OnPrcPassivate;
@@ -450,6 +470,24 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
     pressures.p_hpe = static_cast<float>(sensors.get_pressure_HPE_mean());
     pi::send_dpr_eth_pressures(&ctx, pressures);
   }
+}
+
+extern FDCAN_HandleTypeDef hfdcan1;
+void Prc_Can_SendPreburnLox () {
+  app_printf("Send preburn lox.\n");
+  pi::payload::preburn pb;
+  pb.board = pi::payload::board_id::DPR_LOX;
+  pi::context& ctx = Ctx();
+  ctx.driver.driver_ptr = &hfdcan1;
+  pi::send_prc_preburn(&ctx, pb);
+}
+void Prc_Can_SendPreburnFuel () {
+  app_printf("Send preburn fuel.\n");
+  pi::payload::preburn pb;
+  pb.board = pi::payload::board_id::DPR_ETH;
+  pi::context& ctx = Ctx();
+  ctx.driver.driver_ptr = &hfdcan1;
+  pi::send_prc_preburn(&ctx, pb);
 }
 
 void Prc_Log_Forward(FDCAN_HandleTypeDef *hfdcan, const uint8_t *data, uint32_t length) {

@@ -83,6 +83,7 @@ public:
   // to the state that owns this controller instance (matches BDPR calling
   // RST_p.set()/RST_c.set() once per FSM-state entry, not every tick).
   void reset(float current_measurement, float u0 = 0.0f);
+  void reset_angle(float current_measurement, float angle0);
 
   // Computes and returns the next control action for this tick.
   float update(float reference, float measurement);

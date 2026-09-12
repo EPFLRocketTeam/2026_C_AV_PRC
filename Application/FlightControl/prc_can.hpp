@@ -28,6 +28,9 @@ extern "C" {
 // for other nodes too, this board just filters to its own.
 void Prc_Can_ProcessRxMessage(uint32_t can_id, const uint8_t *data, uint32_t dlc);
 
+void Prc_Can_SendPreburnLox ();
+void Prc_Can_SendPreburnFuel ();
+
 // Configures FDCAN filter index 1 (see main.c's MX_FDCAN1_Init(), which
 // leaves this index deliberately unset; filter index 0 there is the
 // static FC-broadcast filter) to accept this board's own node ID (derived

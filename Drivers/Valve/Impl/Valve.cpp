@@ -130,6 +130,8 @@ ValveStatus ServoBallValve::set_position(float percent_open, bool dither)
     if (percent_open < 0.0f || percent_open > 100.0f) {
         return ValveStatus::InvalidArgument;
     }
+    if (percent_open < 15.f) percent_open = 15.f;
+    if (percent_open > 75.f) percent_open = 75.f;
 
     constexpr float kDitherAmount = 1.0f;
 

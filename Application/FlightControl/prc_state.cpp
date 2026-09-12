@@ -5,6 +5,7 @@
 #include "Application/app_timebase.h"
 #include "Application/app_printf.h"
 #include "Application/Control/rst_controller.hpp"
+#include "Application/Control/preburn.hpp"
 #include "Drivers/PrcBoardId/PrcBoardId.hpp"
 #include "Drivers/Valve/ValveList.hpp"
 #include "Drivers/Plume/plume_storage.hpp"
@@ -161,7 +162,11 @@ State PrcState::fromPressurizeOn(DataDump const &dump) {
   // duration.
   const float target_bar  = SetPressureBarFor(dump.boardIdentity.role);
   const float current_bar = CurrentTankPressureBar(dump);
-  if (current_bar >= config::get().Pressurization.RampExitThresholdRatio * target_bar) {
+
+  const float min_bar_target = dump.boardIdentity.role == BoardRole::DprLox
+    ? config::get().Pressurization.MinLoxNominalPressure
+    : config::get().Pressurization.MinFuelNominalPressure;
+  if (current_bar >= min_bar_target) {
     return State::REGULATE;
   }
 
@@ -185,6 +190,15 @@ State PrcState::fromPressurizeOff(DataDump const &dump) {
   // branch at all plus the diagram's asymmetric abort targets.
   if (IsAbortCmd(dump)) {
     return State::ABORT_IN_FLIGHT;
+  }
+  if (dump.intranetCmd.id == (uint16_t)ResetIdFor(dump.boardIdentity.role)
+   && config::get().ColdflowMode) {
+    return State::MANUAL;
+  }
+
+  // If in coldflow mode, never start depressurize_on
+  if (config::get().ColdflowMode) {
+    return currentState;
   }
 
   if (dump.intranetCmd.id == (uint16_t)PassivateIdFor(dump.boardIdentity.role)) {
@@ -366,17 +380,12 @@ static void ValveActions(State state, State previous_state, const DataDump &dump
         // the open-loop ramp.
         SetVent(false, is_lox, valvesStore);
         SetSafety(true, is_lox, valvesStore);
-
-        // One-time RST setup on entry to the ramp phase (matches BDPR
-        // calling updateRST()+RST_p.set() once per phase-entry, not every
-        // tick, see the RST controller comment above).
-        {
-          const float copv_bar = CurrentCopvPressureBar(dump);
-          UpdateRstPolynomials(g_ramp_r, g_ramp_s, g_ramp_t, copv_bar);
-          const float current_bar = CurrentTankPressureBar(dump);
-          g_ramp_rst.reset(current_bar);
-          g_ramp_p0_bar = current_bar;
-          g_ramp_t0_ms  = HAL_GetTick();
+        if (ServoBallValve* ball = Valve_GetBallValve()) {
+          ball->set_position(
+            is_lox
+              ? config::get().Pressurization.RampBVOpeningLox
+              : config::get().Pressurization.RampBVOpeningFuel
+          );
         }
         break;
       }
@@ -412,38 +421,64 @@ static void ValveActions(State state, State previous_state, const DataDump &dump
         break;
     }
   }
+  
+  const float current_bar = CurrentTankPressureBar(dump);
 
-  // Continuous (every tick, not just on entry):
-  if (state == State::PRESSURIZE_ON || state == State::REGULATE) {
-    const float final_target_bar = SetPressureBarFor(dump.boardIdentity.role);
-    const float current_bar = CurrentTankPressureBar(dump);
+  const float bbdpr_safety_close =
+    is_lox
+      ? config::get().Pressurization.SafetyLoxBBDPRCloseThreshold()
+      : config::get().Pressurization.SafetyFuelBBDPRCloseThreshold();
+  const float bbdpr_safety_open =
+    is_lox
+      ? config::get().Pressurization.SafetyLoxBBDPROpenThreshold()
+      : config::get().Pressurization.SafetyFuelBBDPROpenThreshold();
 
-    // PRESSURIZE_ON tracks a climbing ramp reference (ported from BDPR's
-    // pressurisationTask(), BVDPR.ino:270); REGULATE targets the final set
-    // pressure directly. No clamp on the ramp value, BDPR's doesn't have
-    // one either, since fromPressurizeOn() already leaves this state once
-    // pressure is within k_ramp_exit_threshold_ratio of final_target_bar,
-    // before the reference can climb meaningfully past it.
-    float target_bar = (state == State::PRESSURIZE_ON)
-        ? g_ramp_p0_bar + static_cast<float>(HAL_GetTick() - g_ramp_t0_ms) * config::get().Pressurization.RampRate
-        : final_target_bar;
-    // Fix the rampup
-    if (target_bar > final_target_bar) {
-    	target_bar = final_target_bar;
+  bool disableRegulate = false;
+  if (state == State::REGULATE && preburnRegulator.isRunning(HAL_GetTick())) {
+    if (preburnRegulator.isFirstTick()) {
+      app_printf("Preburn Regulator: Start\n");
+      SetSafety(false, is_lox, valvesStore);
     }
-
-    RstController &rst = (state == State::REGULATE) ? g_regulate_rst : g_ramp_rst;
+    disableRegulate = true;
+    g_regulate_rst.reset_angle(
+      current_bar,
+      // To angle
+      (is_lox
+        ? config::get().Pressurization.StableBVOpeningLox
+        : config::get().Pressurization.StableBVOpeningFuel) * 0.9
+    );
     if (ServoBallValve* ball = Valve_GetBallValve()) {
       // dither=false: this runs every tick, dithering here would fight the
       // control loop instead of settling it (see Valve.hpp's comment).
-      ball->set_position(BallValvePercentFor(rst, target_bar, current_bar), false);
+      ball->set_position(
+        is_lox
+          ? config::get().Pressurization.StableBVOpeningLox
+          : config::get().Pressurization.StableBVOpeningFuel,
+        false
+      );
     }
+  } else if (state == State::REGULATE && preburnRegulator.isEndTick()) {
+      app_printf("Preburn Regulator: Ended\n");
+    if (current_bar >= bbdpr_safety_close) SetSafety(false, is_lox, valvesStore);
+    else SetSafety(true,  is_lox, valvesStore);
+  } else if (state == State::PRESSURIZE_ON || state == State::REGULATE) {
+    if (current_bar >= bbdpr_safety_close) SetSafety(false, is_lox, valvesStore);
+    if (current_bar <= bbdpr_safety_open)  SetSafety(true,  is_lox, valvesStore);
+  }
 
-    if (state == State::REGULATE) {
-      // SAFETY stays open in closed-loop regulation (was already opened on
-      // PRESSURIZE_ON entry above); VENT stays closed.
-      SetSafety(true, is_lox, valvesStore);
-      SetVent(false, is_lox, valvesStore);
+  // Continuous (every tick, not just on entry):
+  if (state == State::REGULATE && !disableRegulate) {
+    // Cap at 100 Hz the regulation
+    RUN_EVERY(10) {
+      const float target_bar  = SetPressureBarFor(dump.boardIdentity.role);
+      const float current_bar = CurrentTankPressureBar(dump);
+
+      RstController &rst = (state == State::REGULATE) ? g_regulate_rst : g_ramp_rst;
+      if (ServoBallValve* ball = Valve_GetBallValve()) {
+        // dither=false: this runs every tick, dithering here would fight the
+        // control loop instead of settling it (see Valve.hpp's comment).
+        ball->set_position(BallValvePercentFor(rst, target_bar, current_bar), false);
+      }
     }
   } else if (state == State::DEPRESSURIZE_ON) {
     // Simplified from BDPR's two-phase passivation() (tank-then-COPV,
