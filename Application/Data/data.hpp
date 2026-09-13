@@ -153,6 +153,7 @@ struct DataDump {
   uint8_t        pad_state[7];
 
   uint32_t       prc_timestamp_ms;
+  float          prc_temperature;
   BoardIdentity  boardIdentity;
   Valves         valves;
   IntranetCmd    intranetCmd;
@@ -166,11 +167,13 @@ struct DataDump {
 static_assert(offsetof(DataDump, prc_state) == 0);
 static_assert(offsetof(DataDump, pad_state) == 1);
 static_assert(offsetof(DataDump, prc_timestamp_ms) == 8);
-static_assert(offsetof(DataDump, boardIdentity) == 12);
-static_assert(offsetof(DataDump, valves) == 16);
-static_assert(offsetof(DataDump, intranetCmd) == 32);
-static_assert(offsetof(DataDump, event) == 36);
-static_assert(sizeof(DataDump) == 40 + 112 + 96 + 48);
+static_assert(offsetof(DataDump, prc_temperature) == 12);
+static_assert(offsetof(DataDump, boardIdentity) == 16);
+static_assert(offsetof(DataDump, valves) == 20);
+static_assert(offsetof(DataDump, intranetCmd) == 36);
+static_assert(offsetof(DataDump, event) == 40);
+static_assert(offsetof(DataDump, propSensorsEngine) == 48);
+static_assert(sizeof(DataDump) == 40 + 112 + 96 + 48 + 8);
 
 // Aggregating singleton — mirrors flight_computer::GOATStore.
 class PrcStore {
@@ -184,6 +187,9 @@ public:
   PropSensorsStoreEngine propSensorsStoreEngine;
   PropSensorsStoreEth    propSensorsStoreEth;
   PropSensorsStoreLox    propSensorsStoreLox;
+
+  float get_prc_temperature () const;
+  void set_prc_temperature (float value);
 
   void set(const DataDump &value);
   const DataDump &get(uint32_t timestamp) const;

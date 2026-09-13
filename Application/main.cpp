@@ -46,6 +46,7 @@ static OxidizerInModule oin;         // P-OIN     (B3 Sensor Plate, Kulite/Sensa
 static EthanolInModule ein;          // P-EIN     (B3 Sensor Plate, Sensata PTE7300)
 static TemperatureOinModule t_oin;   // T-OIN     (Lox Injector, PT1000)
 static TemperatureEinModule t_ein;   // T-EIN     (B3 Sensor Plate, PT1000)
+static EngineBoardTemperaturePipeline engine_temp;
 
 // ── Pressurant bay 1 (Fat Bay, PRC-Lox) ─────────────────────────────────
 static PressureOtaSensorModule ota_module;   // P-OTA{1,2,3} (Lox Tank Ullage, Sensata PTE7300)
@@ -54,10 +55,12 @@ static TemperatureOtaSensorModule1 t_ota1;   // T-OTA1       (Lox Tank, PT1000)
 static TemperatureOtaSensorModule2 t_ota2;   // T-OTA2       (Lox Tank, PT1000)
 static TemperatureOtaSensorModule3 t_ota3;   // T-OTA3       (Lox Tank, PT1000)
 static TemperatureOtaSensorModule4 t_ota4;   // T-OTA4       (Lox Tank, PT1000)
+static EngineBoardTemperaturePipeline lox_temp;
 
 // ── Pressurant bay 2 (Skinny Bay, PRC-ETH) ──────────────────────────────
 static PressureEtaSensorModule eta_module;   // P-ETA{1,2,3} (Eth Tank Ullage, Sensata PTE7300)
 static PressureHpeSensorModule pressure_hpe; // P-HPE        (COPV 2, Sensata PTE7300)
+static EngineBoardTemperaturePipeline eth_temp;
 
 // ---------------------------------------------------------------------------
 // Engine bay setters
@@ -343,6 +346,7 @@ void main_init() {
 			ein.init();
 			t_oin.init();
 			t_ein.init();
+			RUN_EVERY(100) engine_temp.init();
 			break ;
 		case prc::BoardRole::DprLox:
 			ota_module.init();
@@ -351,10 +355,12 @@ void main_init() {
 			t_ota2.init();
 			t_ota3.init();
 			t_ota4.init();
+			RUN_EVERY(100) lox_temp.tick();
 			break ;
 		case prc::BoardRole::DprEth:
 			eta_module.init();
 			pressure_hpe.init();
+			RUN_EVERY(100) eth_temp.tick();
 			break ;
 			
 		case prc::BoardRole::Unknown:

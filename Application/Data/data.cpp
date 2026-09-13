@@ -26,3 +26,10 @@ void PrcStore::set(const DataDump &value) {
 }
 
 DataDump *PrcStore::get_ref() { return &data_; }
+
+float PrcStore::get_prc_temperature () const {
+  return data_.prc_temperature;
+}
+void PrcStore::set_prc_temperature (float value) {
+  data_.prc_temperature = value;
+}
