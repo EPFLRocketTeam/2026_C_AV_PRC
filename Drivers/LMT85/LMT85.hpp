@@ -2,6 +2,7 @@
 
 #include "stm32h7xx_hal.h"
 #include <cstdint>
+#include "Drivers/LMT85/Types.hpp"
 
 namespace Drivers {
 namespace LMT85 {
@@ -10,11 +11,23 @@ namespace LMT85 {
     // CONFIGURATION
     // ======================================================================
 
+    constexpr uint32_t LMT85_1SAMPLE   = 0;
+    constexpr uint32_t LMT85_2SAMPLE   = 1;
+    constexpr uint32_t LMT85_4SAMPLE   = 2;
+    constexpr uint32_t LMT85_8SAMPLE   = 3;
+    constexpr uint32_t LMT85_16SAMPLE  = 4;
+    constexpr uint32_t LMT85_32SAMPLE  = 5;
+    constexpr uint32_t LMT85_64SAMPLE  = 6;
+    constexpr uint32_t LMT85_128SAMPLE = 7;
+
     struct Config {
         ADC_HandleTypeDef* hadc;        // Pointer to the ADC handle
         uint32_t           adc_channel; // ADC channel number
         uint32_t           adc_max;     // Max ADC value (e.g. 4095 for 12-bit, 65535 for 16-bit)
-        float               adc_vref_mv; // ADC reference voltage, in mV (e.g. 3300.0f for 3.3V)
+        float              adc_vref_mv; // ADC reference voltage, in mV (e.g. 3300.0f for 3.3V)
+
+        uint32_t sampling_time  = ADC_SAMPLETIME_64CYCLES_5;
+        uint32_t num_samples_l2 = LMT85_16SAMPLE; // (1 << num_samples_l2) samples
 
         // LMT85 quadratic transfer function (TI datasheet SNIS168E, Section
         // 8.3.1, Equation 1), fit around a reference point (t0_c, v0_mv):
@@ -33,30 +46,20 @@ namespace LMT85 {
     };
 
     // ======================================================================
-    // DATA STRUCTURES
-    // ======================================================================
-
-    struct LMT85Data {
-        float    voltage_mv;  // Measured output voltage, in mV
-        float    temperature; // Temperature in degrees Celsius
-        uint32_t raw_adc;     // Raw ADC reading
-        bool     valid;       // true if the reading is valid
-    };
-
-    // ======================================================================
     // DRIVER CLASS
     // ======================================================================
 
     class LMT85Driver {
     public:
-        explicit LMT85Driver(Config config);
+        LMT85Driver () = default;
+        LMT85Driver(Config config);
 
         // The ADC peripheral is initialized by CubeMX-generated code
         // (MX_ADCx_Init); this just validates the config.
         bool init();
 
         // Blocking ADC read + conversion to temperature.
-        bool read(LMT85Data& out);
+        LMT85Status read(LMT85Data& out);
 
         // Raw ADC count -> output voltage, in mV.
         float calculate_voltage_mv(uint32_t raw_adc) const;

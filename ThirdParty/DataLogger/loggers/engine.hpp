@@ -56,6 +56,13 @@ public:
         this->writeRecord(engine::RecordType::LOG_IGNITER, &frame, sizeof(frame));
     }
 
+    void logLMT85Frame (Drivers::LMT85::LMT85Data frame) {
+        this->writeRecord(engine::RecordType::LOG_LMT85_FRAME, &frame, sizeof(frame));
+    }
+    void logLMT85Error (lmt85::LMT85Error frame) {
+        this->writeRecord(engine::RecordType::LOG_LMT85_ERROR, &frame, sizeof(frame));
+    }
+
     void logError (engine::ErrorKind kind) {
         this->writeRecord(engine::RecordType::LOG_ERROR, &kind, sizeof(kind));
     }

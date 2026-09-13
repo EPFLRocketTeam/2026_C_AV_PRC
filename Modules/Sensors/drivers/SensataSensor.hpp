@@ -4,6 +4,7 @@
 #include "Drivers/SensataPte7300/SensataPte7300.hpp"
 #include "Modules/Sensors/impl/std/sensor.hpp"
 #include "Application/app_printf.h"
+#include "Application/app_timebase.h"
 
 extern "C" I2C_HandleTypeDef hi2c1;
 
@@ -115,11 +116,13 @@ namespace sensata {
             // in Drivers/SensataPte7300/Types.hpp) -- no string table for
             // them exists yet, unlike poll_mode_str. Cross-reference the
             // number against that header if you need the name.
-            app_printf("[SENSATA] %s: FAIL status=%s step=%s mode=%s\r\n",
-                   SensorName,
-                   sensata::status_str(error.status),
-                   sensata::step_str(error.step),
-                   internal::poll_mode_str(error.pollMode));
+            RUN_EVERY(1000) {
+                app_printf("[SENSATA] %s: FAIL status=%s step=%s mode=%s\r\n",
+                    SensorName,
+                    sensata::status_str(error.status),
+                    sensata::step_str(error.step),
+                    internal::poll_mode_str(error.pollMode));
+            }
 
             auto &logger = Func();
 			(logger.*Call)(error);

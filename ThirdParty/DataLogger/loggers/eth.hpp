@@ -48,6 +48,13 @@ public:
         this->writeRecord(eth::RecordType::LOG_BALL_TRANSITION, &frame, sizeof(frame));
     }
 
+    void logLMT85Frame (Drivers::LMT85::LMT85Data frame) {
+        this->writeRecord(eth::RecordType::LOG_LMT85_FRAME, &frame, sizeof(frame));
+    }
+    void logLMT85Error (lmt85::LMT85Error frame) {
+        this->writeRecord(eth::RecordType::LOG_LMT85_ERROR, &frame, sizeof(frame));
+    }
+
     void logError (eth::ErrorKind kind) {
         this->writeRecord(eth::RecordType::LOG_ERROR, &kind, sizeof(kind));
     }

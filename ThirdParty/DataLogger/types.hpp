@@ -6,6 +6,7 @@
 #include "Modules/Sensors/impl/std/multi.hpp"
 #include "Drivers/Plume/types.hpp"
 #include "Drivers/SensataPte7300/Types.hpp"
+#include "Drivers/LMT85/Types.hpp"
 
 constexpr uint8_t ENGINE_LOGGER_MAGIC = 0xA4;
 constexpr uint8_t LOX_LOGGER_MAGIC = 0xC1;
@@ -122,6 +123,9 @@ namespace engine {
         LOG_EIN_P_ERROR,
         LOG_OIN_P_ERROR,
 
+        LOG_LMT85_ERROR,
+        LOG_LMT85_FRAME,
+
         LOG_ERROR // Send an EngineErrorKind
     };
 };
@@ -182,6 +186,9 @@ namespace lox {
         LOG_OTA2_P_ERROR,
         LOG_OTA3_P_ERROR,
 
+        LOG_LMT85_ERROR,
+        LOG_LMT85_FRAME,
+
         LOG_ERROR // Send a LoxErrorKind
     };
 
@@ -226,6 +233,9 @@ namespace eth {
         LOG_ETA1_P_ERROR,
         LOG_ETA2_P_ERROR,
         LOG_ETA3_P_ERROR,
+
+        LOG_LMT85_ERROR,
+        LOG_LMT85_FRAME,
         
         LOG_ERROR // Send a LoxErrorKind
     };
