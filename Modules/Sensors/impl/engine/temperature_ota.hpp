@@ -3,13 +3,13 @@
 
 #include "sigutils/outlier.hpp"
 #include "Modules/Sensors/impl/common.hpp"
-#include "Modules/Sensors/impl/lox/consts.hpp"
+#include "Modules/Sensors/impl/engine/consts.hpp"
 #include "Modules/Sensors/impl/std/sensor.hpp"
 
 #include "Modules/Sensors/drivers/PT1000Sensor.hpp"
 
 template<const int SensorId>
-class LoxOnTemperatureOTASuccess {
+class EngineOnTemperatureOTASuccess {
 public:
 	void ingest (const Drivers::PT1000::PT1000Data &data) {
 		RUN_EVERY(1000)
@@ -23,16 +23,15 @@ public:
     using TemperatureOtaSensorModule##Id = TemperatureModule< \
     CommonTimerPolicy, \
     pt1000::PT1000Sensor<pt1000::PT1000Params<AdcChannel, OTA_RREF_OHMS##Id>, \
-        LoxOnTemperatureOTASuccess<Id>>, \
-    LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_temperature_OTA##Id), \
+        EngineOnTemperatureOTASuccess<Id>>, \
+    ENGINE_SETTER_POLICY(prc::PropSensorsStoreEngine::set_temperature_OTA##Id), \
     TEMPERATURE_OTA_WINDOW_SIZE, \
-    LOX_SETTER_POLICY(prc::PropSensorsStoreLox::CONCAT(CONCAT(set_temperature_OTA, Id), _mean)), \
+    ENGINE_SETTER_POLICY(prc::PropSensorsStoreEngine::CONCAT(CONCAT(set_temperature_OTA, Id), _mean)), \
     pt1000::PT1000ErrorPipeline<CONCAT(CONCAT(OTA, Id), _NAME)> \
 >;
 
-CREATE_TEMPERATURE_OTA_MODULE(1, PT1000_CHANNEL_T_OTA1);
-CREATE_TEMPERATURE_OTA_MODULE(2, PT1000_CHANNEL_T_OTA2);
-CREATE_TEMPERATURE_OTA_MODULE(3, PT1000_CHANNEL_T_OTA3);
+CREATE_TEMPERATURE_OTA_MODULE(4, PT1000_CHANNEL_T_OTA4);
+CREATE_TEMPERATURE_OTA_MODULE(5, PT1000_CHANNEL_T_OTA5);
 
 #undef CONCAT_IMPL
 #undef CONCAT

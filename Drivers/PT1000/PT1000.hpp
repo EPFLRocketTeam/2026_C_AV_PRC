@@ -13,8 +13,10 @@ namespace PT1000 {
     struct Config {
         ADC_HandleTypeDef* hadc;       // Pointer to the ADC handle
         uint32_t           adc_channel; // ADC channel number
-        float              r_ref;      // Reference resistor in the voltage divider (Ohms)
-        uint32_t           adc_max;    // Max ADC value (e.g. 4095 for 12-bit, 65535 for 16-bit)
+        float              r_ref;       // Reference resistor in the voltage divider (Ohms)
+        float              r_0;         // Reference resistor value of PT1000 at 0°C
+        float              alpha;       // IEC 60751 standard temperature coefficient (°C⁻¹)
+        uint32_t           adc_max;     // Max ADC value (e.g. 4095 for 12-bit, 65535 for 16-bit)
     };
 
     // ======================================================================
@@ -27,17 +29,6 @@ namespace PT1000 {
         uint32_t raw_adc;          // Raw ADC reading
         bool     valid;            // true if the reading is valid
     };
-
-    // ======================================================================
-    // CONSTANTS
-    // ======================================================================
-
-    /// Resistance of the PT1000 at 0°C (Ohms)
-    static constexpr float R0    = 1000.0f;
-    /// IEC 60751 standard temperature coefficient (°C⁻¹)
-    static constexpr float ALPHA = 0.00385f;
-    /// Number of PT1000 sensors on the board
-    static constexpr uint8_t NUM_SENSORS = 4;
 
     // ======================================================================
     // DRIVER CLASS

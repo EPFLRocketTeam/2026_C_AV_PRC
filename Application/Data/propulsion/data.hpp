@@ -14,8 +14,8 @@ struct PropSensorsEngine { X_PRC_SENSORS_STORE_ENGINE(); };
 struct PropSensorsLox { X_PRC_SENSORS_STORE_LOX(); };
 struct PropSensorsEth { X_PRC_SENSORS_STORE_ETH(); };
 
-static_assert(sizeof(PropSensorsEngine) == 96);
-static_assert(sizeof(PropSensorsLox) == 112);
+static_assert(sizeof(PropSensorsEngine) == 96 + 32);
+static_assert(sizeof(PropSensorsLox) == 112 - 16);
 static_assert(sizeof(PropSensorsEth) == 48);
 
 #undef CONCAT_IMPL

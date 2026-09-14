@@ -427,6 +427,11 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
     t_chamber.t_ccc = static_cast<float>(sensors.get_temperature_C_mean());
     pi::send_prc_t_chamber(&ctx, t_chamber);
 
+    pi::payload::dpr_lox_temps_ota temps_5_6{};
+    temps_5_6.t1 = static_cast<float>(sensors.get_temperature_OTA4_mean());
+    temps_5_6.t2 = static_cast<float>(sensors.get_temperature_OTA5_mean());
+    pi::send_dpr_lox_temps_ota_5_6(&ctx, temps_5_6);
+
     return;
   }
 
@@ -458,7 +463,7 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
 
     pi::payload::dpr_lox_temps_ota temps_3_4{};
     temps_3_4.t1 = static_cast<float>(sensors.get_temperature_OTA3_mean());
-    temps_3_4.t2 = static_cast<float>(sensors.get_temperature_OTA4_mean());
+    // temps_3_4.t2 = static_cast<float>(sensors.get_temperature_OTA4_mean());
     pi::send_dpr_lox_temps_ota_3_4(&ctx, temps_3_4);
   } else {
     pi::send_dpr_eth_state(&ctx, state);
