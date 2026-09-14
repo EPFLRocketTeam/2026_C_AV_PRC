@@ -23,6 +23,8 @@ using namespace Drivers::PT1000;
  *       the actual values from the Firehorn II schematics once confirmed.
  */
 
+constexpr int NUM_SENSORS = 4;
+
 int manual_test_pt1000() {
     // ===================================================================
     // CONFIGURATION

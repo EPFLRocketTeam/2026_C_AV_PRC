@@ -170,7 +170,7 @@ static_assert(offsetof(DataDump, boardIdentity) == 12);
 static_assert(offsetof(DataDump, valves) == 16);
 static_assert(offsetof(DataDump, intranetCmd) == 32);
 static_assert(offsetof(DataDump, event) == 36);
-static_assert(sizeof(DataDump) == 40 + 112 + 96 + 48);
+static_assert(sizeof(DataDump) == 40 + 112 + 96 + 48 + 16);
 
 // Aggregating singleton — mirrors flight_computer::GOATStore.
 class PrcStore {

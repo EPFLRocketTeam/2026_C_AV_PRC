@@ -1,5 +1,8 @@
 #include "../PT1000.hpp"
 
+#include "Application/app_printf.h"
+#include "Application/app_timebase.h"
+
 namespace Drivers {
 namespace PT1000 {
 
@@ -9,7 +12,7 @@ PT1000Driver::PT1000Driver(Config config)
     : config_(config) {}
 
 bool PT1000Driver::init() {
-    if (config_.hadc == nullptr) {
+	if (config_.hadc == nullptr) {
         return false;
     }
     // The ADC peripheral is typically initialized by STM32CubeMX-generated code
@@ -23,7 +26,7 @@ bool PT1000Driver::read(PT1000Data& out) {
     out.raw_adc   = 0;
 
     if (config_.hadc == nullptr) {
-        return false;
+    	return false;
     }
 
     // Point the ADC's regular rank-1 channel at this sensor before
@@ -40,17 +43,17 @@ bool PT1000Driver::read(PT1000Data& out) {
     sConfig.OffsetSignedSaturation = DISABLE;
 
     if (HAL_ADC_ConfigChannel(config_.hadc, &sConfig) != HAL_OK) {
-        return false;
+    	return false;
     }
 
     // Start ADC conversion (blocking, single channel)
     if (HAL_ADC_Start(config_.hadc) != HAL_OK) {
-        return false;
+    	return false;
     }
 
     // Wait for end of conversion (timeout 100 ms)
     if (HAL_ADC_PollForConversion(config_.hadc, 100) != HAL_OK) {
-        HAL_ADC_Stop(config_.hadc);
+    	HAL_ADC_Stop(config_.hadc);
         return false;
     }
 
@@ -86,7 +89,7 @@ float PT1000Driver::calculate_temperature(float resistance) const {
     // Linear Callendar-Van Dusen approximation
     //   R(T) = R0 * (1 + alpha * T)
     //   => T  = (R - R0) / (R0 * alpha)
-    return (resistance - R0) / (R0 * ALPHA);
+    return (resistance - config_.r_0) / (config_.r_0 * config_.alpha);
 }
 
 } // namespace PT1000

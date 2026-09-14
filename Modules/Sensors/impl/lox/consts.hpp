@@ -4,7 +4,6 @@
 
 const size_t PRESSURE_HPO_WINDOW_SIZE = 10;
 const size_t PRESSURE_OTA_WINDOW_SIZE = 10;
-const size_t TEMPERATURE_OTA_WINDOW_SIZE = 10;
 const size_t FLS_WINDOW_SIZE = 10;
 
 // If changed, please update pipeline
@@ -24,6 +23,8 @@ const int PRESSURE_HPO_MULTIPLIER = 4;
 static const char* OTA1_NAME = "ota1";
 static const char* OTA2_NAME = "ota2";
 static const char* OTA3_NAME = "ota3";
-static const char* OTA4_NAME = "ota4";
 static const char* HPO_NAME  = "hpo";
 
+inline constexpr float OTA_RREF_OHMS1 = 1100.0f; // it appears OTA1 is broken for now
+inline constexpr float OTA_RREF_OHMS2 = 930.0f;
+inline constexpr float OTA_RREF_OHMS3 = 916.0f;

@@ -7,20 +7,28 @@
 extern "C" ADC_HandleTypeDef hadc3;
 
 namespace pt1000 {
+    inline constexpr float    DefaultDRefCels = 0.0f;
     inline constexpr float    DefaultRRefOhms = 1100.0f;
+    inline constexpr float    DefaultR0Ohms   = 1000.0f;
+    inline constexpr float    DefaultAlpha    = 0.0039083f;
     inline constexpr uint32_t DefaultAdcMax   = 65535;
 
     template<
         uint32_t AdcChannel,
 
-        const float&       RRefOhms = DefaultRRefOhms,
-        uint32_t            AdcMax   = DefaultAdcMax,
-        ADC_HandleTypeDef*  Hadc     = &hadc3
+        const float&        RRefOhms    = DefaultRRefOhms,
+        const float&        R0Ohms      = DefaultR0Ohms,
+		const float&        Alpha       = DefaultAlpha,
+
+        uint32_t            AdcMax = DefaultAdcMax,
+        ADC_HandleTypeDef*  Hadc   = &hadc3
     >
     struct PT1000Params {
-        static constexpr uint32_t adc_channel = AdcChannel;
-        static constexpr float    r_ref_ohms  = RRefOhms;
-        static constexpr uint32_t adc_max     = AdcMax;
+        static constexpr uint32_t adc_channel   = AdcChannel;
+        static constexpr float    r_ref_ohms    = RRefOhms;
+        static constexpr float    r_0_ohms      = R0Ohms;
+        static constexpr float    alpha         = Alpha;
+        static constexpr uint32_t adc_max       = AdcMax;
 
         static constexpr ADC_HandleTypeDef* hadc = Hadc;
     };
@@ -29,7 +37,7 @@ namespace pt1000 {
         uint32_t raw_adc;
     };
 
-    template<typename Params>
+    template<typename Params, typename SuccessPipeline = NoPipeline>
     struct PT1000Sensor {
     private:
         using sensor_result = result<pressure_temperature, PT1000Error>;
@@ -39,12 +47,16 @@ namespace pt1000 {
             config.hadc        = Params::hadc;
             config.adc_channel = Params::adc_channel;
             config.r_ref       = Params::r_ref_ohms;
+            config.r_0         = Params::r_0_ohms;
+            config.alpha       = Params::alpha;
             config.adc_max     = Params::adc_max;
 
             return config;
         }
 
         Drivers::PT1000::PT1000Driver sensor;
+
+        SuccessPipeline pipeline;
     public:
         bool init () {
             sensor = Drivers::PT1000::PT1000Driver(createConfig());
@@ -60,6 +72,8 @@ namespace pt1000 {
             pressure_temperature frame;
             frame.temperature = data.temperature;
 
+            pipeline.ingest(data);
+
             return sensor_result::success(frame);
         }
     };
@@ -70,7 +84,8 @@ namespace pt1000 {
             // Silenced -- unwired bench channels (e.g. ota2-4) spam this
             // every poll. Re-enable if you need to see PT1000 read
             // failures again.
-            // app_printf("%s: read failed, raw_adc=%lu\r\n", SensorName, (unsigned long)error.raw_adc);
+            RUN_EVERY(1000)
+        			app_printf("%s: read failed, raw_adc=%lu\r\n", SensorName, (unsigned long)error.raw_adc);
             (void)error;
         }
     };
