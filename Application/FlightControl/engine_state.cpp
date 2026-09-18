@@ -234,7 +234,7 @@ EngineState PrcEngineState::fromBurn(DataDump const &dump) {
   // Compute total impulse
   // Check min / max time
   if (HAL_GetTick() - state_entry_ms_ >= config::get().Burn.EngineMaxDurationMs) {
-    return EngineState::BurnStopMo;
+    return EngineState::BurnStopMe;
   }
   return currentState;
 }
