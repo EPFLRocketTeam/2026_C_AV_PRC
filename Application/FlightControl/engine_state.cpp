@@ -203,20 +203,20 @@ EngineState PrcEngineState::fromIgnitionPrechill(DataDump const &dump) {
 EngineState PrcEngineState::fromIgnitionIgniter(DataDump const &dump) {
   if (AbortCmd(dump)) return EngineState::AbortOnGround;
   if (HAL_GetTick() - state_entry_ms_ >= config::get().Ignition.IgniterDurationMs) {
-    return EngineState::IgnitionBurnStartMo;
-  }
-  return currentState;
-}
-
-EngineState PrcEngineState::fromIgnitionBurnStartMo(DataDump const &dump) {
-  if (AbortCmd(dump)) return EngineState::AbortOnGround;
-  if (HAL_GetTick() - state_entry_ms_ >= config::get().Ignition.DelayMs) {
     return EngineState::IgnitionBurnStartMe;
   }
   return currentState;
 }
 
 EngineState PrcEngineState::fromIgnitionBurnStartMe(DataDump const &dump) {
+  if (AbortCmd(dump)) return EngineState::AbortOnGround;
+  if (HAL_GetTick() - state_entry_ms_ >= config::get().Ignition.DelayMs) {
+    return EngineState::IgnitionBurnStartMo;
+  }
+  return currentState;
+}
+
+EngineState PrcEngineState::fromIgnitionBurnStartMo(DataDump const &dump) {
   if (AbortCmd(dump)) return EngineState::AbortOnGround;
   if (HAL_GetTick() - state_entry_ms_ >= config::get().Ignition.RampUpMs) {
     return EngineState::Burn;
@@ -393,8 +393,8 @@ void PrcEngineState::update(const DataDump &dump) {
     case EngineState::ClearToIgnite:          currentState = fromClearToIgnite(dump); break;
     case EngineState::IgnitionPrechill:       currentState = fromIgnitionPrechill(dump); break;
     case EngineState::IgnitionIgniter:        currentState = fromIgnitionIgniter(dump); break;
-    case EngineState::IgnitionBurnStartMo:    currentState = fromIgnitionBurnStartMo(dump); break;
     case EngineState::IgnitionBurnStartMe:    currentState = fromIgnitionBurnStartMe(dump); break;
+    case EngineState::IgnitionBurnStartMo:    currentState = fromIgnitionBurnStartMo(dump); break;
     case EngineState::Burn:                   currentState = fromBurn(dump); break;
     case EngineState::BurnStopMo:             currentState = fromBurnStopMo(dump); break;
     case EngineState::BurnStopMe:             currentState = fromBurnStopMe(dump); break;
@@ -432,8 +432,8 @@ std::string PrcEngineState::stateToString(EngineState state) {
     case EngineState::ClearToIgnite:        return "CLEAR_TO_IGNITE";
     case EngineState::IgnitionPrechill:     return "IGNITION_PRECHILL";
     case EngineState::IgnitionIgniter:      return "IGNITION_IGNITER";
-    case EngineState::IgnitionBurnStartMo:  return "IGNITION_BURN_START_MO";
     case EngineState::IgnitionBurnStartMe:  return "IGNITION_BURN_START_ME";
+    case EngineState::IgnitionBurnStartMo:  return "IGNITION_BURN_START_MO";
     case EngineState::Burn:                 return "BURN";
     case EngineState::BurnStopMo:           return "BURN_STOP_MO";
     case EngineState::BurnStopMe:           return "BURN_STOP_ME";
@@ -477,12 +477,12 @@ static void ApplyEngineValveActions(EngineState state, EngineState previous_stat
       SetMo(false);
       SetIgniter(true);
       break;
-    case EngineState::IgnitionBurnStartMo:
-      SetMo(true);
-      SetIgniter(false);
-      break;
     case EngineState::IgnitionBurnStartMe:
       SetMe(true);
+      SetIgniter(false);
+      break;
+    case EngineState::IgnitionBurnStartMo:
+      SetMo(true);
       break;
     case EngineState::BurnStopMo:
       SetMo(false);
@@ -567,34 +567,34 @@ void Prc_Engine_Fsm_Tick() {
     g_preburn_fuel_sent = false;
   }
 
-  const uint32_t SendPreburnLoxDelayMs =
-    config::get().Ignition.IgniterDurationMs - config::get().Pressurization.PreburnDurationLoxMs;
-  const uint32_t IgniterSendPreburnFuelDelayMs =
+  const uint32_t SendPreburnFuelDelayMs =
+    config::get().Ignition.IgniterDurationMs - config::get().Pressurization.PreburnDurationFuelMs;
+  const uint32_t IgniterSendPreburnLoxDelayMs =
     config::get().Ignition.IgniterDurationMs + config::get().Ignition.DelayMs
-    - config::get().Pressurization.PreburnDurationFuelMs;
-  const uint32_t StartMoSendPreburnFuelDelayMs =
-    config::get().Ignition.DelayMs - config::get().Pressurization.PreburnDurationFuelMs;
-  RUN_EVERY(1000) 
-    app_printf("%u %u %u\n", SendPreburnLoxDelayMs, IgniterSendPreburnFuelDelayMs, StartMoSendPreburnFuelDelayMs);
-
-  if (new_state == EngineState::IgnitionIgniter && !g_preburn_lox_sent) {
-    app_printf("Lox delay: %u %u\n", HAL_GetTick() - fsm.state_entry_ms_, SendPreburnLoxDelayMs);
-    if (HAL_GetTick() - fsm.state_entry_ms_ >= SendPreburnLoxDelayMs) {
-      g_preburn_lox_sent = true;
-      Prc_Can_SendPreburnLox();
-    }
-  }
+    - config::get().Pressurization.PreburnDurationLoxMs;
+  const uint32_t StartMeSendPreburnLoxDelayMs =
+    config::get().Ignition.DelayMs - config::get().Pressurization.PreburnDurationLoxMs;
+  // RUN_EVERY(1000) 
+  //   app_printf("%u %u %u\n", SendPreburnLoxDelayMs, IgniterSendPreburnFuelDelayMs, StartMoSendPreburnFuelDelayMs);
 
   if (new_state == EngineState::IgnitionIgniter && !g_preburn_fuel_sent) {
-    if (HAL_GetTick() - fsm.state_entry_ms_ >= IgniterSendPreburnFuelDelayMs) {
+    // app_printf("Lox delay: %u %u\n", HAL_GetTick() - fsm.state_entry_ms_, SendPreburnLoxDelayMs);
+    if (HAL_GetTick() - fsm.state_entry_ms_ >= SendPreburnFuelDelayMs) {
       g_preburn_fuel_sent = true;
       Prc_Can_SendPreburnFuel();
     }
   }
 
-  if (new_state == EngineState::IgnitionBurnStartMo && !g_preburn_fuel_sent) {
-    if (HAL_GetTick() - fsm.state_entry_ms_ >= StartMoSendPreburnFuelDelayMs) {
-      g_preburn_fuel_sent = true;
+  if (new_state == EngineState::IgnitionIgniter && !g_preburn_lox_sent) {
+    if (HAL_GetTick() - fsm.state_entry_ms_ >= IgniterSendPreburnLoxDelayMs) {
+      g_preburn_lox_sent = true;
+      Prc_Can_SendPreburnLox();
+    }
+  }
+
+  if (new_state == EngineState::IgnitionBurnStartMe && !g_preburn_lox_sent) {
+    if (HAL_GetTick() - fsm.state_entry_ms_ >= StartMeSendPreburnLoxDelayMs) {
+      g_preburn_lox_sent = true;
       Prc_Can_SendPreburnFuel();
     }
   }

@@ -21,8 +21,8 @@ enum class EngineState : uint8_t {
   // IGNITION SQ
   IgnitionPrechill,       // open MO
   IgnitionIgniter,        // close MO + igniter ON
-  IgnitionBurnStartMo,    // open MO + igniter OFF
-  IgnitionBurnStartMe,    // open ME
+  IgnitionBurnStartMe,    // open ME + igniter OFF
+  IgnitionBurnStartMo,    // open MO
 
   Burn,
   BurnStopMo,             // close MO
