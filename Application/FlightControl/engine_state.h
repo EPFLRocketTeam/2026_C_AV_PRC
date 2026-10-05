@@ -45,8 +45,8 @@ private:
   EngineState fromIgnitionBurnStartMo(DataDump const &dump);
   EngineState fromIgnitionBurnStartMe(DataDump const &dump);
   EngineState fromBurn(DataDump const &dump);
-  EngineState fromBurnStopMo(DataDump const &dump);
   EngineState fromBurnStopMe(DataDump const &dump);
+  EngineState fromBurnStopMo(DataDump const &dump);
   EngineState fromWaitForPassivation(DataDump const &dump);
   EngineState fromPassivationSeparationDelay(DataDump const &dump);
   EngineState fromPassivationEth(DataDump const &dump);
