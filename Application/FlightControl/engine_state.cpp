@@ -14,6 +14,10 @@
 
 #include <cstdio>
 
+#include "Modules/Impulse/impulse_module.hpp"
+
+ImpulseModule<HAL_GetTick> impulse_module;
+
 namespace pi = prc_intranet;
 
 // ---------------------------------------------------------------------------
@@ -233,6 +237,12 @@ EngineState PrcEngineState::fromBurn(DataDump const &dump) {
   // comment above, this is a placeholder elapsed-time check only.
   // Compute total impulse
   // Check min / max time
+  float total_impulse = prc::PrcStore::get_instance().propSensorsStoreEngine.get_total_engine_impuse();
+
+  if (HAL_GetTick() - state_entry_ms_ >= config::get().Burn.MinDurationMs
+   && total_impulse= config::get().Burn.Impulse) {
+    return EngineState::BurnStopMe;
+  }
   if (HAL_GetTick() - state_entry_ms_ >= config::get().Burn.EngineMaxDurationMs) {
     return EngineState::BurnStopMe;
   }
@@ -556,6 +566,20 @@ void Prc_Engine_Fsm_Tick() {
   const EngineState new_state = fsm.getCurrentState();
 
   ApplyEngineValveActions(new_state, previous_state);
+  
+  /* Apply action to impulse module */
+  switch (new_state) {
+    case EngineState::ClearToIgnite:
+      impulse_module.preStart();
+      break ;
+    case EngineState::IgnitionBurnStartMo:
+      impulse_module.start();
+      break ;
+    case EngineState::WaitForPassivation:
+      impulse_module.stop();
+      break ;
+    default: break;
+  }
 
   // Separate manual bench sequence, runs in parallel with the real FSM
   // above -- see ColdflowSequence comment.

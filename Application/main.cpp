@@ -25,6 +25,7 @@ extern "C" FDCAN_HandleTypeDef hfdcan1;
 #include "Modules/Sensors/impl/engine/oin.hpp"
 #include "Modules/Sensors/impl/engine/ein.hpp"
 #include "Modules/Sensors/impl/engine/temperature_ota.hpp"
+#include "Modules/Impulse/impulse_module.hpp"
 
 #include "Drivers/Valve/ValveList.hpp"
 #include "Drivers/SensataPte7300/SensataPte7300HardwareTest.hpp"
@@ -49,6 +50,7 @@ static TemperatureOinModule t_oin;   // T-OIN     (Lox Injector, PT1000)
 static TemperatureEinModule t_ein;   // T-EIN     (B3 Sensor Plate, PT1000)
 static TemperatureOtaSensorModule4 t_ota4;   // T-OTA4       (Lox Tank, PT1000)
 static TemperatureOtaSensorModule5 t_ota5;   // T-OTA5       (Lox Tank, PT1000)
+extern ImpulseModule<HAL_GetTick> impulse_module;
 
 // ── Pressurant bay 1 (Fat Bay, PRC-Lox) ─────────────────────────────────
 static PressureOtaSensorModule ota_module;   // P-OTA{1,2,3} (Lox Tank Ullage, Sensata PTE7300)
@@ -67,10 +69,12 @@ static PressureHpeSensorModule pressure_hpe; // P-HPE        (COPV 2, Sensata PT
 
 void prc::PropSensorsStoreEngine::set_pressure_C(double pressure_C) {
 	data_.pressure_C = pressure_C;
+	impulse_module.ingestChamberPressure(pressure_C);
 	// 	app_printf("p_C=%lf\r\n", pressure_C);
 }
 void prc::PropSensorsStoreEngine::set_pressure_C_mean(double pressure_C_mean) {
 	data_.pressure_C_mean = pressure_C_mean;
+	impulse_module.ingestChamberPressureMean(pressure_C_mean);
 	RUN_EVERY(1000) app_printf("p_C_mean=%lf\r\n", pressure_C_mean);
 }
 void prc::PropSensorsStoreEngine::set_temperature_C(double temperature_C) {
