@@ -240,7 +240,7 @@ EngineState PrcEngineState::fromBurn(DataDump const &dump) {
   float total_impulse = prc::PrcStore::get_instance().propSensorsStoreEngine.get_total_engine_impuse();
 
   if (HAL_GetTick() - state_entry_ms_ >= config::get().Burn.MinDurationMs
-   && total_impulse= config::get().Burn.Impulse) {
+   && total_impulse >= config::get().Burn.Impulse) {
     return EngineState::BurnStopMe;
   }
   if (HAL_GetTick() - state_entry_ms_ >= config::get().Burn.EngineMaxDurationMs) {
