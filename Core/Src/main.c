@@ -210,7 +210,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_4);
+	// HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_4);
 
 
   /* USER CODE END 1 */
@@ -219,7 +219,7 @@ int main(void)
   MPU_Config();
 
   /* MCU Configuration--------------------------------------------------------*/
-
+  
   SCB_EnableICache();
   SCB_EnableDCache();
 
@@ -393,11 +393,20 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
+#ifndef USE_INTERNAL_CLOCK
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+#else
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_DIV4;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+#endif
   RCC_OscInitStruct.PLL.PLLM = 1;
   RCC_OscInitStruct.PLL.PLLN = 60;
   RCC_OscInitStruct.PLL.PLLP = 2;
@@ -765,7 +774,7 @@ static void MX_TIM4_Init(void)
   /* USER CODE BEGIN TIM4_Init 1 */
 
   /* USER CODE END TIM4_Init 1 */
-
+#ifndef USE_INTERNAL_CLOCK
   uint32_t timclk = HAL_RCC_GetPCLK1Freq();
    // If APB1 prescaler != DIV1, timer clock is 2x pclk1 — check your clock config
 
@@ -775,6 +784,12 @@ static void MX_TIM4_Init(void)
   htim4.Init.Prescaler = (timclk / 1000000U) - 1U; // → 1 MHz tick
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim4.Init.Period = 19999; // 20 ms frame (50 Hz) for standard RC servo PWM
+#else
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 0;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 65535;
+#endif
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)
