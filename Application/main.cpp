@@ -26,6 +26,7 @@ extern "C" FDCAN_HandleTypeDef hfdcan1;
 #include "Modules/Sensors/impl/engine/ein.hpp"
 #include "Modules/Sensors/impl/engine/temperature_ota.hpp"
 
+#include "Drivers/LMT85/LMT85.hpp"
 #include "Drivers/Valve/ValveList.hpp"
 #include "Drivers/SensataPte7300/SensataPte7300HardwareTest.hpp"
 // #include "../Drivers/Valve/valve_manual_test.hpp"
@@ -60,6 +61,17 @@ static TemperatureOtaSensorModule3 t_ota3;   // T-OTA3       (Lox Tank, PT1000)
 // ── Pressurant bay 2 (Skinny Bay, PRC-ETH) ──────────────────────────────
 static PressureEtaSensorModule eta_module;   // P-ETA{1,2,3} (Eth Tank Ullage, Sensata PTE7300)
 static PressureHpeSensorModule pressure_hpe; // P-HPE        (COPV 2, Sensata PTE7300)
+
+// ── Board temperature (LMT85, PB1 / ADC1 CH5) ────────────────────────────
+static constexpr uint32_t kBoardTempPeriodMs = 1000; // 1 Hz
+extern "C" ADC_HandleTypeDef hadc1;
+static Drivers::LMT85::LMT85Driver board_temp({
+	.hadc        = &hadc1,
+	.adc_channel = ADC_CHANNEL_5,
+	.adc_max     = 65535, // 16-bit ADC on STM32H7
+	.adc_vref_mv = 3300.0f,
+});
+static bool board_temp_ready = false;
 
 // ---------------------------------------------------------------------------
 // Engine bay setters
@@ -308,6 +320,9 @@ void main_init() {
 
 	app_timebase_init();
 
+	board_temp_ready = board_temp.init();
+	if (!board_temp_ready) app_printf("Could not init the LMT85 board temperature sensor.\n");
+
 	app_printf("Try to create SD card...\n");
 
 	if (!sd_interface.init_sd_card(&hsd1, plume_arena_buffer, plume_arena_length)) {
@@ -410,6 +425,29 @@ void main_tick() {
 			// Role detection hasn't latched yet (or failed) -- report nothing
 			// rather than guessing which bay's sensors to poll.
 			break;
+	}
+
+	if (board_temp_ready) RUN_EVERY(kBoardTempPeriodMs) {
+		Drivers::LMT85::LMT85Data frame;
+		const Drivers::LMT85::LMT85Status status = board_temp.read(frame);
+
+		const bool ok = (status == Drivers::LMT85::LMT85Status::Ok);
+		const lmt85::LMT85Error error { status, frame };
+
+		switch (prc::PrcStore::get_instance().boardIdentityStore.get_role()) {
+			case prc::BoardRole::EngineBay:
+				if (ok) engineLogger.logLMT85Frame(static_cast<double>(frame.temperature)); else engineLogger.logLMT85Error(error);
+				break;
+			case prc::BoardRole::DprLox:
+				if (ok) loxLogger.logLMT85Frame(static_cast<double>(frame.temperature)); else loxLogger.logLMT85Error(error);
+				break;
+			case prc::BoardRole::DprEth:
+				if (ok) ethLogger.logLMT85Frame(static_cast<double>(frame.temperature)); else ethLogger.logLMT85Error(error);
+				break;
+			case prc::BoardRole::Unknown:
+			default:
+				break;
+		}
 	}
 
 	RUN_EVERY(10) {

@@ -3,6 +3,8 @@
 #include "stm32h7xx_hal.h"
 #include <cstdint>
 
+#include "Types.hpp"
+
 namespace Drivers {
 namespace LMT85 {
 
@@ -33,17 +35,6 @@ namespace LMT85 {
     };
 
     // ======================================================================
-    // DATA STRUCTURES
-    // ======================================================================
-
-    struct LMT85Data {
-        float    voltage_mv;  // Measured output voltage, in mV
-        float    temperature; // Temperature in degrees Celsius
-        uint32_t raw_adc;     // Raw ADC reading
-        bool     valid;       // true if the reading is valid
-    };
-
-    // ======================================================================
     // DRIVER CLASS
     // ======================================================================
 
@@ -51,12 +42,10 @@ namespace LMT85 {
     public:
         explicit LMT85Driver(Config config);
 
-        // The ADC peripheral is initialized by CubeMX-generated code
-        // (MX_ADCx_Init); this just validates the config.
         bool init();
 
         // Blocking ADC read + conversion to temperature.
-        bool read(LMT85Data& out);
+        LMT85Status read(LMT85Data& out);
 
         // Raw ADC count -> output voltage, in mV.
         float calculate_voltage_mv(uint32_t raw_adc) const;

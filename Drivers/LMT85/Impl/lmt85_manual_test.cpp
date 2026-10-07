@@ -47,7 +47,7 @@ int manual_test_lmt85() {
 
     while (1) {
         LMT85Data data;
-        if (sensor.read(data)) {
+        if (sensor.read(data) == LMT85Status::Ok) {
             app_printf("[LMT85] ADC: %lu | V: %.1f mV | T: %.2f C\r\n",
                    (unsigned long)data.raw_adc,
                    data.voltage_mv,
