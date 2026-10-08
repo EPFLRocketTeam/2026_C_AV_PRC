@@ -2,7 +2,6 @@
 
 #include <cstdio>
 #include <cstring>
-
 #include "Application/Data/data.hpp"
 #include "Application/app_printf.h"
 #include "Application/app_timebase.h"
@@ -393,6 +392,8 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
       pi::send_config_crc_dpr_eth(&ctx, conf);
   }
 
+  Prc_Can_SendExternalConnector(prc::PrcStore::get_instance().eventStore.get_no_cable_continuity());
+
   if (role == BoardRole::EngineBay) {
     // MO/ME are the engine board's own on/off main valves (see
     // engine_state.cpp's k_valve_mo/k_valve_me), read back via
@@ -517,4 +518,16 @@ void Prc_Log_Forward(FDCAN_HandleTypeDef *hfdcan, const uint8_t *data, uint32_t 
   log_aggregator::chunk_and_send(data, length, &ctx, SendLogChunk);
 
   in_progress = false;
+}
+
+void Prc_Can_SendExternalConnector (int has_no_continuity) {
+  pi::context& ctx = Ctx();
+  ctx.driver.driver_ptr = &hfdcan1;
+
+  const BoardRole role = CurrentRole();
+  if (role == BoardRole::EngineBay) {
+    pi::send_prc_publish_cable(&ctx, pi::payload::cable_info(has_no_continuity));
+  } else if (role == BoardRole::DprLox) {
+    pi::send_dpr_lox_publish_cable(&ctx, pi::payload::cable_info(has_no_continuity));
+  }
 }

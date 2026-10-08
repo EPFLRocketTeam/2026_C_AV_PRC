@@ -2,6 +2,7 @@ extern "C" {
 #include "main_app.h"
 }
 
+#include "Core/Inc/main.h"
 #include "stm32h7xx_hal.h"
 
 extern "C" FDCAN_HandleTypeDef hfdcan1;
@@ -33,6 +34,7 @@ extern "C" FDCAN_HandleTypeDef hfdcan1;
 
 #include "Application/FlightControl/prc_fsm_c_api.h"
 #include "../../Application/FlightControl/prc_can.hpp"
+#include "Modules/ExtConn/external_connector.hpp"
 
 // ---------------------------------------------------------------------------
 // One sensor module instance per row of the sensor table (see project docs:
@@ -251,6 +253,40 @@ const char* open_to_string (bool open) {
 	return open ? "open" : "close";
 }
 
+bool read_external_connector () {
+	return HAL_GPIO_ReadPin(LIFTOFF_GPIO_Port, LIFTOFF_Pin) == GPIO_PIN_RESET;
+}
+void set_external_connector (bool old_has_no_continuity, bool new_has_no_continuity) {
+	switch (prc::PrcStore::get_instance().boardIdentityStore.get_role()) {
+		case prc::BoardRole::EngineBay:
+			engineLogger.logExternalConnector({
+				.old_has_no_continuity = old_has_no_continuity,
+				.new_has_no_continuity = new_has_no_continuity
+			});
+			break ;
+		case prc::BoardRole::DprLox:
+			loxLogger.logExternalConnector({
+				.old_has_no_continuity = old_has_no_continuity,
+				.new_has_no_continuity = new_has_no_continuity
+			});
+			break ;
+		default:
+			break ;
+	}
+
+	prc::PrcStore::get_instance().eventStore.set_no_cable_continuity(new_has_no_continuity);
+}
+void publish_external_connector (bool old_has_no_continuity, bool new_has_no_continuity) {
+	app_printf("[EXT-CONN] State changed %u -> %u\n", old_has_no_continuity, new_has_no_continuity);
+	Prc_Can_SendExternalConnector(new_has_no_continuity);
+}
+
+static ExternalConnectorModule<
+	read_external_connector,
+	set_external_connector,
+	publish_external_connector
+> external_connector_module;
+
 // Engine
 void valves_callbacks::onChange_MO (bool old_open, bool new_open) {
 	engineLogger.logMainLoxTransition({ old_open, new_open });
@@ -312,7 +348,6 @@ void valves_callbacks::onChange_BE (float old_open, float new_open) {
 void main_init() {
 	Prc_Fsm_Init();  /* latches board role from ENG_SETUP/ETH_SETUP/LOX_SETUP straps, see Drivers/PrcBoardId/PrcBoardId.hpp, also calls Valve_InitAll() */
 	Prc_Can_ConfigNodeFilter(&hfdcan1);  /* now that role is latched, accept this board's own DPR node ID, see Application/FlightControl/prc_can.cpp */
-
 
 	for (int i = 0; i < 10; i ++) {
 		app_printf("Booting on PRC, %d seconds remain.\n", 10 - i);
@@ -397,6 +432,7 @@ void main_tick() {
 
 	switch (prc::PrcStore::get_instance().boardIdentityStore.get_role()) {
 		case prc::BoardRole::EngineBay:
+			external_connector_module.tick();
 			chamber.tick();
 			oin.tick();
 			ein.tick();
@@ -407,6 +443,7 @@ void main_tick() {
 			break;
 
 		case prc::BoardRole::DprLox:
+			external_connector_module.tick();
 			ota_module.tick();
 			pressure_hpo.tick();
 			t_ota1.tick();

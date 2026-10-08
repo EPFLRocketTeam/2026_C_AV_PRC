@@ -55,6 +55,10 @@ public:
         this->writeRecord(lox::RecordType::LOG_BALL_TRANSITION, &frame, sizeof(frame));
     }
 
+    void logExternalConnector (ext_connector_transition frame) {
+        this->writeRecord(lox::RecordType::LOG_EXT_CONNECTOR, &frame, sizeof(frame));
+    }
+
     void logError (lox::ErrorKind kind) {
         this->writeRecord(lox::RecordType::LOG_ERROR, &kind, sizeof(kind));
     }

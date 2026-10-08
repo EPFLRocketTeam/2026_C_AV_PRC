@@ -81,6 +81,8 @@ static_assert(sizeof(IntranetCmd) == 4);
 // ---------------------------------------------------------------------------
 
 struct Event {
+  bool no_cable_continuity;
+
   Event();
 };
 
@@ -145,6 +147,9 @@ public:
 class EventStore : public IStore<Event> {
 public:
   EventStore();
+
+  bool get_no_cable_continuity () const;
+  void set_no_cable_continuity (bool value);
 };
 
 struct DataDump {

@@ -88,6 +88,12 @@ struct igniter_transition {
 };
 static_assert(sizeof(igniter_transition) == 1);
 
+struct ext_connector_transition {
+    bool old_has_no_continuity;
+    bool new_has_no_continuity;
+};
+static_assert(sizeof(ext_connector_transition) == 2);
+
 namespace engine {
 
     enum ErrorKind {
@@ -121,6 +127,8 @@ namespace engine {
         
         LOG_EIN_P_ERROR,
         LOG_OIN_P_ERROR,
+
+        LOG_EXT_CONNECTOR,
 
         LOG_ERROR // Send an EngineErrorKind
     };
@@ -181,6 +189,8 @@ namespace lox {
         LOG_OTA1_P_ERROR,
         LOG_OTA2_P_ERROR,
         LOG_OTA3_P_ERROR,
+        
+        LOG_EXT_CONNECTOR,
 
         LOG_ERROR // Send a LoxErrorKind
     };

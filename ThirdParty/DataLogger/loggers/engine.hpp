@@ -56,6 +56,10 @@ public:
         this->writeRecord(engine::RecordType::LOG_IGNITER, &frame, sizeof(frame));
     }
 
+    void logExternalConnector (ext_connector_transition frame) {
+        this->writeRecord(engine::RecordType::LOG_EXT_CONNECTOR, &frame, sizeof(frame));
+    }
+
     void logError (engine::ErrorKind kind) {
         this->writeRecord(engine::RecordType::LOG_ERROR, &kind, sizeof(kind));
     }
