@@ -25,8 +25,8 @@ enum class EngineState : uint8_t {
   IgnitionBurnStartMo,    // open MO
 
   Burn,
-  BurnStopMo,             // close MO
   BurnStopMe,             // close ME
+  BurnStopMo,             // close MO
   WaitForPassivation,
 
   /* PASSIVATION SQ */ 

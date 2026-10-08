@@ -7,8 +7,10 @@
   X_FIELD (double, temperature_C __VA_OPT__(, ##__VA_ARGS__)) \
   X_FIELD (double, temperature_OIN __VA_OPT__(, ##__VA_ARGS__)) \
   X_FIELD (double, temperature_EIN __VA_OPT__(, ##__VA_ARGS__)) \
-  X_FIELD(double, temperature_OTA4 __VA_OPT__(, ##__VA_ARGS__)) \
-  X_FIELD(double, temperature_OTA5 __VA_OPT__(, ##__VA_ARGS__))
+  X_FIELD (double, temperature_OTA5 __VA_OPT__(, ##__VA_ARGS__)) \
+  X_FIELD (double, temperature_OTA6 __VA_OPT__(, ##__VA_ARGS__)) \
+  X_raw_FIELD (double, integral_pressure_C __VA_OPT__(, ##__VA_ARGS__)) \
+  X_raw_FIELD (double, total_engine_impuse __VA_OPT__(, ##__VA_ARGS__))
 #endif
 
 #ifndef X_PRC_SENSORS_STORE_LOX
@@ -20,7 +22,8 @@
   X_FIELD(double, pressure_HPO __VA_OPT__(, ##__VA_ARGS__)) \
   X_FIELD(double, temperature_OTA1 __VA_OPT__(, ##__VA_ARGS__)) \
   X_FIELD(double, temperature_OTA2 __VA_OPT__(, ##__VA_ARGS__)) \
-  X_FIELD(double, temperature_OTA3 __VA_OPT__(, ##__VA_ARGS__))
+  X_FIELD(double, temperature_OTA3 __VA_OPT__(, ##__VA_ARGS__)) \
+  X_FIELD(double, temperature_OTA4 __VA_OPT__(, ##__VA_ARGS__))
 #endif
 
 #ifndef X_PRC_SENSORS_STORE_ETH

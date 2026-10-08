@@ -14,6 +14,10 @@
 
 #include <cstdio>
 
+#include "Modules/Impulse/impulse_module.hpp"
+
+ImpulseModule<HAL_GetTick> impulse_module;
+
 namespace pi = prc_intranet;
 
 // ---------------------------------------------------------------------------
@@ -233,21 +237,27 @@ EngineState PrcEngineState::fromBurn(DataDump const &dump) {
   // comment above, this is a placeholder elapsed-time check only.
   // Compute total impulse
   // Check min / max time
-  if (HAL_GetTick() - state_entry_ms_ >= config::get().Burn.EngineMaxDurationMs) {
-    return EngineState::BurnStopMo;
-  }
-  return currentState;
-}
+  float total_impulse = prc::PrcStore::get_instance().propSensorsStoreEngine.get_total_engine_impuse();
 
-EngineState PrcEngineState::fromBurnStopMo(DataDump const &dump) {
-  if (AbortCmd(dump)) return EngineState::AbortInFlight;
-  if (HAL_GetTick() - state_entry_ms_ >= config::get().Burn.CutoffDelayMs) {
+  if (HAL_GetTick() - state_entry_ms_ >= config::get().Burn.MinDurationMs
+   && total_impulse >= config::get().Burn.Impulse) {
+    return EngineState::BurnStopMe;
+  }
+  if (HAL_GetTick() - state_entry_ms_ >= config::get().Burn.EngineMaxDurationMs) {
     return EngineState::BurnStopMe;
   }
   return currentState;
 }
 
 EngineState PrcEngineState::fromBurnStopMe(DataDump const &dump) {
+  if (AbortCmd(dump)) return EngineState::AbortInFlight;
+  if (HAL_GetTick() - state_entry_ms_ >= config::get().Burn.CutoffDelayMs) {
+    return EngineState::BurnStopMo;
+  }
+  return currentState;
+}
+
+EngineState PrcEngineState::fromBurnStopMo(DataDump const &dump) {
   if (AbortCmd(dump)) return EngineState::AbortInFlight;
   return EngineState::WaitForPassivation;
 }
@@ -396,8 +406,8 @@ void PrcEngineState::update(const DataDump &dump) {
     case EngineState::IgnitionBurnStartMe:    currentState = fromIgnitionBurnStartMe(dump); break;
     case EngineState::IgnitionBurnStartMo:    currentState = fromIgnitionBurnStartMo(dump); break;
     case EngineState::Burn:                   currentState = fromBurn(dump); break;
-    case EngineState::BurnStopMo:             currentState = fromBurnStopMo(dump); break;
     case EngineState::BurnStopMe:             currentState = fromBurnStopMe(dump); break;
+    case EngineState::BurnStopMo:             currentState = fromBurnStopMo(dump); break;
     case EngineState::WaitForPassivation:     currentState = fromWaitForPassivation(dump); break;
     case EngineState::PassivationSeparationDelay: currentState = fromPassivationSeparationDelay(dump); break;
     case EngineState::PassivationEth:         currentState = fromPassivationEth(dump); break;
@@ -435,8 +445,8 @@ std::string PrcEngineState::stateToString(EngineState state) {
     case EngineState::IgnitionBurnStartMe:  return "IGNITION_BURN_START_ME";
     case EngineState::IgnitionBurnStartMo:  return "IGNITION_BURN_START_MO";
     case EngineState::Burn:                 return "BURN";
-    case EngineState::BurnStopMo:           return "BURN_STOP_MO";
     case EngineState::BurnStopMe:           return "BURN_STOP_ME";
+    case EngineState::BurnStopMo:           return "BURN_STOP_MO";
     case EngineState::WaitForPassivation:   return "WAIT_FOR_PASSIVATION";
     case EngineState::PassivationSeparationDelay: return "PASSIVATION_SEPARATION_DELAY";
     case EngineState::PassivationEth:       return "PASSIVATION_ETH";
@@ -484,11 +494,11 @@ static void ApplyEngineValveActions(EngineState state, EngineState previous_stat
     case EngineState::IgnitionBurnStartMo:
       SetMo(true);
       break;
-    case EngineState::BurnStopMo:
-      SetMo(false);
-      break;
     case EngineState::BurnStopMe:
       SetMe(false);
+      break;
+    case EngineState::BurnStopMo:
+      SetMo(false);
       break;
     case EngineState::PassivationEth:
       SetMe(true);
@@ -556,6 +566,20 @@ void Prc_Engine_Fsm_Tick() {
   const EngineState new_state = fsm.getCurrentState();
 
   ApplyEngineValveActions(new_state, previous_state);
+  
+  /* Apply action to impulse module */
+  switch (new_state) {
+    case EngineState::ClearToIgnite:
+      impulse_module.preStart();
+      break ;
+    case EngineState::IgnitionBurnStartMo:
+      impulse_module.start();
+      break ;
+    case EngineState::WaitForPassivation:
+      impulse_module.stop();
+      break ;
+    default: break;
+  }
 
   // Separate manual bench sequence, runs in parallel with the real FSM
   // above -- see ColdflowSequence comment.

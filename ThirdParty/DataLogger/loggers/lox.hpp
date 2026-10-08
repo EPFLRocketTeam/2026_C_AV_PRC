@@ -61,6 +61,10 @@ public:
     void logLMT85Error (const lmt85::LMT85Error &error) {
         this->writeRecord(lox::RecordType::LOG_LMT85_ERROR, &error, sizeof(error));
     }
+    
+    void logExternalConnector (ext_connector_transition frame) {
+        this->writeRecord(lox::RecordType::LOG_EXT_CONNECTOR, &frame, sizeof(frame));
+    }
 
     void logError (lox::ErrorKind kind) {
         this->writeRecord(lox::RecordType::LOG_ERROR, &kind, sizeof(kind));

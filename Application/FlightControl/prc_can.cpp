@@ -2,7 +2,6 @@
 
 #include <cstdio>
 #include <cstring>
-
 #include "Application/Data/data.hpp"
 #include "Application/app_printf.h"
 #include "Application/app_timebase.h"
@@ -393,6 +392,8 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
       pi::send_config_crc_dpr_eth(&ctx, conf);
   }
 
+  Prc_Can_SendExternalConnector(prc::PrcStore::get_instance().eventStore.get_no_cable_continuity());
+
   if (role == BoardRole::EngineBay) {
     // MO/ME are the engine board's own on/off main valves (see
     // engine_state.cpp's k_valve_mo/k_valve_me), read back via
@@ -428,8 +429,8 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
     pi::send_prc_t_chamber(&ctx, t_chamber);
 
     pi::payload::dpr_lox_temps_ota temps_5_6{};
-    temps_5_6.t1 = static_cast<float>(sensors.get_temperature_OTA4_mean());
-    temps_5_6.t2 = static_cast<float>(sensors.get_temperature_OTA5_mean());
+    temps_5_6.ota5() = static_cast<float>(sensors.get_temperature_OTA5_mean());
+    temps_5_6.ota6() = static_cast<float>(sensors.get_temperature_OTA6_mean());
     pi::send_dpr_lox_temps_ota_5_6(&ctx, temps_5_6);
 
     return;
@@ -457,13 +458,13 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
     pi::send_dpr_lox_pressures(&ctx, pressures);
 
     pi::payload::dpr_lox_temps_ota temps_1_2{};
-    temps_1_2.t1 = static_cast<float>(sensors.get_temperature_OTA1_mean());
-    temps_1_2.t2 = static_cast<float>(sensors.get_temperature_OTA2_mean());
+    temps_1_2.ota1() = static_cast<float>(sensors.get_temperature_OTA1_mean());
+    temps_1_2.ota2() = static_cast<float>(sensors.get_temperature_OTA2_mean());
     pi::send_dpr_lox_temps_ota_1_2(&ctx, temps_1_2);
 
     pi::payload::dpr_lox_temps_ota temps_3_4{};
-    temps_3_4.t1 = static_cast<float>(sensors.get_temperature_OTA3_mean());
-    // temps_3_4.t2 = static_cast<float>(sensors.get_temperature_OTA4_mean());
+    temps_3_4.ota3() = static_cast<float>(sensors.get_temperature_OTA3_mean());
+    temps_3_4.ota4() = static_cast<float>(sensors.get_temperature_OTA4_mean());
     pi::send_dpr_lox_temps_ota_3_4(&ctx, temps_3_4);
   } else {
     pi::send_dpr_eth_state(&ctx, state);
@@ -517,4 +518,16 @@ void Prc_Log_Forward(FDCAN_HandleTypeDef *hfdcan, const uint8_t *data, uint32_t 
   log_aggregator::chunk_and_send(data, length, &ctx, SendLogChunk);
 
   in_progress = false;
+}
+
+void Prc_Can_SendExternalConnector (int has_no_continuity) {
+  pi::context& ctx = Ctx();
+  ctx.driver.driver_ptr = &hfdcan1;
+
+  const BoardRole role = CurrentRole();
+  if (role == BoardRole::EngineBay) {
+    pi::send_prc_publish_cable(&ctx, pi::payload::cable_info(has_no_continuity));
+  } else if (role == BoardRole::DprLox) {
+    pi::send_dpr_lox_publish_cable(&ctx, pi::payload::cable_info(has_no_continuity));
+  }
 }

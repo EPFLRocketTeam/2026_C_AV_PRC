@@ -63,6 +63,8 @@ void Prc_Log_Forward(FDCAN_HandleTypeDef *hfdcan, const uint8_t *data, uint32_t 
 // retyped to run the sequence again without looping on its own.
 uint8_t Prc_Can_TakeColdflowTrigger(void);
 
+void Prc_Can_SendExternalConnector (int has_no_continuity);
+
 #ifdef __cplusplus
 }
 #endif

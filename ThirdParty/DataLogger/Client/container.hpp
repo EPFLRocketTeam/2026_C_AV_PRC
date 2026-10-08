@@ -13,6 +13,7 @@
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_EIN_T_FRAME,         temperature_frame,          "prc/engine/sensors/EIN-T.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_OIN_P_FRAME,         pressures_frame,            "prc/engine/sensors/OIN-P.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_OIN_T_FRAME,         temperature_frame,          "prc/engine/sensors/OIN-T.csv") \
+    X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_EXT_CONNECTOR,       ext_connector_transition,   "prc/engine/sensors/EXT-CONN.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_MAIN_LOX_TRANSITION, valve_transition,           "prc/engine/actuators/MO.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_MAIN_ETH_TRANSITION, valve_transition,           "prc/engine/actuators/ME.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_IGNITER,             igniter_transition,         "prc/engine/actuators/Igniter.csv") \
@@ -30,6 +31,7 @@
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_HPO_FRAME,         pressures_frame,            "prc/lox/sensors/HPO.csv") \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_OTA_P_FRAME,       lox::OtaPressureFrame,      "prc/lox/sensors/OTA-P.csv") \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_OTA_T_FRAME,       lox::OtaTemperatureFrame,   "prc/lox/sensors/OTA-T.csv") \
+    X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_EXT_CONNECTOR,     ext_connector_transition,   "prc/lox/sensors/EXT-CONN.csv") \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_VENT_TRANSITION,   valve_transition,           "prc/lox/actuators/VentLox.csv") \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_SAFETY_TRANSITION, valve_transition,           "prc/lox/actuators/SafetyLox.csv") \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_BALL_TRANSITION,   ball_valve_transition,      "prc/lox/actuators/BallValveLox.csv") \
