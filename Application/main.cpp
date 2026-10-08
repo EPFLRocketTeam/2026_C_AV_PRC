@@ -433,6 +433,10 @@ void main_tick() {
 
 		const bool ok = (status == Drivers::LMT85::LMT85Status::Ok);
 		const lmt85::LMT85Error error { status, frame };
+		
+		if (ok) {
+			RUN_EVERY(1000) app_printf("[LMT85] temperature = %f\n", frame.temperature);
+		}
 
 		switch (prc::PrcStore::get_instance().boardIdentityStore.get_role()) {
 			case prc::BoardRole::EngineBay:
