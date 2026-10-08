@@ -16,8 +16,8 @@ static const char* EIN_NAME = "ein";
 static const char* TEIN_NAME = "t_ein";
 static const char* TOIN_NAME = "t_oin";
 
-static const char* OTA4_NAME = "ota4";
 static const char* OTA5_NAME = "ota5";
+static const char* OTA6_NAME = "ota6";
 
-inline constexpr float OTA_RREF_OHMS4 = 968.0f;
-inline constexpr float OTA_RREF_OHMS5 = 952.0f;
+inline constexpr float OTA_RREF_OHMS5 = 968.0f;
+inline constexpr float OTA_RREF_OHMS6 = 952.0f;

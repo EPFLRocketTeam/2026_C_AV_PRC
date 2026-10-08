@@ -48,8 +48,8 @@ static OxidizerInModule oin;         // P-OIN     (B3 Sensor Plate, Kulite/Sensa
 static EthanolInModule ein;          // P-EIN     (B3 Sensor Plate, Sensata PTE7300)
 static TemperatureOinModule t_oin;   // T-OIN     (Lox Injector, PT1000)
 static TemperatureEinModule t_ein;   // T-EIN     (B3 Sensor Plate, PT1000)
-static TemperatureOtaSensorModule4 t_ota4;   // T-OTA4       (Lox Tank, PT1000)
 static TemperatureOtaSensorModule5 t_ota5;   // T-OTA5       (Lox Tank, PT1000)
+static TemperatureOtaSensorModule6 t_ota6;   // T-OTA6       (Lox Tank, PT1000)
 extern ImpulseModule<HAL_GetTick> impulse_module;
 
 // ── Pressurant bay 1 (Fat Bay, PRC-Lox) ─────────────────────────────────
@@ -58,6 +58,7 @@ static PressureHpoSensorModule pressure_hpo; // P-HPO        (COPV 1, Sensata PT
 static TemperatureOtaSensorModule1 t_ota1;   // T-OTA1       (Lox Tank, PT1000)
 static TemperatureOtaSensorModule2 t_ota2;   // T-OTA2       (Lox Tank, PT1000)
 static TemperatureOtaSensorModule3 t_ota3;   // T-OTA3       (Lox Tank, PT1000)
+static TemperatureOtaSensorModule4 t_ota4;   // T-OTA4       (Lox Tank, PT1000)
 
 // ── Pressurant bay 2 (Skinny Bay, PRC-ETH) ──────────────────────────────
 static PressureEtaSensorModule eta_module;   // P-ETA{1,2,3} (Eth Tank Ullage, Sensata PTE7300)
@@ -170,11 +171,11 @@ void prc::PropSensorsStoreLox::set_temperature_OTA3_mean(double temperature_OTA3
 	data_.temperature_OTA3_mean = temperature_OTA3_mean;
 	RUN_EVERY(1000) app_printf("t_OTA3_mean=%lf\r\n", temperature_OTA3_mean);
 }
-void prc::PropSensorsStoreEngine::set_temperature_OTA4(double temperature_OTA4) {
+void prc::PropSensorsStoreLox::set_temperature_OTA4(double temperature_OTA4) {
 	data_.temperature_OTA4 = temperature_OTA4;
-	// 	app_printf("t_OTA4=%lf\r\n", temperature_OTA4);
+	// 	app_printf("t_OTA3=%lf\r\n", temperature_OTA3);
 }
-void prc::PropSensorsStoreEngine::set_temperature_OTA4_mean(double temperature_OTA4_mean) {
+void prc::PropSensorsStoreLox::set_temperature_OTA4_mean(double temperature_OTA4_mean) {
 	data_.temperature_OTA4_mean = temperature_OTA4_mean;
 	RUN_EVERY(1000) app_printf("t_OTA4_mean=%lf\r\n", temperature_OTA4_mean);
 }
@@ -186,6 +187,14 @@ void prc::PropSensorsStoreEngine::set_temperature_OTA5(double temperature_OTA5) 
 void prc::PropSensorsStoreEngine::set_temperature_OTA5_mean(double temperature_OTA5_mean) {
 	data_.temperature_OTA5_mean = temperature_OTA5_mean;
 	RUN_EVERY(1000) app_printf("t_OTA5_mean=%lf\r\n", temperature_OTA5_mean);
+}
+void prc::PropSensorsStoreEngine::set_temperature_OTA6(double temperature_OTA6) {
+	data_.temperature_OTA6 = temperature_OTA6;
+	// 	app_printf("t_OTA4=%lf\r\n", temperature_OTA4);
+}
+void prc::PropSensorsStoreEngine::set_temperature_OTA6_mean(double temperature_OTA6_mean) {
+	data_.temperature_OTA6_mean = temperature_OTA6_mean;
+	RUN_EVERY(1000) app_printf("t_OTA4_mean=%lf\r\n", temperature_OTA6_mean);
 }
 // ---------------------------------------------------------------------------
 // Pressurant bay 2 (Eth) setters
@@ -357,8 +366,8 @@ void main_init() {
 			ein.init();
 			t_oin.init();
 			t_ein.init();
-			t_ota4.init();
 			t_ota5.init();
+			t_ota6.init();
 			break ;
 		case prc::BoardRole::DprLox:
 			ota_module.init();
@@ -366,6 +375,7 @@ void main_init() {
 			t_ota1.init();
 			t_ota2.init();
 			t_ota3.init();
+			t_ota4.init();
 			break ;
 		case prc::BoardRole::DprEth:
 			eta_module.init();
@@ -392,16 +402,17 @@ void main_tick() {
 			ein.tick();
 			t_oin.tick();
 			t_ein.tick();
-			t_ota4.tick();
 			t_ota5.tick();
+			t_ota6.tick();
 			break;
 
 		case prc::BoardRole::DprLox:
 			ota_module.tick();
 			pressure_hpo.tick();
-			// t_ota1.tick();
+			t_ota1.tick();
 			t_ota2.tick();
 			t_ota3.tick();
+			t_ota4.tick();
    			break;
 
 		case prc::BoardRole::DprEth:
