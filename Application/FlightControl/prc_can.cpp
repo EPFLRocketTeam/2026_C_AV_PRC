@@ -466,6 +466,10 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
     temps_3_4.ota3() = static_cast<float>(sensors.get_temperature_OTA3_mean());
     temps_3_4.ota4() = static_cast<float>(sensors.get_temperature_OTA4_mean());
     pi::send_dpr_lox_temps_ota_3_4(&ctx, temps_3_4);
+
+    pi::payload::ball_valve_position bv_state{};
+    bv_state.percent_open = prc::PrcStore::get_instance().valvesStore.get_ball_valve_lox();
+    pi::send_dpr_lox_bv_state(&ctx, bv_state);
   } else {
     pi::send_dpr_eth_state(&ctx, state);
 
@@ -475,6 +479,10 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
     pressures.p_eta = static_cast<float>(sensors.get_pressure_ETA_mean());
     pressures.p_hpe = static_cast<float>(sensors.get_pressure_HPE_mean());
     pi::send_dpr_eth_pressures(&ctx, pressures);
+    
+    pi::payload::ball_valve_position bv_state{};
+    bv_state.percent_open = prc::PrcStore::get_instance().valvesStore.get_ball_valve_fuel();
+    pi::send_dpr_eth_bv_state(&ctx, bv_state);
   }
 }
 
