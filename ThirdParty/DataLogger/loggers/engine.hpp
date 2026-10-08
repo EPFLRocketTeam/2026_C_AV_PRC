@@ -56,6 +56,13 @@ public:
         this->writeRecord(engine::RecordType::LOG_IGNITER, &frame, sizeof(frame));
     }
 
+    void logLMT85Frame (double temperature_c) {
+        this->writeRecord(engine::RecordType::LOG_LMT85_FRAME, &temperature_c, sizeof(temperature_c));
+    }
+    void logLMT85Error (const lmt85::LMT85Error &error) {
+        this->writeRecord(engine::RecordType::LOG_LMT85_ERROR, &error, sizeof(error));
+    }
+    
     void logExternalConnector (ext_connector_transition frame) {
         this->writeRecord(engine::RecordType::LOG_EXT_CONNECTOR, &frame, sizeof(frame));
     }

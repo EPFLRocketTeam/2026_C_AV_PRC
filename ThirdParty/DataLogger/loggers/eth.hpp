@@ -48,6 +48,13 @@ public:
         this->writeRecord(eth::RecordType::LOG_BALL_TRANSITION, &frame, sizeof(frame));
     }
 
+    void logLMT85Frame (double temperature_c) {
+        this->writeRecord(eth::RecordType::LOG_LMT85_FRAME, &temperature_c, sizeof(temperature_c));
+    }
+    void logLMT85Error (const lmt85::LMT85Error &error) {
+        this->writeRecord(eth::RecordType::LOG_LMT85_ERROR, &error, sizeof(error));
+    }
+
     void logError (eth::ErrorKind kind) {
         this->writeRecord(eth::RecordType::LOG_ERROR, &kind, sizeof(kind));
     }
