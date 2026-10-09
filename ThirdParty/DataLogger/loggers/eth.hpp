@@ -48,6 +48,11 @@ public:
         this->writeRecord(eth::RecordType::LOG_BALL_TRANSITION, &frame, sizeof(frame));
     }
 
+
+    void logExternalConnector (ext_connector_transition frame) {
+        this->writeRecord(eth::RecordType::LOG_EXT_CONNECTOR, &frame, sizeof(frame));
+    }
+
     void logLMT85Frame (double temperature_c) {
         this->writeRecord(eth::RecordType::LOG_LMT85_FRAME, &temperature_c, sizeof(temperature_c));
     }

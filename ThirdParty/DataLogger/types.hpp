@@ -128,8 +128,6 @@ namespace engine {
         
         LOG_EIN_P_ERROR,
         LOG_OIN_P_ERROR,
-
-        LOG_EXT_CONNECTOR,
       
         LOG_ERROR, // Send an EngineErrorKind
 
@@ -244,6 +242,8 @@ namespace eth {
         LOG_ETA2_P_ERROR,
         LOG_ETA3_P_ERROR,
         
+        LOG_EXT_CONNECTOR,
+
         LOG_ERROR, // Send a LoxErrorKind
 
         LOG_LMT85_FRAME, // double, temperature in degC

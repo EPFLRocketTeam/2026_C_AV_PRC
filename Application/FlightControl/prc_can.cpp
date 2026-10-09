@@ -533,8 +533,8 @@ void Prc_Can_SendExternalConnector (int has_no_continuity) {
   ctx.driver.driver_ptr = &hfdcan1;
 
   const BoardRole role = CurrentRole();
-  if (role == BoardRole::EngineBay) {
-    pi::send_prc_publish_cable(&ctx, pi::payload::cable_info(has_no_continuity));
+  if (role == BoardRole::DprEth) {
+    pi::send_dpr_eth_publish_cable(&ctx, pi::payload::cable_info(has_no_continuity));
   } else if (role == BoardRole::DprLox) {
     pi::send_dpr_lox_publish_cable(&ctx, pi::payload::cable_info(has_no_continuity));
   }
