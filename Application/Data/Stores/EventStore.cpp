@@ -2,7 +2,7 @@
 
 using namespace prc;
 
-Event::Event() {}
+Event::Event() : no_cable_continuity(false) {}
 
 EventStore::EventStore() {}
 
