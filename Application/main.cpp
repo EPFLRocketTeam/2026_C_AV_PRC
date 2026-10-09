@@ -270,8 +270,8 @@ bool read_external_connector () {
 }
 void set_external_connector (bool old_has_no_continuity, bool new_has_no_continuity) {
 	switch (prc::PrcStore::get_instance().boardIdentityStore.get_role()) {
-		case prc::BoardRole::EngineBay:
-			engineLogger.logExternalConnector({
+		case prc::BoardRole::DprEth:
+			ethLogger.logExternalConnector({
 				.old_has_no_continuity = old_has_no_continuity,
 				.new_has_no_continuity = new_has_no_continuity
 			});
@@ -447,7 +447,6 @@ void main_tick() {
 
 	switch (prc::PrcStore::get_instance().boardIdentityStore.get_role()) {
 		case prc::BoardRole::EngineBay:
-			external_connector_module.tick();
 			chamber.tick();
 			oin.tick();
 			ein.tick();
@@ -468,6 +467,7 @@ void main_tick() {
    			break;
 
 		case prc::BoardRole::DprEth:
+			external_connector_module.tick();
 			eta_module.tick();
 			pressure_hpe.tick();
 			break;

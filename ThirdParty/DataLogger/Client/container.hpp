@@ -13,7 +13,6 @@
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_EIN_T_FRAME,         temperature_frame,          "prc/engine/sensors/EIN-T.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_OIN_P_FRAME,         pressures_frame,            "prc/engine/sensors/OIN-P.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_OIN_T_FRAME,         temperature_frame,          "prc/engine/sensors/OIN-T.csv") \
-    X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_EXT_CONNECTOR,       ext_connector_transition,   "prc/engine/sensors/EXT-CONN.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_MAIN_LOX_TRANSITION, valve_transition,           "prc/engine/actuators/MO.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_MAIN_ETH_TRANSITION, valve_transition,           "prc/engine/actuators/ME.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_IGNITER,             igniter_transition,         "prc/engine/actuators/Igniter.csv") \
@@ -48,6 +47,7 @@
     X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_FSM_TRANSITION,    dpr_fsm_transition,         "prc/eth/FsmTransitions.csv") \
     X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_HPE_FRAME,         pressures_frame,            "prc/eth/sensors/HPE.csv") \
     X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_ETA_P_FRAME,       eth::EtaPressureFrame,      "prc/eth/sensors/ETA.csv") \
+    X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_EXT_CONNECTOR,     ext_connector_transition,   "prc/eth/sensors/EXT-CONN.csv") \
     X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_VENT_TRANSITION,   valve_transition,           "prc/eth/actuators/VentEth.csv") \
     X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_SAFETY_TRANSITION, valve_transition,           "prc/eth/actuators/SafetyEth.csv") \
     X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_BALL_TRANSITION,   ball_valve_transition,      "prc/eth/actuators/BallValveEth.csv") \
