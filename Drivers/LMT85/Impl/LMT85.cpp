@@ -9,7 +9,10 @@ LMT85Driver::LMT85Driver(Config config)
     : config_(config) {}
 
 bool LMT85Driver::init() {
-    return config_.hadc != nullptr;
+    if (config_.hadc == nullptr) {
+        return false;
+    }
+    return HAL_ADCEx_Calibration_Start(config_.hadc, ADC_CALIB_OFFSET_LINEARITY, ADC_SINGLE_ENDED) == HAL_OK;
 }
 
 namespace {
@@ -28,14 +31,19 @@ constexpr uint32_t kSamplingTime = ADC_SAMPLETIME_64CYCLES_5;
 // alone fixes. If 128 samples doesn't help much either, this confirms it's
 // a hardware issue, not a firmware one.
 constexpr int      kNumSamples   = 128;
+
+constexpr float kMinValidMv = 250.0f;
+constexpr float kMaxValidMv = 2100.0f;
 } // namespace
 
-bool LMT85Driver::read(LMT85Data& out) {
-    out.valid   = false;
-    out.raw_adc = 0;
+LMT85Status LMT85Driver::read(LMT85Data& out) {
+    out.voltage_mv  = 0.0f;
+    out.temperature = 0.0f;
+    out.raw_adc     = 0;
+    out.valid       = false;
 
     if (config_.hadc == nullptr) {
-        return false;
+        return LMT85Status::HadcNullptr;
     }
 
     // Point the ADC's regular rank-1 channel at this sensor before
@@ -51,18 +59,18 @@ bool LMT85Driver::read(LMT85Data& out) {
     sConfig.OffsetSignedSaturation = DISABLE;
 
     if (HAL_ADC_ConfigChannel(config_.hadc, &sConfig) != HAL_OK) {
-        return false;
+        return LMT85Status::ConfigFailed;
     }
 
     uint32_t sum = 0;
     for (int i = 0; i < kNumSamples; ++i) {
         if (HAL_ADC_Start(config_.hadc) != HAL_OK) {
-            return false;
+            return LMT85Status::StartFailed;
         }
 
         if (HAL_ADC_PollForConversion(config_.hadc, 100) != HAL_OK) {
             HAL_ADC_Stop(config_.hadc);
-            return false;
+            return LMT85Status::PollFailed;
         }
 
         sum += HAL_ADC_GetValue(config_.hadc);
@@ -73,9 +81,13 @@ bool LMT85Driver::read(LMT85Data& out) {
 
     out.voltage_mv  = calculate_voltage_mv(out.raw_adc);
     out.temperature = calculate_temperature(out.voltage_mv);
-    out.valid       = true;
 
-    return out.valid;
+    if (out.voltage_mv < kMinValidMv || out.voltage_mv > kMaxValidMv) {
+        return LMT85Status::OutOfRange;
+    }
+
+    out.valid = true;
+    return LMT85Status::Ok;
 }
 
 float LMT85Driver::calculate_voltage_mv(uint32_t raw_adc) const {

@@ -6,6 +6,7 @@
 #include "Modules/Sensors/impl/std/multi.hpp"
 #include "Drivers/Plume/types.hpp"
 #include "Drivers/SensataPte7300/Types.hpp"
+#include "Drivers/LMT85/Types.hpp"
 
 constexpr uint8_t ENGINE_LOGGER_MAGIC = 0xA4;
 constexpr uint8_t LOX_LOGGER_MAGIC = 0xC1;
@@ -88,6 +89,12 @@ struct igniter_transition {
 };
 static_assert(sizeof(igniter_transition) == 1);
 
+struct ext_connector_transition {
+    bool old_has_no_continuity;
+    bool new_has_no_continuity;
+};
+static_assert(sizeof(ext_connector_transition) == 2);
+
 namespace engine {
 
     enum ErrorKind {
@@ -122,7 +129,12 @@ namespace engine {
         LOG_EIN_P_ERROR,
         LOG_OIN_P_ERROR,
 
-        LOG_ERROR // Send an EngineErrorKind
+        LOG_EXT_CONNECTOR,
+      
+        LOG_ERROR, // Send an EngineErrorKind
+
+        LOG_LMT85_FRAME, // double, temperature in degC
+        LOG_LMT85_ERROR  // lmt85::LMT85Error
     };
 };
 
@@ -181,8 +193,13 @@ namespace lox {
         LOG_OTA1_P_ERROR,
         LOG_OTA2_P_ERROR,
         LOG_OTA3_P_ERROR,
+        
+        LOG_EXT_CONNECTOR,
 
-        LOG_ERROR // Send a LoxErrorKind
+        LOG_ERROR, // Send a LoxErrorKind
+
+        LOG_LMT85_FRAME, // double, temperature in degC
+        LOG_LMT85_ERROR  // lmt85::LMT85Error
     };
 
 }; // namespace lox;
@@ -227,6 +244,9 @@ namespace eth {
         LOG_ETA2_P_ERROR,
         LOG_ETA3_P_ERROR,
         
-        LOG_ERROR // Send a LoxErrorKind
+        LOG_ERROR, // Send a LoxErrorKind
+
+        LOG_LMT85_FRAME, // double, temperature in degC
+        LOG_LMT85_ERROR  // lmt85::LMT85Error
     };
 };

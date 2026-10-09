@@ -81,6 +81,8 @@ static_assert(sizeof(IntranetCmd) == 4);
 // ---------------------------------------------------------------------------
 
 struct Event {
+  bool no_cable_continuity;
+
   Event();
 };
 
@@ -145,6 +147,9 @@ public:
 class EventStore : public IStore<Event> {
 public:
   EventStore();
+
+  bool get_no_cable_continuity () const;
+  void set_no_cable_continuity (bool value);
 };
 
 struct DataDump {
@@ -170,7 +175,7 @@ static_assert(offsetof(DataDump, boardIdentity) == 12);
 static_assert(offsetof(DataDump, valves) == 16);
 static_assert(offsetof(DataDump, intranetCmd) == 32);
 static_assert(offsetof(DataDump, event) == 36);
-static_assert(sizeof(DataDump) == 40 + 112 + 96 + 48 + 16);
+static_assert(sizeof(DataDump) == 40 + 112 + 96 + 48 + 16 + 16 + 16);
 
 // Aggregating singleton — mirrors flight_computer::GOATStore.
 class PrcStore {

@@ -13,6 +13,7 @@
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_EIN_T_FRAME,         temperature_frame,          "prc/engine/sensors/EIN-T.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_OIN_P_FRAME,         pressures_frame,            "prc/engine/sensors/OIN-P.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_OIN_T_FRAME,         temperature_frame,          "prc/engine/sensors/OIN-T.csv") \
+    X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_EXT_CONNECTOR,       ext_connector_transition,   "prc/engine/sensors/EXT-CONN.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_MAIN_LOX_TRANSITION, valve_transition,           "prc/engine/actuators/MO.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_MAIN_ETH_TRANSITION, valve_transition,           "prc/engine/actuators/ME.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_IGNITER,             igniter_transition,         "prc/engine/actuators/Igniter.csv") \
@@ -20,6 +21,8 @@
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_EIN_P_ERROR,         sensata::SensataError,      "prc/engine/Errors/EIN-P.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_OIN_P_ERROR,         sensata::SensataError,      "prc/engine/Errors/OIN-P.csv") \
     X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_ERROR,               engine::ErrorKind,          "prc/engine/Errors.csv") \
+    X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_LMT85_FRAME,         double,                     "prc/engine/sensors/BoardTemperature.csv") \
+    X_CHANNEL(ENGINE_LOGGER_MAGIC, engine, LOG_LMT85_ERROR,         lmt85::LMT85Error,          "prc/engine/Errors/BoardTemperature.csv") \
     \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_HEALTH,            StorageHealth,              "prc/lox/StorageHealth.csv") \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_DATA_DUMP,         prc::DataDump,              "prc/lox/DataDump.csv") \
@@ -28,6 +31,7 @@
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_HPO_FRAME,         pressures_frame,            "prc/lox/sensors/HPO.csv") \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_OTA_P_FRAME,       lox::OtaPressureFrame,      "prc/lox/sensors/OTA-P.csv") \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_OTA_T_FRAME,       lox::OtaTemperatureFrame,   "prc/lox/sensors/OTA-T.csv") \
+    X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_EXT_CONNECTOR,     ext_connector_transition,   "prc/lox/sensors/EXT-CONN.csv") \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_VENT_TRANSITION,   valve_transition,           "prc/lox/actuators/VentLox.csv") \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_SAFETY_TRANSITION, valve_transition,           "prc/lox/actuators/SafetyLox.csv") \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_BALL_TRANSITION,   ball_valve_transition,      "prc/lox/actuators/BallValveLox.csv") \
@@ -36,6 +40,8 @@
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_OTA2_P_ERROR,      sensata::SensataError,      "prc/lox/errors/OTA2-P.csv") \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_OTA3_P_ERROR,      sensata::SensataError,      "prc/lox/errors/OTA3-P.csv") \
     X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_ERROR,             lox::ErrorKind,             "prc/lox/Errors.csv") \
+    X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_LMT85_FRAME,       double,                     "prc/lox/sensors/BoardTemperature.csv") \
+    X_CHANNEL(LOX_LOGGER_MAGIC, lox, LOG_LMT85_ERROR,       lmt85::LMT85Error,          "prc/lox/errors/BoardTemperature.csv") \
     \
     X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_HEALTH,            StorageHealth,              "prc/eth/StorageHealth.csv") \
     X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_DATA_DUMP,         prc::DataDump,              "prc/eth/DataDump.csv") \
@@ -49,7 +55,9 @@
     X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_ETA1_P_ERROR,      sensata::SensataError,      "prc/eth/errors/ETA1-P.csv") \
     X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_ETA2_P_ERROR,      sensata::SensataError,      "prc/eth/errors/ETA2-P.csv") \
     X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_ETA3_P_ERROR,      sensata::SensataError,      "prc/eth/errors/ETA3-P.csv") \
-    X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_ERROR,             eth::ErrorKind,             "prc/eth/Errors.csv")
+    X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_ERROR,             eth::ErrorKind,             "prc/eth/Errors.csv") \
+    X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_LMT85_FRAME,       double,                     "prc/eth/sensors/BoardTemperature.csv") \
+    X_CHANNEL(ETH_LOGGER_MAGIC, eth, LOG_LMT85_ERROR,       lmt85::LMT85Error,          "prc/eth/errors/BoardTemperature.csv")
 
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)

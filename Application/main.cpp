@@ -2,6 +2,7 @@ extern "C" {
 #include "main_app.h"
 }
 
+#include "Core/Inc/main.h"
 #include "stm32h7xx_hal.h"
 
 extern "C" FDCAN_HandleTypeDef hfdcan1;
@@ -25,13 +26,16 @@ extern "C" FDCAN_HandleTypeDef hfdcan1;
 #include "Modules/Sensors/impl/engine/oin.hpp"
 #include "Modules/Sensors/impl/engine/ein.hpp"
 #include "Modules/Sensors/impl/engine/temperature_ota.hpp"
+#include "Modules/Impulse/impulse_module.hpp"
 
+#include "Drivers/LMT85/LMT85.hpp"
 #include "Drivers/Valve/ValveList.hpp"
 #include "Drivers/SensataPte7300/SensataPte7300HardwareTest.hpp"
 // #include "../Drivers/Valve/valve_manual_test.hpp"
 
 #include "Application/FlightControl/prc_fsm_c_api.h"
 #include "../../Application/FlightControl/prc_can.hpp"
+#include "Modules/ExtConn/external_connector.hpp"
 
 // ---------------------------------------------------------------------------
 // One sensor module instance per row of the sensor table (see project docs:
@@ -47,8 +51,9 @@ static OxidizerInModule oin;         // P-OIN     (B3 Sensor Plate, Kulite/Sensa
 static EthanolInModule ein;          // P-EIN     (B3 Sensor Plate, Sensata PTE7300)
 static TemperatureOinModule t_oin;   // T-OIN     (Lox Injector, PT1000)
 static TemperatureEinModule t_ein;   // T-EIN     (B3 Sensor Plate, PT1000)
-static TemperatureOtaSensorModule4 t_ota4;   // T-OTA4       (Lox Tank, PT1000)
 static TemperatureOtaSensorModule5 t_ota5;   // T-OTA5       (Lox Tank, PT1000)
+static TemperatureOtaSensorModule6 t_ota6;   // T-OTA6       (Lox Tank, PT1000)
+extern ImpulseModule<HAL_GetTick> impulse_module;
 
 // ── Pressurant bay 1 (Fat Bay, PRC-Lox) ─────────────────────────────────
 static PressureOtaSensorModule ota_module;   // P-OTA{1,2,3} (Lox Tank Ullage, Sensata PTE7300)
@@ -56,10 +61,22 @@ static PressureHpoSensorModule pressure_hpo; // P-HPO        (COPV 1, Sensata PT
 static TemperatureOtaSensorModule1 t_ota1;   // T-OTA1       (Lox Tank, PT1000)
 static TemperatureOtaSensorModule2 t_ota2;   // T-OTA2       (Lox Tank, PT1000)
 static TemperatureOtaSensorModule3 t_ota3;   // T-OTA3       (Lox Tank, PT1000)
+static TemperatureOtaSensorModule4 t_ota4;   // T-OTA4       (Lox Tank, PT1000)
 
 // ── Pressurant bay 2 (Skinny Bay, PRC-ETH) ──────────────────────────────
 static PressureEtaSensorModule eta_module;   // P-ETA{1,2,3} (Eth Tank Ullage, Sensata PTE7300)
 static PressureHpeSensorModule pressure_hpe; // P-HPE        (COPV 2, Sensata PTE7300)
+
+// ── Board temperature (LMT85, PB1 / ADC1 CH5) ────────────────────────────
+static constexpr uint32_t kBoardTempPeriodMs = 1000; // 1 Hz
+extern "C" ADC_HandleTypeDef hadc1;
+static Drivers::LMT85::LMT85Driver board_temp({
+	.hadc        = &hadc1,
+	.adc_channel = ADC_CHANNEL_5,
+	.adc_max     = 65535, // 16-bit ADC on STM32H7
+	.adc_vref_mv = 3300.0f,
+});
+static bool board_temp_ready = false;
 
 // ---------------------------------------------------------------------------
 // Engine bay setters
@@ -67,10 +84,12 @@ static PressureHpeSensorModule pressure_hpe; // P-HPE        (COPV 2, Sensata PT
 
 void prc::PropSensorsStoreEngine::set_pressure_C(double pressure_C) {
 	data_.pressure_C = pressure_C;
+	impulse_module.ingestChamberPressure(pressure_C);
 	// 	app_printf("p_C=%lf\r\n", pressure_C);
 }
 void prc::PropSensorsStoreEngine::set_pressure_C_mean(double pressure_C_mean) {
 	data_.pressure_C_mean = pressure_C_mean;
+	impulse_module.ingestChamberPressureMean(pressure_C_mean);
 	RUN_EVERY(1000) app_printf("p_C_mean=%lf\r\n", pressure_C_mean);
 }
 void prc::PropSensorsStoreEngine::set_temperature_C(double temperature_C) {
@@ -166,11 +185,11 @@ void prc::PropSensorsStoreLox::set_temperature_OTA3_mean(double temperature_OTA3
 	data_.temperature_OTA3_mean = temperature_OTA3_mean;
 	RUN_EVERY(1000) app_printf("t_OTA3_mean=%lf\r\n", temperature_OTA3_mean);
 }
-void prc::PropSensorsStoreEngine::set_temperature_OTA4(double temperature_OTA4) {
+void prc::PropSensorsStoreLox::set_temperature_OTA4(double temperature_OTA4) {
 	data_.temperature_OTA4 = temperature_OTA4;
-	// 	app_printf("t_OTA4=%lf\r\n", temperature_OTA4);
+	// 	app_printf("t_OTA3=%lf\r\n", temperature_OTA3);
 }
-void prc::PropSensorsStoreEngine::set_temperature_OTA4_mean(double temperature_OTA4_mean) {
+void prc::PropSensorsStoreLox::set_temperature_OTA4_mean(double temperature_OTA4_mean) {
 	data_.temperature_OTA4_mean = temperature_OTA4_mean;
 	RUN_EVERY(1000) app_printf("t_OTA4_mean=%lf\r\n", temperature_OTA4_mean);
 }
@@ -182,6 +201,14 @@ void prc::PropSensorsStoreEngine::set_temperature_OTA5(double temperature_OTA5) 
 void prc::PropSensorsStoreEngine::set_temperature_OTA5_mean(double temperature_OTA5_mean) {
 	data_.temperature_OTA5_mean = temperature_OTA5_mean;
 	RUN_EVERY(1000) app_printf("t_OTA5_mean=%lf\r\n", temperature_OTA5_mean);
+}
+void prc::PropSensorsStoreEngine::set_temperature_OTA6(double temperature_OTA6) {
+	data_.temperature_OTA6 = temperature_OTA6;
+	// 	app_printf("t_OTA4=%lf\r\n", temperature_OTA4);
+}
+void prc::PropSensorsStoreEngine::set_temperature_OTA6_mean(double temperature_OTA6_mean) {
+	data_.temperature_OTA6_mean = temperature_OTA6_mean;
+	RUN_EVERY(1000) app_printf("t_OTA4_mean=%lf\r\n", temperature_OTA6_mean);
 }
 // ---------------------------------------------------------------------------
 // Pressurant bay 2 (Eth) setters
@@ -237,6 +264,40 @@ LoxDataLogger<PlumeStorage>& getLoxLogger() { return loxLogger; }
 const char* open_to_string (bool open) {
 	return open ? "open" : "close";
 }
+
+bool read_external_connector () {
+	return HAL_GPIO_ReadPin(LIFTOFF_GPIO_Port, LIFTOFF_Pin) == GPIO_PIN_RESET;
+}
+void set_external_connector (bool old_has_no_continuity, bool new_has_no_continuity) {
+	switch (prc::PrcStore::get_instance().boardIdentityStore.get_role()) {
+		case prc::BoardRole::EngineBay:
+			engineLogger.logExternalConnector({
+				.old_has_no_continuity = old_has_no_continuity,
+				.new_has_no_continuity = new_has_no_continuity
+			});
+			break ;
+		case prc::BoardRole::DprLox:
+			loxLogger.logExternalConnector({
+				.old_has_no_continuity = old_has_no_continuity,
+				.new_has_no_continuity = new_has_no_continuity
+			});
+			break ;
+		default:
+			break ;
+	}
+
+	prc::PrcStore::get_instance().eventStore.set_no_cable_continuity(new_has_no_continuity);
+}
+void publish_external_connector (bool old_has_no_continuity, bool new_has_no_continuity) {
+	app_printf("[EXT-CONN] State changed %u -> %u\n", old_has_no_continuity, new_has_no_continuity);
+	Prc_Can_SendExternalConnector(new_has_no_continuity);
+}
+
+static ExternalConnectorModule<
+	read_external_connector,
+	set_external_connector,
+	publish_external_connector
+> external_connector_module;
 
 // Engine
 void valves_callbacks::onChange_MO (bool old_open, bool new_open) {
@@ -300,13 +361,15 @@ void main_init() {
 	Prc_Fsm_Init();  /* latches board role from ENG_SETUP/ETH_SETUP/LOX_SETUP straps, see Drivers/PrcBoardId/PrcBoardId.hpp, also calls Valve_InitAll() */
 	Prc_Can_ConfigNodeFilter(&hfdcan1);  /* now that role is latched, accept this board's own DPR node ID, see Application/FlightControl/prc_can.cpp */
 
-
 	for (int i = 0; i < 10; i ++) {
 		app_printf("Booting on PRC, %d seconds remain.\n", 10 - i);
 		HAL_Delay(1000);
 	}
 
 	app_timebase_init();
+
+	board_temp_ready = board_temp.init();
+	if (!board_temp_ready) app_printf("Could not init the LMT85 board temperature sensor.\n");
 
 	app_printf("Try to create SD card...\n");
 
@@ -353,8 +416,8 @@ void main_init() {
 			ein.init();
 			t_oin.init();
 			t_ein.init();
-			t_ota4.init();
 			t_ota5.init();
+			t_ota6.init();
 			break ;
 		case prc::BoardRole::DprLox:
 			ota_module.init();
@@ -362,6 +425,7 @@ void main_init() {
 			t_ota1.init();
 			t_ota2.init();
 			t_ota3.init();
+			t_ota4.init();
 			break ;
 		case prc::BoardRole::DprEth:
 			eta_module.init();
@@ -383,21 +447,24 @@ void main_tick() {
 
 	switch (prc::PrcStore::get_instance().boardIdentityStore.get_role()) {
 		case prc::BoardRole::EngineBay:
+			external_connector_module.tick();
 			chamber.tick();
 			oin.tick();
 			ein.tick();
 			t_oin.tick();
 			t_ein.tick();
-			t_ota4.tick();
 			t_ota5.tick();
+			t_ota6.tick();
 			break;
 
 		case prc::BoardRole::DprLox:
+			external_connector_module.tick();
 			ota_module.tick();
 			pressure_hpo.tick();
-			// t_ota1.tick();
+			t_ota1.tick();
 			t_ota2.tick();
 			t_ota3.tick();
+			t_ota4.tick();
    			break;
 
 		case prc::BoardRole::DprEth:
@@ -410,6 +477,33 @@ void main_tick() {
 			// Role detection hasn't latched yet (or failed) -- report nothing
 			// rather than guessing which bay's sensors to poll.
 			break;
+	}
+
+	if (board_temp_ready) RUN_EVERY(kBoardTempPeriodMs) {
+		Drivers::LMT85::LMT85Data frame;
+		const Drivers::LMT85::LMT85Status status = board_temp.read(frame);
+
+		const bool ok = (status == Drivers::LMT85::LMT85Status::Ok);
+		const lmt85::LMT85Error error { status, frame };
+		
+		if (ok) {
+			RUN_EVERY(1000) app_printf("[LMT85] temperature = %f\n", frame.temperature);
+		}
+
+		switch (prc::PrcStore::get_instance().boardIdentityStore.get_role()) {
+			case prc::BoardRole::EngineBay:
+				if (ok) engineLogger.logLMT85Frame(static_cast<double>(frame.temperature)); else engineLogger.logLMT85Error(error);
+				break;
+			case prc::BoardRole::DprLox:
+				if (ok) loxLogger.logLMT85Frame(static_cast<double>(frame.temperature)); else loxLogger.logLMT85Error(error);
+				break;
+			case prc::BoardRole::DprEth:
+				if (ok) ethLogger.logLMT85Frame(static_cast<double>(frame.temperature)); else ethLogger.logLMT85Error(error);
+				break;
+			case prc::BoardRole::Unknown:
+			default:
+				break;
+		}
 	}
 
 	RUN_EVERY(10) {
