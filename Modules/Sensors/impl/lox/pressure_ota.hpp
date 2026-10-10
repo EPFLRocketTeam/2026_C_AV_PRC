@@ -48,12 +48,12 @@ using PressureOtaSensorModule = multi::Module<
         sensata::SensataErrorPipeline<OTA1_NAME, &getLoxLogger, &LoxDataLogger<PlumeStorage>::logOTA1PressureError>
     >,
     multi::PressureSensorParam<
-        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L3>>,
+        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L2>>,
         LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA2),
         sensata::SensataErrorPipeline<OTA2_NAME, &getLoxLogger, &LoxDataLogger<PlumeStorage>::logOTA2PressureError>
     >,
     multi::PressureSensorParam<
-        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L5>>,
+        sensata::PressureSensata<sensata::SensataParams<SENSATA_CHANNEL_L3>>,
         LOX_SETTER_POLICY(prc::PropSensorsStoreLox::set_pressure_OTA3),
         sensata::SensataErrorPipeline<OTA3_NAME, &getLoxLogger, &LoxDataLogger<PlumeStorage>::logOTA3PressureError>
     >
