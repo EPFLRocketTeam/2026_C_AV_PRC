@@ -218,7 +218,7 @@ State PrcState::fromPressurizeOff(DataDump const &dump) {
 State PrcState::fromDepressurizeOn(DataDump const &dump) {
   const uint32_t elapsed_ms = HAL_GetTick() - depressurize_on_entry_ms_;
   if (elapsed_ms >= config::get().Descent.Depressurize.DPR.DurationMs) {
-    return State::DEPRESSURIZE_ON;
+    return State::DEPRESSURIZE_OFF;
   }
 
   return currentState;
