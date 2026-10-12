@@ -460,10 +460,10 @@ void main_tick() {
 			external_connector_module.tick();
 			ota_module.tick();
 			pressure_hpo.tick();
-			t_ota1.tick();
+			//t_ota1.tick();
 			//t_ota2.tick();
 			t_ota3.tick();
-			//t_ota4.tick();
+			t_ota4.tick();
    			break;
 
 		case prc::BoardRole::DprEth:
