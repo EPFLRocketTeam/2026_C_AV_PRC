@@ -512,6 +512,9 @@ static void ApplyEngineValveActions(EngineState state, EngineState previous_stat
     case EngineState::Shutoff:
       SetMo(false);
       break;
+    case EngineState::AbortOnGround:
+      SetIgniter(false);
+      break;
     case EngineState::AbortOnGroundOxydant:
       SetMo(false);
       break;
