@@ -622,7 +622,7 @@ void Prc_Engine_Fsm_Tick() {
   if (new_state == EngineState::IgnitionBurnStartMe && !g_preburn_lox_sent) {
     if (HAL_GetTick() - fsm.state_entry_ms_ >= StartMeSendPreburnLoxDelayMs) {
       g_preburn_lox_sent = true;
-      Prc_Can_SendPreburnFuel();
+      Prc_Can_SendPreburnLox();
     }
   }
 }
