@@ -21,9 +21,10 @@
 // list. LOX_ON/ETH_ON pins exist on this board's .ioc pinout but are not
 // valves this board drives, so they are intentionally not in ValveId.
 //
-// Sol1_ctrl = SafetyDpr, Sol2_ctrl = Vent is the fixed assignment: wire the
-// physical valve cables to match this, not the other way around. Sol3/Sol4
-// are spare, unused.
+// Sol3_ctrl = SafetyDpr, Sol2_ctrl = Vent is the assignment since the bench
+// fixes of 2026-08-15 (see ValveList.cpp): wire the physical valve cables to
+// match this, not the other way around. Sol3/Sol4 are the engine board's
+// MO/ME channels; on the DPR boards Sol3 shares PE9 with SafetyDpr.
 //
 // TODO (unverified — confirm against the wiring/schematic before flight):
 //   - NC vs NO (FailSafeState) below (Vent=NO, SafetyDpr=NC), but GPIO
@@ -40,8 +41,8 @@
 
 enum class ValveId : uint8_t {
     Vent,      // Sol2_ctrl, PE8 — solenoid, NO (Ethanol Tank Venting / LOX Tank Venting)
-    SafetyDpr, // Sol1_ctrl, PE7 — solenoid, NC (ETH Safety DPR / LOX Safety DPR)
-    Sol3,      // Sol3_ctrl, PE9  — spare, unused
+    SafetyDpr, // Sol3_ctrl, PE9 — solenoid, NC (ETH Safety DPR / LOX Safety DPR)
+    Sol3,      // Sol3_ctrl, PE9  — same pin as SafetyDpr; engine board MO, bench only
     Sol4,      // Sol4_ctrl, PE10 — spare, unused
     BallValve, // PWM_BV PB8/TIM4_CH3 — this board's ball valve (Ethanol Tank DPR / LOX Tank DPR)
     Count

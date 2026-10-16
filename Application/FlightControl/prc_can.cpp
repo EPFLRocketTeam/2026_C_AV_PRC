@@ -105,6 +105,11 @@ void ApplyCmdValves(pi::payload::cmd_valves cmd) noexcept {
     return;
   }
 
+  // Sol3/Sol4 are spare channels on the engine board only. On the DPR boards
+  // Sol3_ctrl (PE9) is the SafetyDpr pin (ValveList.cpp), so driving
+  // ValveId::Sol3 there would move the safety valve behind the FSM's back.
+  if (CurrentRole() != BoardRole::EngineBay) return;
+
   ValveId id;
   if (cmd.valve_id == pi::constants::VALVE_SOL3) id = ValveId::Sol3;
   else if (cmd.valve_id == pi::constants::VALVE_SOL4) id = ValveId::Sol4;
