@@ -64,3 +64,23 @@ create_test(test_average_module Modules/Sensors/tests/test_average_policy.cpp)
 create_test(test_outlier_module Modules/Sensors/tests/test_outlier_policy.cpp)
 
 create_test(test_base_logger ThirdParty/DataLogger/Tests/test_base_logger.cpp)
+
+create_test(test_engine_state_igniter Application/FlightControl/tests/test_engine_state_igniter.cpp)
+target_sources(test_engine_state_igniter PRIVATE
+    Application/FlightControl/engine_state.cpp
+    Application/Config/config.cpp
+    Application/Config/2026_C_AV_FLIGHT_PARAMS/FlightParams.cpp
+    Application/Data/data.cpp
+    Application/Data/Stores/BoardIdentityStore.cpp
+    Application/Data/Stores/EventStore.cpp
+    Application/Data/Stores/IntranetCmdStore.cpp
+    Application/Data/Stores/ValvesStore.cpp
+    Application/Data/propulsion/store.cpp
+    Drivers/Plume/2026_C_AV_PLUME/src/plume/status.c)
+target_include_directories(test_engine_state_igniter PRIVATE
+    Application/FlightControl/tests/shim
+    Application/Config/2026_C_AV_FLIGHT_PARAMS
+    Application/Config/2026_C_AV_FLIGHT_PARAMS/2026_C_AV_CONFMAN
+    Drivers/Plume/2026_C_AV_PLUME/include
+    Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include)
+target_compile_options(test_engine_state_igniter PRIVATE -Wno-unused-function -include stddef.h)
