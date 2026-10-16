@@ -27,6 +27,7 @@ extern "C" FDCAN_HandleTypeDef hfdcan1;
 #include "Modules/Sensors/impl/engine/ein.hpp"
 #include "Modules/Sensors/impl/engine/temperature_ota.hpp"
 #include "Modules/Impulse/impulse_module.hpp"
+#include "Modules/Power/ina_24v_module.hpp"
 
 #include "Drivers/LMT85/LMT85.hpp"
 #include "Drivers/Valve/ValveList.hpp"
@@ -66,6 +67,16 @@ static TemperatureOtaSensorModule4 t_ota4;   // T-OTA4       (Lox Tank, PT1000)
 // ── Pressurant bay 2 (Skinny Bay, PRC-ETH) ──────────────────────────────
 static PressureEtaSensorModule eta_module;   // P-ETA{1,2,3} (Eth Tank Ullage, Sensata PTE7300)
 static PressureHpeSensorModule pressure_hpe; // P-HPE        (COPV 2, Sensata PTE7300)
+
+// ── 24 V rail monitor (INA228 @ 0x45 on I2C1, DPR-Lox and DPR-Eth only) ─
+// LOX: the unwired T-OTA1/T-OTA2 slots carry it (OTA1 = volts),
+// so it rides the existing dpr_lox_temps_ota_1_2 CAN frame (voltage only;
+// ETH owns the other slot of that frame, see prc_can.cpp).
+extern "C" I2C_HandleTypeDef hi2c1;
+static Ina24vModule ina_24v(&hi2c1);
+
+bool  app_ina_24v_healthy() { return ina_24v.healthy(); }
+float app_ina_24v_voltage() { return ina_24v.voltage(); }
 
 // ── Board temperature (LMT85, PB1 / ADC1 CH5) ────────────────────────────
 static constexpr uint32_t kBoardTempPeriodMs = 1000; // 1 Hz
@@ -166,16 +177,14 @@ void prc::PropSensorsStoreLox::set_temperature_OTA1(double temperature_OTA1) {
 	// 	app_printf("t_OTA1=%lf\r\n", temperature_OTA1);
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA1_mean(double temperature_OTA1_mean) {
-	data_.temperature_OTA1_mean = temperature_OTA1_mean;
-	RUN_EVERY(1000) app_printf("t_OTA1_mean=%lf\r\n", temperature_OTA1_mean);
+	data_.temperature_OTA1_mean = temperature_OTA1_mean;  // carries INA 24 V volts, see ina_24v
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA2(double temperature_OTA2) {
 	data_.temperature_OTA2 = temperature_OTA2;
 	// 	app_printf("t_OTA2=%lf\r\n", temperature_OTA2);
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA2_mean(double temperature_OTA2_mean) {
-	data_.temperature_OTA2_mean = temperature_OTA2_mean;
-	RUN_EVERY(1000) app_printf("t_OTA2_mean=%lf\r\n", temperature_OTA2_mean);
+	data_.temperature_OTA2_mean = temperature_OTA2_mean;  // unused (was INA amps)
 }
 void prc::PropSensorsStoreLox::set_temperature_OTA3(double temperature_OTA3) {
 	data_.temperature_OTA3 = temperature_OTA3;
@@ -422,14 +431,14 @@ void main_init() {
 		case prc::BoardRole::DprLox:
 			ota_module.init();
 			pressure_hpo.init();
-			t_ota1.init();
-			t_ota2.init();
+			ina_24v.init();  // replaces the unwired T-OTA1/T-OTA2
 			t_ota3.init();
 			t_ota4.init();
 			break ;
 		case prc::BoardRole::DprEth:
 			eta_module.init();
 			pressure_hpe.init();
+			ina_24v.init();
 			break ;
 			
 		case prc::BoardRole::Unknown:
@@ -460,8 +469,12 @@ void main_tick() {
 			external_connector_module.tick();
 			ota_module.tick();
 			pressure_hpo.tick();
-			//t_ota1.tick();
-			//t_ota2.tick();
+			if (ina_24v.tick(HAL_GetTick())) {
+				auto& lox = prc::PrcStore::get_instance().propSensorsStoreLox;
+				lox.set_temperature_OTA1(ina_24v.voltage());
+				lox.set_temperature_OTA1_mean(ina_24v.voltage());
+				RUN_EVERY(1000) app_printf("[INA-24V] %.2f V\r\n", ina_24v.voltage());
+			}
 			t_ota3.tick();
 			t_ota4.tick();
    			break;
@@ -470,6 +483,7 @@ void main_tick() {
 			external_connector_module.tick();
 			eta_module.tick();
 			pressure_hpe.tick();
+			ina_24v.tick(HAL_GetTick());  // voltage sent in ota2 of dpr_lox_temps_ota_1_2, see prc_can.cpp
 			break;
 
 		case prc::BoardRole::Unknown:

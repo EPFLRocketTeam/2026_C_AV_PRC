@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <cmath>
 #include "Application/Data/data.hpp"
 #include "Application/app_printf.h"
 #include "Application/app_timebase.h"
@@ -19,6 +20,12 @@
 
 using namespace prc;
 namespace pi = prc_intranet;
+
+// 24 V INA228 rail voltage of this DPR board, defined in main.cpp. Sent in one
+// slot of dpr_lox_temps_ota_1_2, the other slot is NaN (ignored by the FC):
+// DPR-Lox owns slot 1 (ota1), DPR-Eth owns slot 2 (ota2).
+bool  app_ina_24v_healthy();
+float app_ina_24v_voltage();
 
 namespace {
 
@@ -458,8 +465,8 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
     pi::send_dpr_lox_pressures(&ctx, pressures);
 
     pi::payload::dpr_lox_temps_ota temps_1_2{};
-    temps_1_2.ota1() = static_cast<float>(sensors.get_temperature_OTA1_mean());
-    temps_1_2.ota2() = static_cast<float>(sensors.get_temperature_OTA2_mean());
+    temps_1_2.ota1() = app_ina_24v_healthy() ? static_cast<float>(sensors.get_temperature_OTA1_mean()) : NAN;  // INA 24 V volts
+    temps_1_2.ota2() = NAN;  // slot owned by DPR-Eth
     pi::send_dpr_lox_temps_ota_1_2(&ctx, temps_1_2);
 
     pi::payload::dpr_lox_temps_ota temps_3_4{};
@@ -479,6 +486,10 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
     pressures.p_eta = static_cast<float>(sensors.get_pressure_ETA_mean());
     pressures.p_hpe = static_cast<float>(sensors.get_pressure_HPE_mean());
     pi::send_dpr_eth_pressures(&ctx, pressures);
+    pi::payload::dpr_lox_temps_ota temps_1_2{};
+    temps_1_2.ota1() = NAN;  // slot owned by DPR-Lox
+    temps_1_2.ota2() = app_ina_24v_healthy() ? app_ina_24v_voltage() : NAN;  // INA 24 V volts
+    pi::send_dpr_lox_temps_ota_1_2(&ctx, temps_1_2);
     
     pi::payload::ball_valve_position bv_state{};
     bv_state.percent_open = prc::PrcStore::get_instance().valvesStore.get_ball_valve_fuel();
