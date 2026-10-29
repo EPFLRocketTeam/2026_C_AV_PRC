@@ -109,7 +109,13 @@ int _write(int file, char *ptr, int len) {
       uint32_t start = HAL_GetTick();
       while (CDC_Transmit_HS((uint8_t*)ptr, len) == USBD_BUSY) {
           if (HAL_GetTick() - start >= 2) {
+              // Flag first, then one last try: a completion landing in
+              // between clears the flag itself, and if the endpoint freed
+              // up just before the flag was set the retry goes through.
               usb_tx_stalled = 1;
+              if (CDC_Transmit_HS((uint8_t*)ptr, len) != USBD_BUSY) {
+                  usb_tx_stalled = 0;
+              }
               break;
           }
       }
