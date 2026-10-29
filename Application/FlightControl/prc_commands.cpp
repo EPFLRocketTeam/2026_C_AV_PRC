@@ -290,7 +290,12 @@ void OnConfigCommit(void*) noexcept {
              static_cast<unsigned long>(config::internal::crc_commited()));
 }
 
+void OnBadArgument(void*) noexcept {
+  app_printf("[SHELL] command refused on %s: bool arguments are open, close, on or off\r\n", RoleName(Role()));
+}
+
 void FillDriver(prc_cli::driver& drv) {
+  drv.on_bad_argument     = OnBadArgument;
   drv.config_commit       = OnConfigCommit;
   drv.config_print_status = OnConfigPrintStatus;
   drv.fsm_abort           = OnFsmAbort;

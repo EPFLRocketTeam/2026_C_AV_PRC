@@ -72,6 +72,10 @@ void OnConfigPrintStatus(void*) noexcept;
 // Refused when IsProtectedMode() is true or the role is Unknown.
 void OnConfigCommit(void*) noexcept;
 
+// Bound as the trie's on_bad_argument: a bool argument other than open,
+// close, on or off runs nothing and gets this refusal instead.
+void OnBadArgument(void*) noexcept;
+
 }  // namespace prc_commands
 
 #endif  // APP_PRC_COMMANDS_H
