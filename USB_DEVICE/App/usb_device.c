@@ -68,7 +68,13 @@ void MX_USB_DEVICE_Init(void)
   /* USER CODE END USB_DEVICE_Init_PreTreatment */
 
   /* Init Device Library, add supported class and start the library. */
-  if (USBD_Init(&hUsbDeviceHS, &HS_Desc, DEVICE_HS) != USBD_OK)
+  /* The CDC runs on the OTG_FS core: on the 2026_C_AV_PC_V1 board only
+   * PA11/PA12 reach a connector (J7); PB14/PB15 (OTG_HS) reach none.
+   * The handle and the usbd_cdc_if.c callbacks keep their _HS names so
+   * existing callers (CDC_Transmit_HS, CDC_Receive_HS) stay unchanged;
+   * DEVICE_FS is what selects the core in USBD_LL_Init (usbd_conf.c).
+   * A CubeMX regeneration reverts this; see the README. */
+  if (USBD_Init(&hUsbDeviceHS, &HS_Desc, DEVICE_FS) != USBD_OK)
   {
     Error_Handler();
   }
