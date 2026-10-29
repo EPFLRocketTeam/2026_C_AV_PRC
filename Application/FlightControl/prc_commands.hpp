@@ -69,6 +69,7 @@ void OnFsmReset(void*) noexcept;
 void OnLogsUsb(void*, bool on) noexcept;
 void OnLogsCan(void*, bool on) noexcept;
 void OnConfigPrintStatus(void*) noexcept;
+// Refused when IsProtectedMode() is true or the role is Unknown.
 void OnConfigCommit(void*) noexcept;
 
 }  // namespace prc_commands

@@ -32,7 +32,7 @@ Bool arguments are true only for `open` or `on`; anything else means closed or o
 | `logs usb on\|off` | all | app_printf over USB. |
 | `logs can on\|off` | all | app_printf forwarded over CAN. |
 | `config print status` | all | Config buffer and committed CRCs. |
-| `config commit` | all | Commit the config buffer. |
+| `config commit` | all | Commit the config buffer. Refused while the board is protected (see below) and before the role is latched. |
 
 Manual valve commands are refused while the board is in a protected state: DPR boards accept them only in MANUAL, PRESSURIZE_ON and REGULATE (the FSM's own allow list), the engine board only in IDLE. A line longer than 128 bytes, or one that lost bytes to a full receive buffer, is dropped with a message instead of being run.
 
