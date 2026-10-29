@@ -184,8 +184,10 @@ public:
   }
 
   // True when `alive` should be printed now: on every alive or dead edge,
-  // and once as "dead" when now_ms (ms since boot) reaches BOOT_GRACE_MS
-  // with the FC never heard from.
+  // and once as "dead" with the FC never heard from, on the first call at
+  // or after BOOT_GRACE_MS (ms since boot), whichever is later. On the board
+  // the first telemetry call comes about 12 s after reset, past the grace,
+  // so that first call already reports.
   inline bool take_report(uint32_t now_ms, bool alive) {
     bool report = (alive != data_.reported_alive);
     data_.reported_alive = alive;

@@ -34,12 +34,27 @@ TEST(FcLink, SurvivesTickWrap) {
     EXPECT_FALSE(link.alive(0x00000200u));
 }
 
-TEST(FcLink, BootGraceReportsNeverSeenOnce) {
+// The never-heard "dead" fires on the first call at or after the grace,
+// whichever is later. Early calls only exist off the board.
+TEST(FcLink, NeverHeardReportsOnFirstCallAfterGrace) {
     FcLinkStore link;
     EXPECT_FALSE(link.take_report(100, link.alive(100)));
     EXPECT_FALSE(link.take_report(1999, link.alive(1999)));
     EXPECT_TRUE(link.take_report(2000, link.alive(2000)));   // one "dead"
     EXPECT_FALSE(link.take_report(2050, link.alive(2050)));
+}
+
+// On the board the first telemetry call comes about 12 s after reset.
+TEST(FcLink, FirstCallPastGraceReportsAtOnce) {
+    FcLinkStore absent;
+    EXPECT_TRUE(absent.take_report(12000, absent.alive(12000)));   // FC never heard: dead
+    EXPECT_FALSE(absent.take_report(12050, absent.alive(12050)));
+
+    FcLinkStore present;
+    present.on_heartbeat(7, 11990);
+    EXPECT_TRUE(present.take_report(12000, present.alive(12000))); // FC up: alive
+    EXPECT_TRUE(present.alive(12000));
+    EXPECT_FALSE(present.take_report(12050, present.alive(12050)));
 }
 
 TEST(FcLink, EdgesOnly) {
