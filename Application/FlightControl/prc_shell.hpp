@@ -6,7 +6,7 @@
 //          CDC_Receive_HS (USB interrupt) only copies bytes into a 256 byte
 //          ring buffer through Prc_Shell_ProcessRxBytes. Prc_Shell_Tick
 //          (main loop, top of main_tick) drains the ring, assembles lines of
-//          up to 128 bytes across USB packets, and replays each complete
+//          up to 128 bytes across USB packets (ended by CR, LF or CRLF), and replays each complete
 //          line character by character through prc_cli::push_char. Handlers
 //          therefore run in the main loop, never in interrupt context.
 //

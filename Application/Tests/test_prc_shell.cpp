@@ -84,6 +84,24 @@ TEST_F(PrcShell, CrLfEndingsAreAccepted) {
   EXPECT_FLOAT_EQ(g_calls.ball[0], 12.5f);
 }
 
+TEST_F(PrcShell, BareCrEndsALine) {
+  Packet("valve vent on\rvalve ball 3\r");
+  Prc_Shell_Tick();
+  ASSERT_EQ(g_calls.vent.size(), 1u);
+  EXPECT_TRUE(g_calls.vent[0]);
+  ASSERT_EQ(g_calls.ball.size(), 1u);
+  EXPECT_FLOAT_EQ(g_calls.ball[0], 3.0f);
+}
+
+TEST_F(PrcShell, LfRightAfterCrIsSwallowedEvenAcrossPackets) {
+  Packet("state\r");
+  Prc_Shell_Tick();
+  Packet("\nstate\n\n");  // LF of the CRLF, then a line, then an empty line
+  Prc_Shell_Tick();
+  EXPECT_EQ(g_calls.state, 2);
+  EXPECT_TRUE(g_sink_text.empty());
+}
+
 TEST_F(PrcShell, TrailingSpacesAreTrimmedSoOpenStillMeansOpen) {
   Packet("valve vent open   \n");
   Prc_Shell_Tick();

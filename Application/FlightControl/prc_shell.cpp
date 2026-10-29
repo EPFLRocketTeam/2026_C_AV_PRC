@@ -35,6 +35,9 @@ uint32_t g_line_len = 0;
 // everything up to the next newline instead of running a damaged command.
 bool g_too_long = false;
 bool g_damaged  = false;
+// The previous byte was a CR, so an LF right after it belongs to the same
+// line ending (CRLF) and is swallowed.
+bool g_after_cr = false;
 bool g_usb_log_checked = false;
 
 void Say(const char *text) {
@@ -57,25 +60,36 @@ void RunLine() {
   prc_cli::push_char(&g_ctx, g_driver, '\n');
 }
 
+void EndLine() {
+  if (g_damaged) {
+    Say("[SHELL] input overflow, line dropped\r\n");
+  } else if (g_too_long) {
+    Say("[SHELL] line longer than 128 bytes, dropped\r\n");
+  } else {
+    RunLine();
+  }
+  g_line_len = 0;
+  g_too_long = false;
+  g_damaged  = false;
+}
+
 void FeedByte(uint8_t byte) {
+  const bool after_cr = g_after_cr;
+  g_after_cr = false;
+
   if (byte == kGapMarker) {
     g_damaged = true;
     return;
   }
-  // Skip CR so CRLF terminals do not leave a stray \r in bool/float args.
-  if (byte == '\r') return;
-
+  // CR, LF and CRLF all end a line: PuTTY, screen and minicom send a bare CR
+  // on Enter by default, others send LF or CRLF.
+  if (byte == '\r') {
+    g_after_cr = true;
+    EndLine();
+    return;
+  }
   if (byte == '\n') {
-    if (g_damaged) {
-      Say("[SHELL] input overflow, line dropped\r\n");
-    } else if (g_too_long) {
-      Say("[SHELL] line longer than 128 bytes, dropped\r\n");
-    } else {
-      RunLine();
-    }
-    g_line_len = 0;
-    g_too_long = false;
-    g_damaged  = false;
+    if (!after_cr) EndLine();
     return;
   }
 
@@ -95,6 +109,7 @@ void prc_shell::Configure(const prc_cli::driver *drv, Sink sink) {
   g_line_len = 0;
   g_too_long = false;
   g_damaged  = false;
+  g_after_cr = false;
   g_usb_log_checked = false;
 }
 
