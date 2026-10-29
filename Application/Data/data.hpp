@@ -152,6 +152,53 @@ public:
   void set_no_cable_continuity (bool value);
 };
 
+// ---------------------------------------------------------------------------
+// FC liveness, fed by the heartbeat_fc CAN callback (prc_can.cpp). Exposed
+// only: no FSM reacts to FC silence. Kept out of DataDump so the logged
+// layout does not move. HAL free, so it is host tested.
+// ---------------------------------------------------------------------------
+
+struct FcLink {
+  uint32_t last_counter = 0;
+  uint32_t last_rx_ms   = 0;
+  bool     seen         = false;
+  bool     reported_alive = false; // last state printed
+  bool     grace_done     = false;
+};
+
+class FcLinkStore : public IStore<FcLink> {
+public:
+  static constexpr uint32_t TIMEOUT_MS = 500;
+  static constexpr uint32_t BOOT_GRACE_MS = 2000;
+
+  inline void on_heartbeat(uint32_t counter, uint32_t now_ms) {
+    data_.last_counter = counter;
+    data_.last_rx_ms   = now_ms;
+    data_.seen         = true;
+  }
+
+  // True when a heartbeat arrived less than TIMEOUT_MS ago. Unsigned
+  // subtraction keeps it right across the HAL_GetTick() wrap.
+  inline bool alive(uint32_t now_ms) const {
+    return data_.seen && (now_ms - data_.last_rx_ms) < TIMEOUT_MS;
+  }
+
+  // True when `alive` should be printed now: on every alive or dead edge,
+  // and once as "dead" with the FC never heard from, on the first call at
+  // or after BOOT_GRACE_MS (ms since boot), whichever is later. On the board
+  // the first telemetry call comes about 12 s after reset, past the grace,
+  // so that first call already reports.
+  inline bool take_report(uint32_t now_ms, bool alive) {
+    bool report = (alive != data_.reported_alive);
+    data_.reported_alive = alive;
+    if (!data_.grace_done && now_ms >= BOOT_GRACE_MS) {
+      data_.grace_done = true;
+      if (!data_.seen) report = true;
+    }
+    return report;
+  }
+};
+
 struct DataDump {
   State          prc_state;
   CSV_IGNORE
@@ -185,6 +232,7 @@ public:
   ValvesStore        valvesStore;
   IntranetCmdStore     intranetCmdStore;
   EventStore         eventStore;
+  FcLinkStore        fcLinkStore;
 
   PropSensorsStoreEngine propSensorsStoreEngine;
   PropSensorsStoreEth    propSensorsStoreEth;

@@ -232,6 +232,11 @@ void OnPrcPreburn (void*, pi::payload::preburn pb) noexcept {
   }
 }
 
+// FC heartbeat: every role records it (node 0 passes filter index 0).
+void OnHeartbeatFc(void*, pi::payload::heartbeat hb) noexcept {
+  PrcStore::get_instance().fcLinkStore.on_heartbeat(hb.counter, HAL_GetTick());
+}
+
 // HAL_FDCAN_AddMessageToTxFifoQ word-copies from this buffer regardless of
 // dlc (see 2026_C_AV_FC's main.c TX test comment), so pad to the full
 // word-aligned MAX_PAYLOAD_SIZE rather than passing `buffer` (only
@@ -318,6 +323,7 @@ pi::context& Ctx() {
     driver.on_log_config         = OnLogConfig;
     driver.on_config_send_commit = OnConfigSendCommit;
     driver.on_config_send_data   = OnConfigSendData;
+    driver.on_heartbeat_fc       = OnHeartbeatFc;
     return pi::create_context(driver);
   }();
   return ctx;
@@ -378,6 +384,26 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
 
   pi::context& ctx = Ctx();
   ctx.driver.driver_ptr = hfdcan;
+
+  // One counter per board: a board has exactly one latched role. The engine
+  // beats under its own PrcP id, never the DprLox id its OTA5/6 frame uses.
+  static uint32_t heartbeat_counter = 0;
+  pi::payload::heartbeat hb{};
+  hb.counter   = heartbeat_counter++;
+  hb.uptime_ms = HAL_GetTick();
+  if (role == BoardRole::EngineBay)   pi::send_heartbeat_prc_engine(&ctx, hb);
+  else if (role == BoardRole::DprLox) pi::send_heartbeat_dpr_lox(&ctx, hb);
+  else                                pi::send_heartbeat_dpr_eth(&ctx, hb);
+
+  // FC liveness, printed on each edge, and once as dead if the FC was never
+  // heard from, on the first call 2 s or more after boot (in practice the
+  // very first call). Reports only: no FSM reads it.
+  const bool fc_alive = Prc_Can_FcAlive(hb.uptime_ms);
+  FcLinkStore& fc_link = PrcStore::get_instance().fcLinkStore;
+  if (fc_link.take_report(hb.uptime_ms, fc_alive)) {
+    app_printf("[FC LINK] %s (counter %lu)\r\n", fc_alive ? "alive" : "dead",
+               static_cast<unsigned long>(fc_link.get().last_counter));
+  }
 
   RUN_EVERY(1000) {
     pi::payload::config_crc conf;
@@ -526,6 +552,10 @@ void Prc_Log_Forward(FDCAN_HandleTypeDef *hfdcan, const uint8_t *data, uint32_t 
   log_aggregator::chunk_and_send(data, length, &ctx, SendLogChunk);
 
   in_progress = false;
+}
+
+bool Prc_Can_FcAlive(uint32_t now_ms) {
+  return PrcStore::get_instance().fcLinkStore.alive(now_ms);
 }
 
 void Prc_Can_SendExternalConnector (int has_no_continuity) {

@@ -8,6 +8,7 @@
 #ifndef APP_PRC_CAN_H
 #define APP_PRC_CAN_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "stm32h7xx_hal.h"
@@ -64,6 +65,11 @@ void Prc_Log_Forward(FDCAN_HandleTypeDef *hfdcan, const uint8_t *data, uint32_t 
 uint8_t Prc_Can_TakeColdflowTrigger(void);
 
 void Prc_Can_SendExternalConnector (int has_no_continuity);
+
+// True when a heartbeat_fc frame arrived less than 500 ms before now_ms
+// (HAL_GetTick() time). Reports only; no FSM acts on it. Prc_Can_SendTelemetry
+// prints "[FC LINK] alive|dead" from it on each edge.
+bool Prc_Can_FcAlive(uint32_t now_ms);
 
 #ifdef __cplusplus
 }
