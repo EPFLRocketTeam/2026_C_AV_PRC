@@ -20,7 +20,26 @@
 
 #include "prc_commands_generated.hpp"
 
+#include <cstddef>  // data.hpp uses offsetof without including it
+
+#include "Application/Data/data.hpp"
+#include "Application/Data/engine_fsm.hpp"
+
 namespace prc_commands {
+
+// Window for config commit, which swaps the live config the FSMs read every
+// tick: DPR boards only in MANUAL (REGULATE reads the target pressure and
+// the safety thresholds from the config every tick), the engine board only
+// in Idle, never before the role is latched. Pure, so the host tests can
+// check it without the HAL.
+inline bool ConfigCommitAllowed(prc::BoardRole role, prc::State dpr_state, prc::EngineState engine_state) {
+  switch (role) {
+    case prc::BoardRole::DprLox:
+    case prc::BoardRole::DprEth:    return dpr_state == prc::State::MANUAL;
+    case prc::BoardRole::EngineBay: return engine_state == prc::EngineState::Idle;
+    default:                        return false;
+  }
+}
 
 // Binds every handler below into `drv`.
 void FillDriver(prc_cli::driver& drv);
@@ -69,7 +88,7 @@ void OnFsmReset(void*) noexcept;
 void OnLogsUsb(void*, bool on) noexcept;
 void OnLogsCan(void*, bool on) noexcept;
 void OnConfigPrintStatus(void*) noexcept;
-// Refused when IsProtectedMode() is true or the role is Unknown.
+// Refused outside ConfigCommitAllowed's window, with the reason printed.
 void OnConfigCommit(void*) noexcept;
 
 // Bound as the trie's on_bad_argument: a bool argument other than open,

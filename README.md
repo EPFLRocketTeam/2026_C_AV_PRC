@@ -32,7 +32,7 @@ Bool arguments take `open` or `on` for true and `close` or `off` for false; any 
 | `logs usb on\|off` | all | app_printf over USB. |
 | `logs can on\|off` | all | app_printf forwarded over CAN. |
 | `config print status` | all | Config buffer and committed CRCs. |
-| `config commit` | all | Commit the config buffer. Refused while the board is protected (see below) and before the role is latched. |
+| `config commit` | all | Commit the config buffer. DPR boards only in MANUAL, the engine board only in IDLE, never before the role is latched. |
 
 The `fsm` commands never go on the CAN bus. Each one writes the same command id into this board's own command slot that the matching CAN message from the FC would write, and this board's FSM acts on it on its next tick, only from the states listed here; in any other state it is ignored, while the reply still says "sent". The vehicle abort stays the FC's `prc abort` and DPR broadcast abort.
 

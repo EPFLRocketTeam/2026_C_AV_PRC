@@ -269,20 +269,23 @@ void OnConfigPrintStatus(void*) noexcept {
   config::internal::print_status();
 }
 
-// Committing swaps the live config the FSMs read every tick, so it is
-// refused in protected mode (and on role Unknown, where IsProtectedMode is
-// always true). The logs commands stay allowed on every role.
+// See ConfigCommitAllowed for the window. The logs commands stay allowed on
+// every role.
 void OnConfigCommit(void*) noexcept {
   const BoardRole role = Role();
   if (role == BoardRole::Unknown) {
     app_printf("[SHELL] config commit refused on UNKNOWN: board role not latched\r\n");
     return;
   }
-  if (IsProtectedMode()) {
-    const std::string fsm = role == BoardRole::EngineBay
-        ? PrcEngineState::stateToString(Prc_Engine_Fsm_GetState())
-        : DprStateName();
-    app_printf("[SHELL] config commit refused on %s: FSM %s is protected\r\n", RoleName(role), fsm.c_str());
+  const EngineState engine = Prc_Engine_Fsm_GetState();
+  if (!prc_commands::ConfigCommitAllowed(role, Store().stateStore.get(), engine)) {
+    if (role == BoardRole::EngineBay) {
+      app_printf("[SHELL] config commit refused on %s: engine FSM %s, commit only in IDLE\r\n",
+                 RoleName(role), PrcEngineState::stateToString(engine).c_str());
+    } else {
+      app_printf("[SHELL] config commit refused on %s: FSM %s, commit only in MANUAL\r\n",
+                 RoleName(role), DprStateName().c_str());
+    }
     return;
   }
   config::internal::commit();

@@ -106,3 +106,7 @@ target_sources(test_prc_shell PRIVATE
     Application/app_printf.cpp
     Drivers/CLI/2026_C_AV_CLI/prc_commands_generated.cpp)
 target_include_directories(test_prc_shell PUBLIC Drivers/CLI/2026_C_AV_CLI)
+
+# Pure command policies from prc_commands.hpp (no HAL).
+create_test(test_prc_commands Application/Tests/test_prc_commands.cpp)
+target_include_directories(test_prc_commands PUBLIC Drivers/CLI/2026_C_AV_CLI)
