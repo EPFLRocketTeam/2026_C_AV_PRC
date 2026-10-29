@@ -8,7 +8,7 @@ The PRC flashes over USB without an ST-Link, through the STM32H743 ROM bootloade
 
 The board has one USB port that carries data, the mini USB connector J7 on OTG_FS (PA11/PA12). The application runs its serial console (CDC) there; it enumerates as "ERT Firehorn II PRC" with the chip's 96 bit unique id as its serial number, so each board keeps a stable port name. The ROM bootloader takes over the same port.
 
-1. Enter the bootloader. Once the PRC shell binds it, type `system dfu` on the serial port (`Bootloader_RequestDfu()` in `Application/System/bootloader.h` is the call behind it). Fallback, and the only route until then: set the BOOT0 switch high and reset or power cycle the board, then set BOOT0 back low once flashed.
+1. Enter the bootloader. The PRC has no software entry yet: nothing on the PRC calls `Bootloader_RequestDfu()` (`Application/System/bootloader.h`) until a shell or CAN command binds it, so today the only route is BOOT0: set the BOOT0 switch high, reset or power cycle the board, and set BOOT0 back low once flashed.
 2. Keep the USB port plugged. `dfu-util -l` lists the bootloader as `0483:df11`.
 3. Flash a raw binary (`arm-none-eabi-objcopy -O binary firmware.elf firmware.bin` turns the CubeIDE output into one):
 
@@ -24,11 +24,19 @@ The board has one USB port that carries data, the mini USB connector J7 on OTG_F
 
    On Windows, dfu-util needs the WinUSB driver bound to the DFU device (Zadig); STM32CubeProgrammer ships ST's own driver.
 
+Operational rule: never enter DFU on a loaded rocket. In the ROM bootloader the PRC drives no valve and answers no CAN command, and the bootloader has no timeout: it stays there until a reset or a power cycle.
+
 What to expect:
 
 * The ROM bootloader only runs at reset. `Bootloader_RequestDfu()` stores a magic word in RTC backup register 0 and resets; the first statement of `main()` sees it and jumps to the bootloader before the HAL starts (`Application/System/bootloader.cpp`).
 * The word is cleared before the jump, so a power cycle or a reset out of the bootloader never enters DFU again.
 * After flashing, `:leave` (or `--start`) exits the bootloader and the board reboots into the new image. With the BOOT0 fallback, every reset enters the bootloader until BOOT0 is back low.
+
+Bench checklist, once a command binds `Bootloader_RequestDfu()` (the backup register write behind it is not yet confirmed on hardware):
+
+1. Run that command.
+2. Expect `0483:df11` on J7 (`dfu-util -l`).
+3. If the board just reboots into the application instead, select LSI as the RTC clock source in the `.ioc` (RCC, RTC clock mux), regenerate, and try again.
 
 What the ROM bootloader needs (ST AN2606 Rev 61, section 52 "STM32H74xxx/75xxx devices bootloader"):
 
@@ -36,7 +44,7 @@ What the ROM bootloader needs (ST AN2606 Rev 61, section 52 "STM32H74xxx/75xxx d
 * USB: DFU runs on "USB FS configured in forced device mode" on PA11 (DM) and PA12 (DP), the J7 pair, and "No external pull-up resistor is required" (Table 113).
 * Clock: the bootloader runs at 64 MHz on HSI and uses the CRS to clock USB from HSI48 (Table 113), so no crystal is involved.
 * Supply: "DFU mode does not support USBREGEN mode. If STM32 is powered by 1.8 V source, it is not possible to use the BL DFU unless 3.3 V is provided" (Table 113).
-* Version: the bootloader ID byte at 0x1FF1E7FE is 0x91 for V9.1 (Table 177); `Bootloader_RomId()` returns it, so the PRC shell can print it with `system dfu`. A part reading 0x90 has V9.0, whose known limitations (Table 114) are a jump issue unless the application stack pointer is below RAM end minus 16 bytes (the jump here hands over the bootloader's own initial stack pointer, which avoids it) and an extra reset needed after a power cycle before the bootloader answers (ST's workaround is a pull-up on PA11). V9.1 fixes both.
+* Version: the bootloader ID byte at 0x1FF1E7FE is 0x91 for V9.1 (Table 177); `Bootloader_RomId()` returns it for whichever command binds DFU entry later. A part reading 0x90 has V9.0, whose known limitations (Table 114) are a jump issue unless the application stack pointer is below RAM end minus 16 bytes (the jump here hands over the bootloader's own initial stack pointer, which avoids it) and an extra reset needed after a power cycle before the bootloader answers (ST's workaround is a pull-up on PA11). V9.1 fixes both.
 * After its own reset the bootloader disables every interrupt source and peripheral clock and initialises its clock, GPIOs, IWDG and SysTick itself (Figure 64), so it starts cleanly from the reset state the jump hands over. It refreshes the IWDG it configures (Table 113).
 
 ## CubeMX regeneration
