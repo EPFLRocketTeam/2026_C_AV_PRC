@@ -152,6 +152,35 @@ public:
   void set_no_cable_continuity (bool value);
 };
 
+// ---------------------------------------------------------------------------
+// FC liveness, fed by the heartbeat_fc CAN callback (prc_can.cpp). Exposed
+// only: no FSM reacts to FC silence. Kept out of DataDump so the logged
+// layout does not move. HAL free, so it is host tested.
+// ---------------------------------------------------------------------------
+
+struct FcLink {
+  uint32_t last_counter = 0;
+  uint32_t last_rx_ms   = 0;
+  bool     seen         = false;
+};
+
+class FcLinkStore : public IStore<FcLink> {
+public:
+  static constexpr uint32_t TIMEOUT_MS = 500;
+
+  inline void on_heartbeat(uint32_t counter, uint32_t now_ms) {
+    data_.last_counter = counter;
+    data_.last_rx_ms   = now_ms;
+    data_.seen         = true;
+  }
+
+  // True when a heartbeat arrived less than TIMEOUT_MS ago. Unsigned
+  // subtraction keeps it right across the HAL_GetTick() wrap.
+  inline bool alive(uint32_t now_ms) const {
+    return data_.seen && (now_ms - data_.last_rx_ms) < TIMEOUT_MS;
+  }
+};
+
 struct DataDump {
   State          prc_state;
   CSV_IGNORE
@@ -185,6 +214,7 @@ public:
   ValvesStore        valvesStore;
   IntranetCmdStore     intranetCmdStore;
   EventStore         eventStore;
+  FcLinkStore        fcLinkStore;
 
   PropSensorsStoreEngine propSensorsStoreEngine;
   PropSensorsStoreEth    propSensorsStoreEth;
