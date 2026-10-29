@@ -84,3 +84,12 @@ target_include_directories(test_engine_state_igniter PRIVATE
     Drivers/Plume/2026_C_AV_PLUME/include
     Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include)
 target_compile_options(test_engine_state_igniter PRIVATE -Wno-unused-function -include stddef.h)
+
+# USB shell line assembler and dispatcher, against a fake prc_cli driver.
+# prc_commands.cpp (the HAL bound handlers) is deliberately not linked.
+create_test(test_prc_shell Application/Tests/test_prc_shell.cpp)
+target_sources(test_prc_shell PRIVATE
+    Application/FlightControl/prc_shell.cpp
+    Application/app_printf.cpp
+    Drivers/CLI/2026_C_AV_CLI/prc_commands_generated.cpp)
+target_include_directories(test_prc_shell PUBLIC Drivers/CLI/2026_C_AV_CLI)

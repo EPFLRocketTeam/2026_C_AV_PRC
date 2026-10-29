@@ -99,6 +99,7 @@
 									<listOptionValue builtIn="false" value="../Drivers/LMT85"/>
 									<listOptionValue builtIn="false" value="../Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include"/>
 									<listOptionValue builtIn="false" value="../Drivers/LOG_AGGREGATOR/2026_C_AV_LOG_AGGREGATOR/include"/>
+									<listOptionValue builtIn="false" value="../Drivers/CLI/2026_C_AV_CLI"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/ThirdParty/SignalUtils/include}&quot;"/>
 									<listOptionValue builtIn="false" value="../Modules"/>
 									<listOptionValue builtIn="false" value="../Drivers/Plume/2026_C_AV_PLUME/include"/>
@@ -143,7 +144,7 @@
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Application"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
-						<entry excluding="Plume/2026_C_AV_PLUME/src/plume/cli|Plume/2026_C_AV_PLUME/src/plume/drivers|Plume/2026_C_AV_PLUME/tests|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_msp_template.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_timebase_rtc_wakeup_template.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_timebase_rtc_alarm_template.c|CMSIS/DSP|CMSIS/Device/ST/STM32H7xx/Source|CMSIS/Core/Template|CMSIS/Core_A/Source|CMSIS/NN|CMSIS/RTOS2" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
+						<entry excluding="CLI/2026_C_AV_CLI/fc_commands_generated.cpp|Plume/2026_C_AV_PLUME/src/plume/cli|Plume/2026_C_AV_PLUME/src/plume/drivers|Plume/2026_C_AV_PLUME/tests|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_msp_template.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_timebase_rtc_wakeup_template.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_timebase_rtc_alarm_template.c|CMSIS/DSP|CMSIS/Device/ST/STM32H7xx/Source|CMSIS/Core/Template|CMSIS/Core_A/Source|CMSIS/NN|CMSIS/RTOS2" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
 						<entry excluding="ST/STM32_USB_Device_Library/Core/Src/usbd_desc_template.c|ST/STM32_USB_Device_Library/Core/Src/usbd_conf_template.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
 						<entry excluding="Sensors/tests" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Modules"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="USB_DEVICE"/>
@@ -238,6 +239,7 @@
 									<listOptionValue builtIn="false" value="../Drivers/LMT85"/>
 									<listOptionValue builtIn="false" value="../Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include"/>
 									<listOptionValue builtIn="false" value="../Drivers/LOG_AGGREGATOR/2026_C_AV_LOG_AGGREGATOR/include"/>
+									<listOptionValue builtIn="false" value="../Drivers/CLI/2026_C_AV_CLI"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/ThirdParty/SignalUtils/include}&quot;"/>
 									<listOptionValue builtIn="false" value="../Drivers/Plume/2026_C_AV_PLUME/include"/>
 								</option>
@@ -276,7 +278,7 @@
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Application"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
-						<entry excluding="Plume/2026_C_AV_PLUME/src/plume/cli|Plume/2026_C_AV_PLUME/src/plume/drivers|Plume/2026_C_AV_PLUME/tests|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_msp_template.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_timebase_rtc_wakeup_template.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_timebase_rtc_alarm_template.c|CMSIS/DSP|CMSIS/Device/ST/STM32H7xx/Source|CMSIS/Core/Template|CMSIS/Core_A/Source|CMSIS/NN|CMSIS/RTOS2" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
+						<entry excluding="CLI/2026_C_AV_CLI/fc_commands_generated.cpp|Plume/2026_C_AV_PLUME/src/plume/cli|Plume/2026_C_AV_PLUME/src/plume/drivers|Plume/2026_C_AV_PLUME/tests|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_msp_template.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_timebase_rtc_wakeup_template.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_timebase_rtc_alarm_template.c|CMSIS/DSP|CMSIS/Device/ST/STM32H7xx/Source|CMSIS/Core/Template|CMSIS/Core_A/Source|CMSIS/NN|CMSIS/RTOS2" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
 						<entry excluding="ST/STM32_USB_Device_Library/Core/Src/usbd_desc_template.c|ST/STM32_USB_Device_Library/Core/Src/usbd_conf_template.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="USB_DEVICE"/>
 					</sourceEntries>

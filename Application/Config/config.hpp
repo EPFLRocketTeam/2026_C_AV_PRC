@@ -15,5 +15,7 @@ namespace config {
 
         void commit ();
         void put (uint8_t offset, uint8_t* buffer, uint8_t buffer_length);
+
+        void print_status ();
     };
 };

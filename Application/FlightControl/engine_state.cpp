@@ -630,3 +630,23 @@ void Prc_Engine_Fsm_Tick() {
 EngineState Prc_Engine_Fsm_GetState() {
   return engine_fsm_instance().getCurrentState();
 }
+
+bool Prc_Engine_ManualSetMo(bool open) {
+  if (Prc_Engine_Fsm_GetState() != EngineState::Idle) return false;
+  if (Valve_Get(k_valve_mo) == nullptr) return false;
+  SetMo(open);
+  return true;
+}
+
+bool Prc_Engine_ManualSetMe(bool open) {
+  if (Prc_Engine_Fsm_GetState() != EngineState::Idle) return false;
+  if (Valve_Get(k_valve_me) == nullptr) return false;
+  SetMe(open);
+  return true;
+}
+
+bool Prc_Engine_ManualSetIgniter(bool on) {
+  if (Prc_Engine_Fsm_GetState() != EngineState::Idle) return false;
+  SetIgniter(on);
+  return true;
+}

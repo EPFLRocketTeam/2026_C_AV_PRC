@@ -34,6 +34,7 @@ extern "C" FDCAN_HandleTypeDef hfdcan1;
 // #include "../Drivers/Valve/valve_manual_test.hpp"
 
 #include "Application/FlightControl/prc_fsm_c_api.h"
+#include "Application/FlightControl/prc_shell.hpp"
 #include "../../Application/FlightControl/prc_can.hpp"
 #include "Modules/ExtConn/external_connector.hpp"
 
@@ -443,6 +444,8 @@ void main_init() {
 }
 
 void main_tick() {
+	Prc_Shell_Tick();  /* USB shell: runs the lines CDC_Receive_HS queued, see Application/FlightControl/prc_shell.hpp */
+
 	// RUN_EVERY (1000) app_printf("Tick\n");
 
 	switch (prc::PrcStore::get_instance().boardIdentityStore.get_role()) {
