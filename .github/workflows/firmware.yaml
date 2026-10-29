@@ -1,0 +1,33 @@
+name: firmware
+on:
+  push:
+    branches:
+      - "**"
+permissions:
+  contents: read
+jobs:
+  arm-build:
+    name: arm-none-eabi firmware build
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+      - name: install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
+      - name: compile
+        run: |
+          cmake -B build-arm -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi.cmake -DCMAKE_BUILD_TYPE=Debug
+          cmake --build build-arm -j8
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 2026_C_AV_PRC-firmware
+          path: |
+            build-arm/2026_C_AV_PRC_IOC.elf
+            build-arm/2026_C_AV_PRC_IOC.bin
+            build-arm/2026_C_AV_PRC_IOC.hex

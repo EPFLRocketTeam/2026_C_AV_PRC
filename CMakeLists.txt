@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 3.28.0)
 PROJECT(2026_C_AV_PRC)
+
+# Firmware ELF, only with -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi.cmake.
+if(CMAKE_CROSSCOMPILING)
+    include(cmake/firmware.cmake)
+    return()
+endif()
+
 SET(CMAKE_C_FLAGS "-g -Wall -Werror")
 SET(CMAKE_CXX_FLAGS "-g -Wall -Werror -std=c++20")
 

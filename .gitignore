@@ -11,3 +11,6 @@ build
 EWARM
 Middlewares
 STM32CubeIDE
+
+# arm firmware build
+build-arm/
