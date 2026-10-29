@@ -23,16 +23,28 @@ Bool arguments are true only for `open` or `on`; anything else means closed or o
 | `valve mo open\|close` | engine | Main oxidiser valve. |
 | `valve me open\|close` | engine | Main ethanol valve. |
 | `igniter on\|off` | engine | Igniter output. |
-| `fsm pressurize on\|off` | DPR | Pressurize command, as if it came over CAN. |
+| `fsm pressurize on\|off` | DPR | This board's pressurize on or off command. |
 | `fsm clear_to_ignite` | engine | Clear to ignite. |
 | `fsm ignite` | engine | Ignite. |
-| `fsm abort` | all | Abort (DPR abort on a DPR board, broadcast abort on the engine board). |
-| `fsm passivate` | all | Passivate this board. |
-| `fsm reset` | all | Reset this board's FSM. |
+| `fsm abort` | all | Abort this board's own FSM only. |
+| `fsm passivate` | all | Passivate this board's own FSM only. |
+| `fsm reset` | all | Reset this board's own FSM only. |
 | `logs usb on\|off` | all | app_printf over USB. |
 | `logs can on\|off` | all | app_printf forwarded over CAN. |
 | `config print status` | all | Config buffer and committed CRCs. |
 | `config commit` | all | Commit the config buffer. Refused while the board is protected (see below) and before the role is latched. |
+
+The `fsm` commands never go on the CAN bus. Each one writes the same command id into this board's own command slot that the matching CAN message from the FC would write, and this board's FSM acts on it on its next tick, only from the states listed here; in any other state it is ignored, while the reply still says "sent". The vehicle abort stays the FC's `prc abort` and DPR broadcast abort.
+
+| Command | DPR board (LOX or ETH) | Engine board |
+| --- | --- | --- |
+| `fsm pressurize on` | MANUAL to PRESSURIZE_ON | refused |
+| `fsm pressurize off` | REGULATE to PRESSURIZE_OFF | refused |
+| `fsm clear_to_ignite` | refused | IDLE to CLEAR_TO_IGNITE |
+| `fsm ignite` | refused | CLEAR_TO_IGNITE to IGNITION_PRECHILL, which starts the ignition sequence and its preburn messages to the DPR boards |
+| `fsm abort` | writes this board's DPR abort id: PRESSURIZE_ON or REGULATE to ABORT_ON_GROUND, PRESSURIZE_OFF to ABORT_IN_FLIGHT | writes broadcast_abort into the local slot only, the DPR boards do not see it: CLEAR_TO_IGNITE and the ignition states to ABORT_ON_GROUND, BURN, BURN_STOP_ME, BURN_STOP_MO and WAIT_FOR_PASSIVATION to ABORT_IN_FLIGHT; ignored in IDLE |
+| `fsm passivate` | PRESSURIZE_OFF to DEPRESSURIZE_ON, unless coldflow mode | WAIT_FOR_PASSIVATION to PASSIVATION_SEPARATION_DELAY, unless coldflow mode |
+| `fsm reset` | DEPRESSURIZE_OFF and ABORT_ON_GROUND to MANUAL, PRESSURIZE_OFF to MANUAL in coldflow mode | DEPRESSURIZE_CLOSE, ABORT_ON_GROUND_OXYDANT and ABORT_ON_GROUND_ETHANOL to IDLE, WAIT_FOR_PASSIVATION to IDLE in coldflow mode |
 
 Manual valve commands are refused while the board is in a protected state: DPR boards accept them only in MANUAL, PRESSURIZE_ON and REGULATE (the FSM's own allow list), the engine board only in IDLE. A line longer than 128 bytes, or one that lost bytes to a full receive buffer, is dropped with a message instead of being run.
 
