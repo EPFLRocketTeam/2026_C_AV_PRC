@@ -72,8 +72,18 @@ static void SetMe(bool open) {
 // at all). Polarity (active_high) is ASSUMED, not measured against the
 // real drive circuit -- same caveat as ValveList.hpp's solenoid polarity
 // TODO, confirm before relying on this live.
+//
+// Writes and logs only on a real change: the entry actions switch the
+// igniter off in several consecutive states, and each of those used to be
+// logged as a transition although the pin did not move. g_igniter_on mirrors
+// the last level written; it starts off because MX_GPIO_Init drives PB2 low
+// before the FSM runs, and nothing else writes the pin.
+static bool g_igniter_on = false;
+
 static void SetIgniter(bool on) {
+  if (on == g_igniter_on) return;
   HAL_GPIO_WritePin(Igniter_GPIO_Port, Igniter_Pin, on ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  g_igniter_on = on;
   getEngineLogger().logIgniterTransition({ on });
 }
 
