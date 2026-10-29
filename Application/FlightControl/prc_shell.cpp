@@ -113,6 +113,10 @@ void prc_shell::Configure(const prc_cli::driver *drv, Sink sink) {
   g_usb_log_checked = false;
 }
 
+uint16_t prc_shell::RingHead() {
+  return g_head;
+}
+
 extern "C" void Prc_Shell_ProcessRxBytes(const uint8_t *data, uint32_t length) {
   if (data == nullptr || length == 0) return;
 

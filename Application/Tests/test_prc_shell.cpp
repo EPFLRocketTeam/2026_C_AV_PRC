@@ -20,9 +20,12 @@ struct Calls {
   std::vector<float> ball;
   int state = 0;
   int abort = 0;
+  int bad = 0;
 };
 Calls g_calls;
 std::string g_sink_text;
+int g_init_calls = 0;
+bool g_init_binds = true;
 
 void Sink(const char* text) { g_sink_text += text; }
 
@@ -32,6 +35,7 @@ prc_cli::driver FakeDriver() {
   d.valve_ball  = [](void*, float v) { g_calls.ball.push_back(v); };
   d.state_print = [](void*) { g_calls.state++; };
   d.fsm_abort   = [](void*) { g_calls.abort++; };
+  d.on_bad_argument = [](void*) { g_calls.bad++; };
   return d;
 }
 
@@ -53,9 +57,24 @@ protected:
 
 }  // namespace
 
-// The firmware binds the real handlers here; the tests bind theirs through
-// prc_shell::Configure before the first tick, so this is never reached.
-extern "C" void Prc_Shell_Init(void) {}
+// The firmware binds the real handlers here (prc_commands.cpp). The tests
+// bind theirs through prc_shell::Configure in SetUp; this stand in counts the
+// lazy call Prc_Shell_Tick makes when no driver is bound, and binds the fake.
+extern "C" void Prc_Shell_Init(void) {
+  g_init_calls++;
+  if (g_init_binds) prc_shell::Configure(&g_driver, Sink);
+}
+
+namespace {
+
+// Drain the ring and return the producer index, so a test can place bytes at
+// a known position.
+uint16_t DrainedHead() {
+  Prc_Shell_Tick();
+  return prc_shell::RingHead();
+}
+
+}  // namespace
 
 TEST_F(PrcShell, LineSplitOverTwoPacketsWithATickBetweenSurvives) {
   Packet("valve ve");
@@ -169,6 +188,150 @@ TEST_F(PrcShell, EmptyLinesAndUnknownWordsDoNothing) {
   EXPECT_TRUE(g_calls.vent.empty());
   EXPECT_EQ(g_calls.state, 0);
   EXPECT_TRUE(g_sink_text.empty());
+}
+
+TEST_F(PrcShell, LineAcrossTheRingWrapPointRuns) {
+  // Fill with empty lines until the producer index is 3 short of the end,
+  // so "state\n" lands in slots 253, 254, 255, 0, 1, 2.
+  const uint16_t head = DrainedHead();
+  const uint16_t filler = static_cast<uint16_t>(prc_shell::kRingSize - 3 - head) % prc_shell::kRingSize;
+  if (filler > 0) Packet(std::string(filler, '\n'));
+  ASSERT_EQ(DrainedHead(), prc_shell::kRingSize - 3);
+
+  Packet("state\n");
+  EXPECT_EQ(prc_shell::RingHead(), 3);
+  Prc_Shell_Tick();
+  EXPECT_EQ(g_calls.state, 1);
+  EXPECT_TRUE(g_sink_text.empty());
+}
+
+TEST_F(PrcShell, PacketOfExactly255BytesFitsAnEmptyRing) {
+  DrainedHead();
+  std::string packet = "state\n";
+  packet += std::string(prc_shell::kRingSize - 1 - packet.size(), '\n');
+  ASSERT_EQ(packet.size(), 255u);
+  Packet(packet);
+  Prc_Shell_Tick();
+  EXPECT_EQ(g_calls.state, 1);
+  EXPECT_TRUE(g_sink_text.empty());
+
+  // 256 bytes never fit (one slot stays empty): dropped, and the next line
+  // is dropped with it because the marker cannot tell where the hole ends.
+  Packet(std::string(256, '\n'));
+  Packet("state\n");
+  Prc_Shell_Tick();
+  EXPECT_EQ(g_calls.state, 1);
+  EXPECT_NE(g_sink_text.find("input overflow"), std::string::npos);
+}
+
+TEST_F(PrcShell, SecondDroppedPacketWhileTheMarkerIsOwedStillDropsOneLine) {
+  DrainedHead();
+  Packet("valve ba");
+  Packet(std::string(250, 'x'));  // dropped, marker owed
+  Packet(std::string(250, 'y'));  // dropped again, marker still owed
+  Prc_Shell_Tick();
+  Packet("ll 7\n");
+  Prc_Shell_Tick();
+  EXPECT_TRUE(g_calls.ball.empty());
+  EXPECT_EQ(g_sink_text, "[SHELL] input overflow, line dropped\r\n");
+
+  Packet("valve ball 7\n");
+  Prc_Shell_Tick();
+  ASSERT_EQ(g_calls.ball.size(), 1u);
+}
+
+TEST_F(PrcShell, NulByteFromTheHostDropsTheLine) {
+  Packet(std::string("sta\0te\n", 7));
+  Prc_Shell_Tick();
+  EXPECT_EQ(g_calls.state, 0);
+  EXPECT_NE(g_sink_text.find("input overflow"), std::string::npos);
+}
+
+TEST_F(PrcShell, DamagedAndOverlongLineReportsTheDamage) {
+  DrainedHead();
+  Packet(std::string(200, 'z'));
+  Packet(std::string(250, 'x'));  // dropped while 200 bytes wait
+  Prc_Shell_Tick();
+  Packet("\n");
+  Prc_Shell_Tick();
+  EXPECT_EQ(g_sink_text, "[SHELL] input overflow, line dropped\r\n");
+}
+
+TEST_F(PrcShell, LineOf129BytesIsDropped) {
+  std::string line = "valve ball 5";
+  line += std::string(prc_shell::kLineMax + 1 - line.size(), '0');
+  ASSERT_EQ(line.size(), prc_shell::kLineMax + 1);
+  Packet(line + "\n");
+  Prc_Shell_Tick();
+  EXPECT_TRUE(g_calls.ball.empty());
+  EXPECT_NE(g_sink_text.find("longer than 128 bytes"), std::string::npos);
+}
+
+TEST_F(PrcShell, EmptyOrNullPacketIsIgnored) {
+  Prc_Shell_ProcessRxBytes(nullptr, 5);
+  const uint8_t byte = 's';
+  Prc_Shell_ProcessRxBytes(&byte, 0);
+  const uint16_t before = prc_shell::RingHead();
+  Prc_Shell_Tick();
+  EXPECT_EQ(prc_shell::RingHead(), before);
+  EXPECT_TRUE(g_sink_text.empty());
+}
+
+TEST_F(PrcShell, BadBoolArgumentRunsNothingAndCallsOnBadArgument) {
+  Packet("valve vent maybe\nvalve vent opne\nvalve vent close\n");
+  Prc_Shell_Tick();
+  EXPECT_EQ(g_calls.bad, 2);
+  EXPECT_EQ(g_calls.vent, (std::vector<bool>{false}));
+}
+
+TEST_F(PrcShell, GarbageBeforeACommandRunsNothing) {
+  Packet("xfsm abort\nfsm abort\n");
+  Prc_Shell_Tick();
+  EXPECT_EQ(g_calls.abort, 1);
+}
+
+TEST_F(PrcShell, TickBindsTheHandlersOnceWhenNoneAreBound) {
+  prc_shell::Configure(nullptr, nullptr);
+  g_init_calls = 0;
+  Prc_Shell_Tick();
+  EXPECT_EQ(g_init_calls, 1);
+  Prc_Shell_Tick();
+  Packet("state\n");
+  Prc_Shell_Tick();
+  EXPECT_EQ(g_init_calls, 1);
+  EXPECT_EQ(g_calls.state, 1);
+
+  // Init again (idempotent): same binding, the shell keeps working.
+  Prc_Shell_Init();
+  Packet("state\n");
+  Prc_Shell_Tick();
+  EXPECT_EQ(g_calls.state, 2);
+}
+
+TEST_F(PrcShell, NoDriverBoundRunsNothing) {
+  g_init_binds = false;
+  prc_shell::Configure(nullptr, Sink);
+  Packet("state\n");
+  Prc_Shell_Tick();
+  EXPECT_EQ(g_calls.state, 0);
+  g_init_binds = true;
+}
+
+TEST_F(PrcShell, NoSinkBoundDropsTheShellMessageQuietly) {
+  prc_shell::Configure(&g_driver, nullptr);
+  Packet(std::string(200, 'z') + "\nstate\n");
+  Prc_Shell_Tick();
+  EXPECT_EQ(g_calls.state, 1);
+  EXPECT_TRUE(g_sink_text.empty());
+}
+
+TEST_F(PrcShell, UsbLogAlreadyOnIsLeftOn) {
+  app_printf_use_usb(true);
+  prc_shell::Configure(&g_driver, Sink);
+  Packet("state\n");
+  Prc_Shell_Tick();
+  EXPECT_TRUE(app_printf_is_usb_enabled());
+  EXPECT_EQ(g_calls.state, 1);
 }
 
 TEST_F(PrcShell, FirstReceivedBytesTurnTheUsbLogOnOnce) {

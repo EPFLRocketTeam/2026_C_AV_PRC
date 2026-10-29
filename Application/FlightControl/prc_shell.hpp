@@ -60,6 +60,10 @@ using Sink = void (*)(const char *text);
 // it on the target; the host tests call it with a fake driver.
 void Configure(const prc_cli::driver *drv, Sink sink);
 
+// Producer index, read only. Lets the host tests place a line exactly across
+// the ring's wrap point.
+uint16_t RingHead();
+
 }  // namespace prc_shell
 
 #endif
