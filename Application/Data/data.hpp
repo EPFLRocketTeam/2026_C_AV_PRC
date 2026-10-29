@@ -162,11 +162,14 @@ struct FcLink {
   uint32_t last_counter = 0;
   uint32_t last_rx_ms   = 0;
   bool     seen         = false;
+  bool     reported_alive = false; // last state printed
+  bool     grace_done     = false;
 };
 
 class FcLinkStore : public IStore<FcLink> {
 public:
   static constexpr uint32_t TIMEOUT_MS = 500;
+  static constexpr uint32_t BOOT_GRACE_MS = 2000;
 
   inline void on_heartbeat(uint32_t counter, uint32_t now_ms) {
     data_.last_counter = counter;
@@ -178,6 +181,19 @@ public:
   // subtraction keeps it right across the HAL_GetTick() wrap.
   inline bool alive(uint32_t now_ms) const {
     return data_.seen && (now_ms - data_.last_rx_ms) < TIMEOUT_MS;
+  }
+
+  // True when `alive` should be printed now: on every alive or dead edge,
+  // and once as "dead" when now_ms (ms since boot) reaches BOOT_GRACE_MS
+  // with the FC never heard from.
+  inline bool take_report(uint32_t now_ms, bool alive) {
+    bool report = (alive != data_.reported_alive);
+    data_.reported_alive = alive;
+    if (!data_.grace_done && now_ms >= BOOT_GRACE_MS) {
+      data_.grace_done = true;
+      if (!data_.seen) report = true;
+    }
+    return report;
   }
 };
 

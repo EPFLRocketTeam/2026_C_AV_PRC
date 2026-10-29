@@ -67,7 +67,8 @@ uint8_t Prc_Can_TakeColdflowTrigger(void);
 void Prc_Can_SendExternalConnector (int has_no_continuity);
 
 // True when a heartbeat_fc frame arrived less than 500 ms before now_ms
-// (HAL_GetTick() time). Reports only; no FSM acts on it.
+// (HAL_GetTick() time). Reports only; no FSM acts on it. Prc_Can_SendTelemetry
+// prints "[FC LINK] alive|dead" from it on each edge.
 bool Prc_Can_FcAlive(uint32_t now_ms);
 
 #ifdef __cplusplus

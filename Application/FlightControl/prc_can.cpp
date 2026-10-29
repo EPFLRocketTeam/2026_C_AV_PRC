@@ -395,6 +395,15 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
   else if (role == BoardRole::DprLox) pi::send_heartbeat_dpr_lox(&ctx, hb);
   else                                pi::send_heartbeat_dpr_eth(&ctx, hb);
 
+  // FC liveness, printed on each edge and once 2 s after boot if the FC was
+  // never heard from. Reports only: no FSM reads it.
+  const bool fc_alive = Prc_Can_FcAlive(hb.uptime_ms);
+  FcLinkStore& fc_link = PrcStore::get_instance().fcLinkStore;
+  if (fc_link.take_report(hb.uptime_ms, fc_alive)) {
+    app_printf("[FC LINK] %s (counter %lu)\r\n", fc_alive ? "alive" : "dead",
+               static_cast<unsigned long>(fc_link.get().last_counter));
+  }
+
   RUN_EVERY(1000) {
     pi::payload::config_crc conf;
     conf.crc_buffer   = config::internal::crc_buffer();
