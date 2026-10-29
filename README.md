@@ -39,4 +39,17 @@ What the ROM bootloader needs (ST AN2606 Rev 61, section 52 "STM32H74xxx/75xxx d
 * Version: the bootloader ID byte at 0x1FF1E7FE is 0x91 for V9.1 (Table 177); `Bootloader_RomId()` returns it, so the PRC shell can print it with `system dfu`. A part reading 0x90 has V9.0, whose known limitations (Table 114) are a jump issue unless the application stack pointer is below RAM end minus 16 bytes (the jump here hands over the bootloader's own initial stack pointer, which avoids it) and an extra reset needed after a power cycle before the bootloader answers (ST's workaround is a pull-up on PA11). V9.1 fixes both.
 * After its own reset the bootloader disables every interrupt source and peripheral clock and initialises its clock, GPIOs, IWDG and SysTick itself (Figure 64), so it starts cleanly from the reset state the jump hands over. It refreshes the IWDG it configures (Table 113).
 
-CubeMX note: `USB_DEVICE/App/usb_device.c` starts the CDC on the OTG_FS core and no DFU class, which the `.ioc` does not describe yet. Regenerating code from the current `.ioc` puts the CDC back on OTG_HS (PB14/PB15, which reach no connector on 2026_C_AV_PC_V1) and the DFU stub back on OTG_FS; update the `.ioc` first.
+## CubeMX regeneration
+
+Kept by a regeneration, because they sit inside USER CODE blocks: the `Bootloader_CheckAndJump()` call and its include in `Core/Src/main.c`, and the product string and UID serial number in `USB_DEVICE/App/usbd_desc.c` (an `#undef` of `USBD_PRODUCT_STRING_HS` and a serial descriptor that returns early, both written against the HS descriptor set the CDC uses).
+
+Reverted by a regeneration from the current `.ioc`: `USB_DEVICE/App/usb_device.c`. The CDC goes back to OTG_HS (PB14/PB15, which reach no connector on 2026_C_AV_PC_V1, so the board stops showing up as a serial port), and the stub DFU device comes back on OTG_FS, advertising the ROM bootloader's own `0483:df11` on J7. Also check that the `excluding="App/usbd_dfu_if.c"` entry on the `USB_DEVICE` source folder in `.cproject` is still there.
+
+To make the `.ioc` match (`2026_C_AV_PRC.ioc`), move the CDC to OTG_FS and drop OTG_HS:
+
+* `USB_DEVICE.CLASS_NAME_FS=DFU` becomes CDC and `USB_DEVICE.CLASS_NAME_HS=CDC` goes (lines 446 and 447), with `USB_DEVICE.IPParameters`, `USB_DEVICE.VirtualMode-CDC_HS`, `VirtualMode-DFU_FS`, `VirtualModeFS` and `VirtualModeHS` (lines 448 to 452) to match
+* PA11/PA12 stay `USB_OTG_FS_DM`/`USB_OTG_FS_DP` in `Device_Only` (lines 181 to 184)
+* PB14/PB15 `USB_OTG_HS` (lines 205 to 208), `Mcu.Pin16`/`Mcu.Pin17`, `Mcu.IP14=USB_OTG_HS` and the `USB_OTG_HS.*` lines (455, 456) go
+* `Mcu.Pin43=VP_USB_DEVICE_VS_USB_DEVICE_DFU_FS` and `Mcu.Pin44=VP_USB_DEVICE_VS_USB_DEVICE_CDC_HS` with their `.Mode`/`.Signal` lines (461 to 464) become one `VP_USB_DEVICE_VS_USB_DEVICE_CDC_FS`
+
+Once the `.ioc` puts the CDC on OTG_FS, CubeMX generates `usbd_cdc_if.c` and `usbd_desc.c` with FS names: `CDC_Transmit_FS`, `CDC_Receive_FS`, `USBD_Interface_fops_FS`, the `hUsbDeviceFS` handle and the `FS_Desc` descriptor set. Then rename the caller `CDC_Transmit_HS` in `_write` (`Core/Src/main.c`), move the code in the `CDC_Receive_HS` USER CODE block to `CDC_Receive_FS`, and move the product string and serial overrides from the HS names (`USBD_PRODUCT_STRING_HS`, `USBD_HS_SerialStrDescriptor`) to the FS ones. The product string can also be set on the USB_DEVICE middleware page; the 96 bit serial has no CubeMX parameter.
