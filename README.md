@@ -35,7 +35,7 @@ Bool arguments take `open` or `on` for true and `close` or `off` for false; any 
 | `config commit` | all | Commit the config buffer. DPR boards only in MANUAL, the engine board only in IDLE, never before the role is latched. |
 | `system dfu` | all | Arms a reboot into the ROM DFU bootloader for 10 s and prints the FSM state and the ROM bootloader ID. DPR boards only in MANUAL, the engine board only in IDLE, never before the role is latched. |
 | `system reboot` | all | Arms a plain reboot for 10 s, same states. |
-| `system confirm` | all | Within 10 s of `system dfu` or `system reboot`, checks the state again and does the armed reset. Typing `system dfu` twice only re-arms. |
+| `system confirm` | all | Within 10 s of `system dfu` or `system reboot`, checks the state again and does the armed reset. Typing `system dfu` twice only re-arms. A CAN command from the FC latched in the previous loop iteration is consumed by the FSM only after the shell runs, so a confirm in that same iteration can reset the board before the command acts, and the command is lost. |
 
 The `fsm` commands never go on the CAN bus. Each one writes the same command id into this board's own command slot that the matching CAN message from the FC would write, and this board's FSM acts on it on its next tick, only from the states listed here; in any other state it is ignored, while the reply still says "sent". The vehicle abort stays the FC's `prc abort` and DPR broadcast abort.
 
