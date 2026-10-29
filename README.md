@@ -48,4 +48,6 @@ The `fsm` commands never go on the CAN bus. Each one writes the same command id 
 
 Manual valve commands are refused while the board is in a protected state: DPR boards accept them only in MANUAL, PRESSURIZE_ON and REGULATE (the FSM's own allow list), the engine board only in IDLE. A line longer than 128 bytes, or one that lost bytes to a full receive buffer, is dropped with a message instead of being run.
 
+Known host quirk: a NUL byte marks the line it arrives in as damaged, the same marker the shell uses for lost bytes, so that line is dropped with the overflow message. A terminal in telnet mode that sends CR NUL on Enter therefore loses every line after the first. Use a raw serial terminal, or set the terminal to send CR, LF or CRLF only.
+
 The command tree lives in the CLI submodule (`Drivers/CLI/2026_C_AV_CLI/prc_commands.yaml`); the parser `prc_commands_generated.*` is generated from it with `--namespace prc_cli`. The handlers are in `Application/FlightControl/prc_commands.cpp`, the line assembler in `prc_shell.cpp`.
