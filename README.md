@@ -8,6 +8,8 @@ The PRC has the same command shell as the flight computer, on its USB port (USB 
 
 Open the port with any serial terminal (PuTTY, screen, minicom, the CubeIDE terminal). The baud rate is ignored by CDC, so 115200 or anything else works. Each command is one line ending in a newline; a trailing carriage return and trailing spaces are dropped. There is no echo and no prompt, so turn on local echo in the terminal if you want to see what you type. Every command answers with one `[SHELL] ...` line naming the board role, or a refusal saying why. The first bytes received turn the USB log on, so replies show up without sending `logs usb on` first.
 
+USB output never holds up the main loop. A log line goes out only while a host has the port configured. If the port stays busy for 2 ms (laptop unplugged, terminal not reading), that line and every later one are dropped until the host is seen again: a new enumeration, a byte received or a transfer completed. Unplugging a laptop therefore costs log output, never loop time.
+
 Bool arguments are true only for `open` or `on`; anything else means closed or off.
 
 | Command | Boards | What it does |
