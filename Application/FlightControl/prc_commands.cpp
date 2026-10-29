@@ -184,11 +184,24 @@ void OnValveCopvVent(void*, bool open) noexcept {
   ReportDpr("valve copv_vent", OpenClosed(open), Prc_Fsm_ManualVentCopv(open));
 }
 
+// The reply shows the position the driver applied: ServoBallValve clamps to
+// 15 to 75 percent. Out of range or NaN requests are refused here with that
+// reason, instead of reading as an FSM refusal.
 void OnValveBall(void*, float percent_open) noexcept {
   if (!IsDpr(Role())) { RefuseRole("valve ball", "DPR_LOX and DPR_ETH"); return; }
-  char value[24];
-  std::snprintf(value, sizeof(value), "%.1f%%", percent_open);
-  ReportDpr("valve ball", value, Prc_Fsm_ManualSetBallValve(percent_open));
+  if (!(percent_open >= 0.0f && percent_open <= 100.0f)) {
+    app_printf("[SHELL] valve ball refused on %s: position must be 0 to 100\r\n", RoleName(Role()));
+    return;
+  }
+  char value[48];
+  const bool applied = Prc_Fsm_ManualSetBallValve(percent_open);
+  const ServoBallValve* ball = Valve_GetBallValve();
+  if (applied && ball != nullptr && ball->position() != percent_open) {
+    std::snprintf(value, sizeof(value), "%.1f%% (clamped from %.1f%%)", ball->position(), percent_open);
+  } else {
+    std::snprintf(value, sizeof(value), "%.1f%%", percent_open);
+  }
+  ReportDpr("valve ball", value, applied);
 }
 
 void OnValveMo(void*, bool open) noexcept {

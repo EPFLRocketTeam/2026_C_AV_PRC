@@ -145,6 +145,9 @@ public:
     // control loop instead of settling it. Leave it true (default) for
     // manual commands and one-shot state-entry positions.
     ValveStatus set_position(float percent_open, bool dither = true);
+
+    // Position last written to the servo, after set_position's clamp.
+    float position() const { return commanded_percent_open_; }
     
     void setCallback(void (*callback)(float old_open, float new_open));
 

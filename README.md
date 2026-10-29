@@ -19,7 +19,7 @@ Bool arguments are true only for `open` or `on`; anything else means closed or o
 | `valve vent open\|close` | DPR | Vent valve, through the DPR FSM's manual override. |
 | `valve safety open\|close` | DPR | Safety valve, same override. |
 | `valve copv_vent open\|close` | DPR | Vent, safety and ball valve together to vent the COPV. |
-| `valve ball <percent>` | DPR | Ball valve position, 0 to 100. |
+| `valve ball <percent>` | DPR | Ball valve position, 0 to 100. The driver clamps it to 15 to 75 and the reply shows the position applied. |
 | `valve mo open\|close` | engine | Main oxidiser valve. |
 | `valve me open\|close` | engine | Main ethanol valve. |
 | `igniter on\|off` | engine | Igniter output. |
