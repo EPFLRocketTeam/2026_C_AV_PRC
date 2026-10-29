@@ -44,7 +44,9 @@
 #   C++ includes   every C path, plus Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include,
 #                  Drivers/LOG_AGGREGATOR/2026_C_AV_LOG_AGGREGATOR/include (:81-105)
 #   Optimisation   empty, so the compiler default -O0; -g3 everywhere      (:32,45-46,79-80)
-#   C standard     not set (compiler default)
+#   C standard     not set, so no -std is passed and GCC 13 uses gnu17. Unconfirmed:
+#                  CubeIDE may pass its own default (possibly -std=gnu11) for an
+#                  unset C standard; one line of a CubeIDE Debug build log settles it.
 #   C++ standard   gnu++17                                                 (:112)
 #   Runtime        not set: CubeIDE default, reduced C (--specs=nano.specs)
 #   System calls   minimal implementation (--specs=nosys.specs)            (:123)
