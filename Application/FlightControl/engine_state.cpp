@@ -476,10 +476,20 @@ static void ApplyEngineValveActions(EngineState state, EngineState previous_stat
   if (state == previous_state) return;
 
   switch (state) {
+    // Idle, ClearToIgnite and every abort state switch the igniter off, and
+    // ClearToIgnite also closes MO and ME, so an output set by hand in Idle
+    // (Prc_Engine_ManualSet*, USB shell) never survives into the ignition
+    // sequence or an abort.
     case EngineState::Idle:
       SetMo(false);
       SetMe(false);
+      SetIgniter(false);
       break ;
+    case EngineState::ClearToIgnite:
+      SetMo(false);
+      SetMe(false);
+      SetIgniter(false);
+      break;
     case EngineState::IgnitionPrechill:
       SetMo(true);
       break;
@@ -517,15 +527,22 @@ static void ApplyEngineValveActions(EngineState state, EngineState previous_stat
       break;
     case EngineState::AbortOnGroundOxydant:
       SetMo(false);
+      SetIgniter(false);
       break;
     case EngineState::AbortOnGroundEthanol:
       SetMe(false);
+      SetIgniter(false);
+      break;
+    case EngineState::AbortInFlight:
+      SetIgniter(false);
       break;
     case EngineState::AbortInFlightOxydant:
       SetMo(false);
+      SetIgniter(false);
       break;
     case EngineState::AbortInFlightEthanol:
       SetMe(false);
+      SetIgniter(false);
       break;
     case EngineState::DepressurizeOpen:
       SetMo(true);
@@ -631,22 +648,26 @@ EngineState Prc_Engine_Fsm_GetState() {
   return engine_fsm_instance().getCurrentState();
 }
 
+bool Prc_Engine_ManualAllowedIn(EngineState state) {
+  return state == EngineState::Idle;
+}
+
 bool Prc_Engine_ManualSetMo(bool open) {
-  if (Prc_Engine_Fsm_GetState() != EngineState::Idle) return false;
+  if (!Prc_Engine_ManualAllowedIn(Prc_Engine_Fsm_GetState())) return false;
   if (Valve_Get(k_valve_mo) == nullptr) return false;
   SetMo(open);
   return true;
 }
 
 bool Prc_Engine_ManualSetMe(bool open) {
-  if (Prc_Engine_Fsm_GetState() != EngineState::Idle) return false;
+  if (!Prc_Engine_ManualAllowedIn(Prc_Engine_Fsm_GetState())) return false;
   if (Valve_Get(k_valve_me) == nullptr) return false;
   SetMe(open);
   return true;
 }
 
 bool Prc_Engine_ManualSetIgniter(bool on) {
-  if (Prc_Engine_Fsm_GetState() != EngineState::Idle) return false;
+  if (!Prc_Engine_ManualAllowedIn(Prc_Engine_Fsm_GetState())) return false;
   SetIgniter(on);
   return true;
 }

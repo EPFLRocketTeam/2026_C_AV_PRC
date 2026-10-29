@@ -85,6 +85,19 @@ target_include_directories(test_engine_state_igniter PRIVATE
     Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include)
 target_compile_options(test_engine_state_igniter PRIVATE -Wno-unused-function -include stddef.h)
 
+# Manual MO, ME and igniter gate and the FSM taking the outputs back, same shim.
+create_test(test_engine_state_manual Application/FlightControl/tests/test_engine_state_manual.cpp)
+get_target_property(ENGINE_STATE_TEST_SOURCES test_engine_state_igniter SOURCES)
+list(REMOVE_ITEM ENGINE_STATE_TEST_SOURCES Application/FlightControl/tests/test_engine_state_igniter.cpp)
+target_sources(test_engine_state_manual PRIVATE ${ENGINE_STATE_TEST_SOURCES})
+target_include_directories(test_engine_state_manual PRIVATE
+    Application/FlightControl/tests/shim
+    Application/Config/2026_C_AV_FLIGHT_PARAMS
+    Application/Config/2026_C_AV_FLIGHT_PARAMS/2026_C_AV_CONFMAN
+    Drivers/Plume/2026_C_AV_PLUME/include
+    Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include)
+target_compile_options(test_engine_state_manual PRIVATE -Wno-unused-function -include stddef.h)
+
 # USB shell line assembler and dispatcher, against a fake prc_cli driver.
 # prc_commands.cpp (the HAL bound handlers) is deliberately not linked.
 create_test(test_prc_shell Application/Tests/test_prc_shell.cpp)

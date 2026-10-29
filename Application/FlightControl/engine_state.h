@@ -78,11 +78,15 @@ void Prc_Engine_Fsm_Tick();
 EngineState Prc_Engine_Fsm_GetState();
 
 // Manual MO, ME and igniter commands for the USB shell (prc_commands.cpp).
-// They only act while the engine FSM is Idle, so a bench command can never
-// fight the ignition, burn, passivation or abort sequence, and return false
-// when refused (or when the valve is not initialised yet). Idle has only an
-// entry action (close MO and ME), so a manual setting holds until the FSM
-// leaves Idle.
+// They only act while the engine FSM is Idle (Prc_Engine_ManualAllowedIn), so
+// a bench command can never fight the ignition, burn, passivation or abort
+// sequence, and return false when refused (or when the valve is not
+// initialised yet). A manual setting holds while the FSM stays in Idle. The
+// FSM takes the outputs back as soon as it leaves: entering ClearToIgnite
+// closes MO and ME and switches the igniter off, every abort state switches
+// the igniter off, and re-entering Idle closes MO and ME and switches the
+// igniter off.
+bool Prc_Engine_ManualAllowedIn(EngineState state);
 bool Prc_Engine_ManualSetMo(bool open);
 bool Prc_Engine_ManualSetMe(bool open);
 bool Prc_Engine_ManualSetIgniter(bool on);
