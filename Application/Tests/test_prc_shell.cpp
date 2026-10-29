@@ -21,6 +21,7 @@ struct Calls {
   int state = 0;
   int abort = 0;
   int bad = 0;
+  int unknown = 0;
 };
 Calls g_calls;
 std::string g_sink_text;
@@ -36,6 +37,7 @@ prc_cli::driver FakeDriver() {
   d.state_print = [](void*) { g_calls.state++; };
   d.fsm_abort   = [](void*) { g_calls.abort++; };
   d.on_bad_argument = [](void*) { g_calls.bad++; };
+  d.on_unknown_command = [](void*) { g_calls.unknown++; };
   return d;
 }
 
@@ -288,6 +290,14 @@ TEST_F(PrcShell, GarbageBeforeACommandRunsNothing) {
   Packet("xfsm abort\nfsm abort\n");
   Prc_Shell_Tick();
   EXPECT_EQ(g_calls.abort, 1);
+  EXPECT_EQ(g_calls.unknown, 1);
+}
+
+TEST_F(PrcShell, UnknownLinesGetOnUnknownCommandAndEmptyLinesNothing) {
+  Packet(" state\nstat\nvalve\nzzz\n\n   \nstate\n");
+  Prc_Shell_Tick();
+  EXPECT_EQ(g_calls.unknown, 4);
+  EXPECT_EQ(g_calls.state, 1);
 }
 
 TEST_F(PrcShell, TickBindsTheHandlersOnceWhenNoneAreBound) {

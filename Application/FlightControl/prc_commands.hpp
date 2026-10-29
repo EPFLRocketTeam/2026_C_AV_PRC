@@ -95,6 +95,10 @@ void OnConfigCommit(void*) noexcept;
 // close, on or off runs nothing and gets this refusal instead.
 void OnBadArgument(void*) noexcept;
 
+// Bound as the trie's on_unknown_command: a non-empty line that matches no
+// command (garbage, a leading space, a partial command).
+void OnUnknownCommand(void*) noexcept;
+
 }  // namespace prc_commands
 
 #endif  // APP_PRC_COMMANDS_H

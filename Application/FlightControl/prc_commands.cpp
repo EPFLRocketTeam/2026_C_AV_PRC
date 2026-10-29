@@ -297,8 +297,13 @@ void OnBadArgument(void*) noexcept {
   app_printf("[SHELL] command refused on %s: bool arguments are open, close, on or off\r\n", RoleName(Role()));
 }
 
+void OnUnknownCommand(void*) noexcept {
+  app_printf("[SHELL] unknown command on %s\r\n", RoleName(Role()));
+}
+
 void FillDriver(prc_cli::driver& drv) {
   drv.on_bad_argument     = OnBadArgument;
+  drv.on_unknown_command  = OnUnknownCommand;
   drv.config_commit       = OnConfigCommit;
   drv.config_print_status = OnConfigPrintStatus;
   drv.fsm_abort           = OnFsmAbort;

@@ -10,7 +10,7 @@ Open the port with any serial terminal (PuTTY, screen, minicom, the CubeIDE term
 
 USB output never holds up the main loop. A log line goes out only while a host has the port configured. If the port stays busy for 2 ms (laptop unplugged, terminal not reading), that line and every later one are dropped until the host is seen again: a new enumeration, a byte received or a transfer completed. Unplugging a laptop therefore costs log output, never loop time.
 
-Bool arguments take `open` or `on` for true and `close` or `off` for false; any other word runs nothing and gets a refusal. A line that starts with an unknown word, or has stray characters before the command, runs nothing.
+Bool arguments take `open` or `on` for true and `close` or `off` for false; any other word runs nothing and gets a refusal. A line that matches no command (an unknown word, a leading space, stray characters, a command cut short) runs nothing and answers `[SHELL] unknown command`; an empty line gets no answer.
 
 | Command | Boards | What it does |
 | --- | --- | --- |
