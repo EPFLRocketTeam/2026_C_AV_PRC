@@ -11,6 +11,7 @@
 #include "Application/Data/data.hpp"
 #include "Application/Config/config.hpp"
 #include "Application/app_printf.h"
+#include "Application/System/bootloader.h"
 #include "Drivers/Valve/ValveList.hpp"
 #include "Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include/prc_intranet/const.hpp"
 
@@ -293,6 +294,67 @@ void OnConfigCommit(void*) noexcept {
              static_cast<unsigned long>(config::internal::crc_commited()));
 }
 
+namespace {
+
+prc_commands::ConfirmWindow g_reset_confirm;
+
+std::string FsmStateName(BoardRole role) {
+  if (role == BoardRole::EngineBay) return PrcEngineState::stateToString(Prc_Engine_Fsm_GetState());
+  return DprStateName();
+}
+
+// Prints the refusal and disarms when this board may not reset now.
+bool ResetAllowedNow(const char* command) {
+  const BoardRole role = Role();
+  if (role == BoardRole::Unknown) {
+    g_reset_confirm.Disarm();
+    app_printf("[SHELL] %s refused on UNKNOWN: board role not latched\r\n", command);
+    return false;
+  }
+  if (prc_commands::ResetAllowed(role, Store().stateStore.get(), Prc_Engine_Fsm_GetState())) return true;
+  g_reset_confirm.Disarm();
+  app_printf("[SHELL] %s refused on %s: FSM %s, allowed only in %s\r\n", command, RoleName(role),
+             FsmStateName(role).c_str(), role == BoardRole::EngineBay ? "IDLE" : "MANUAL");
+  return false;
+}
+
+void ArmReset(const char* command, prc_commands::ConfirmWindow::Command which) {
+  if (!ResetAllowedNow(command)) return;
+  g_reset_confirm.Arm(which, HAL_GetTick());
+  // 0x90 is ROM bootloader V9.0, with AN2606 Rev 61 Table 114 limitations.
+  app_printf("[SHELL] %s armed on %s: FSM %s, ROM bootloader id 0x%02X, type system confirm within 10 s\r\n",
+             command, RoleName(Role()), FsmStateName(Role()).c_str(), static_cast<unsigned>(Bootloader_RomId()));
+}
+
+}  // namespace
+
+void OnSystemDfu(void*) noexcept {
+  ArmReset("system dfu", prc_commands::ConfirmWindow::Command::kDfu);
+}
+
+void OnSystemReboot(void*) noexcept {
+  ArmReset("system reboot", prc_commands::ConfirmWindow::Command::kReboot);
+}
+
+void OnSystemConfirm(void*) noexcept {
+  const prc_commands::ConfirmWindow::Command armed = g_reset_confirm.Confirm(HAL_GetTick());
+  if (armed == prc_commands::ConfirmWindow::Command::kNone) {
+    app_printf("[SHELL] system confirm on %s: nothing armed in the last 10 s, type system dfu or system reboot first\r\n",
+               RoleName(Role()));
+    return;
+  }
+  if (!ResetAllowedNow("system confirm")) return;
+  if (armed == prc_commands::ConfirmWindow::Command::kDfu) {
+    app_printf("[SHELL] system confirm on %s: rebooting into the ROM DFU bootloader, flash over J7\r\n",
+               RoleName(Role()));
+    HAL_Delay(50);  // let the last USB packet leave before the reset
+    Bootloader_RequestDfu();
+  }
+  app_printf("[SHELL] system confirm on %s: rebooting\r\n", RoleName(Role()));
+  HAL_Delay(50);  // let the last USB packet leave before the reset
+  Bootloader_Reboot();
+}
+
 void OnBadArgument(void*) noexcept {
   app_printf("[SHELL] command refused on %s: bool arguments are open, close, on or off\r\n", RoleName(Role()));
 }
@@ -317,6 +379,9 @@ void FillDriver(prc_cli::driver& drv) {
   drv.logs_usb            = OnLogsUsb;
   drv.sensors_print       = OnSensors;
   drv.state_print         = OnState;
+  drv.system_confirm      = OnSystemConfirm;
+  drv.system_dfu          = OnSystemDfu;
+  drv.system_reboot       = OnSystemReboot;
   drv.valve_ball          = OnValveBall;
   drv.valve_copv_vent     = OnValveCopvVent;
   drv.valve_me            = OnValveMe;

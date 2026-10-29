@@ -33,6 +33,7 @@
 #include "../../Application/FlightControl/prc_fsm_c_api.h"
 #include "../../Application/FlightControl/prc_can.hpp"
 #include "../../Application/app_printf.h"
+#include "../../Application/System/bootloader.h"
 #include "../../Application/main_app.h"
 #include "../../Drivers/Plume/sd_hardware_init.h"
 #include "CAN.h"
@@ -228,6 +229,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+  Bootloader_CheckAndJump();
 	// HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_4);
 
 

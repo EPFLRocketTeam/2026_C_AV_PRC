@@ -24,6 +24,7 @@
 
 #include "Application/Data/data.hpp"
 #include "Application/Data/engine_fsm.hpp"
+#include "Application/FlightControl/prc_confirm_window.hpp"
 
 namespace prc_commands {
 
@@ -33,6 +34,20 @@ namespace prc_commands {
 // in Idle, never before the role is latched. Pure, so the host tests can
 // check it without the HAL.
 inline bool ConfigCommitAllowed(prc::BoardRole role, prc::State dpr_state, prc::EngineState engine_state) {
+  switch (role) {
+    case prc::BoardRole::DprLox:
+    case prc::BoardRole::DprEth:    return dpr_state == prc::State::MANUAL;
+    case prc::BoardRole::EngineBay: return engine_state == prc::EngineState::Idle;
+    default:                        return false;
+  }
+}
+
+// Window for system dfu and system reboot, which reset the board: DPR
+// boards only in MANUAL, the engine board only in Idle, never before the
+// role is latched. A reset drops whatever the FSM is doing and DFU then
+// stops every valve command until NRST or a power cycle. Pure, for the
+// host tests.
+inline bool ResetAllowed(prc::BoardRole role, prc::State dpr_state, prc::EngineState engine_state) {
   switch (role) {
     case prc::BoardRole::DprLox:
     case prc::BoardRole::DprEth:    return dpr_state == prc::State::MANUAL;
@@ -90,6 +105,15 @@ void OnLogsCan(void*, bool on) noexcept;
 void OnConfigPrintStatus(void*) noexcept;
 // Refused outside ConfigCommitAllowed's window, with the reason printed.
 void OnConfigCommit(void*) noexcept;
+
+// -- System (two step, see prc_confirm_window.hpp) --------------------------------
+// system dfu and system reboot only arm a 10 s window, refused outside
+// ResetAllowed, and print the FSM state and the ROM bootloader id.
+// system confirm inside the window does the armed reset: the ROM DFU
+// bootloader (Application/System/bootloader.h) or a plain reboot.
+void OnSystemDfu(void*) noexcept;
+void OnSystemReboot(void*) noexcept;
+void OnSystemConfirm(void*) noexcept;
 
 // Bound as the trie's on_bad_argument: a bool argument other than open,
 // close, on or off runs nothing and gets this refusal instead.
