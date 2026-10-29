@@ -1,5 +1,9 @@
 # arm-none-eabi toolchain for the PRC firmware (STM32H743VITx, Cortex-M7).
 #
+# Source folders, exclusions, include paths and defines are read from .cproject at
+# configure time by cmake/cproject.cmake (the values below are what it reads on main);
+# the rest is written by hand in this file and cmake/firmware.cmake.
+#
 # What was read from .cproject, Debug configuration (line numbers on main 9b2dc24):
 #   MCU            STM32H743VITx, fpu fpv5-d16, float abi hard            (:20,23,24)
 #   Source folders Application, Core, Drivers, Middlewares, Modules,

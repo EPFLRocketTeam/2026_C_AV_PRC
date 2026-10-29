@@ -1,6 +1,11 @@
 # PRC firmware ELF, mirroring the Debug configuration of .cproject.
 # Included from the root CMakeLists.txt only when cross compiling with
-# cmake/arm-none-eabi.cmake; the header of that file lists what was extracted.
+# cmake/arm-none-eabi.cmake; the header of that file lists what is read.
+#
+# Source folders, their exclusions, include paths and defines are read from
+# .cproject at configure time, so a .cproject edit reaches this build too.
+# Only what .cproject does not store is written here: MCU flags (toolchain
+# file), CubeIDE default flags, optimisation, runtime and the linker script.
 
 if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(FATAL_ERROR "Only the .cproject Debug configuration is modelled; pass -DCMAKE_BUILD_TYPE=Debug")
@@ -14,106 +19,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "")
 set(CMAKE_ASM_FLAGS_DEBUG "")
 
 set(FW_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
-
-# Glob a .cproject source folder and drop its Eclipse exclusion patterns
-# (each pattern names a path relative to the folder, and everything under it).
-function(fw_sources out folder)
-    file(GLOB_RECURSE found RELATIVE "${FW_ROOT}" CONFIGURE_DEPENDS
-        "${folder}/*.c" "${folder}/*.cpp" "${folder}/*.cc" "${folder}/*.cxx"
-        "${folder}/*.s" "${folder}/*.S")
-    foreach(pattern IN LISTS ARGN)
-        string(REPLACE "." "\\." pattern "${pattern}")
-        list(FILTER found EXCLUDE REGEX "^${folder}/${pattern}(/|$)")
-    endforeach()
-    list(TRANSFORM found PREPEND "${FW_ROOT}/")
-    set(${out} ${${out}} ${found} PARENT_SCOPE)
-endfunction()
-
-set(FW_SOURCES "")
-fw_sources(FW_SOURCES Application)
-fw_sources(FW_SOURCES Core)
-fw_sources(FW_SOURCES Drivers
-    Plume/2026_C_AV_PLUME/src/plume/cli
-    Plume/2026_C_AV_PLUME/src/plume/drivers
-    Plume/2026_C_AV_PLUME/tests
-    STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_msp_template.c
-    STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_timebase_rtc_wakeup_template.c
-    STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_timebase_rtc_alarm_template.c
-    CMSIS/DSP
-    CMSIS/Device/ST/STM32H7xx/Source
-    CMSIS/Core/Template
-    CMSIS/Core_A/Source
-    CMSIS/NN
-    CMSIS/RTOS2)
-fw_sources(FW_SOURCES Middlewares
-    ST/STM32_USB_Device_Library/Core/Src/usbd_desc_template.c
-    ST/STM32_USB_Device_Library/Core/Src/usbd_conf_template.c)
-fw_sources(FW_SOURCES Modules Sensors/tests)
-fw_sources(FW_SOURCES USB_DEVICE)
-
-set(FW_C_INCLUDES
-    USB_DEVICE/App
-    Application/Config/2026_C_AV_FLIGHT_PARAMS/2026_C_AV_CONFMAN
-    Application/Config/2026_C_AV_FLIGHT_PARAMS
-    USB_DEVICE/Target
-    Core/Inc
-    Drivers/STM32H7xx_HAL_Driver/Inc
-    Drivers/STM32H7xx_HAL_Driver/Inc/Legacy
-    Middlewares/ST/STM32_USB_Device_Library/Core/Inc
-    Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc
-    Middlewares/ST/STM32_USB_Device_Library/Class/DFU/Inc
-    Drivers/CMSIS/Device/ST/STM32H7xx/Include
-    Drivers/CMSIS/Include
-    Drivers/PT1000
-    Drivers/FDC1004
-    .
-    Drivers/Valve
-    Drivers/KULITE_CTL190
-    Drivers/LMT85
-    ThirdParty/SignalUtils/include
-    Modules
-    Drivers/Plume/2026_C_AV_PLUME/include)
-
-set(FW_CXX_INCLUDES
-    USB_DEVICE/App
-    Application/Config/2026_C_AV_FLIGHT_PARAMS/2026_C_AV_CONFMAN
-    Application/Config/2026_C_AV_FLIGHT_PARAMS
-    USB_DEVICE/Target
-    Core/Inc
-    Drivers/STM32H7xx_HAL_Driver/Inc
-    Drivers/STM32H7xx_HAL_Driver/Inc/Legacy
-    Middlewares/ST/STM32_USB_Device_Library/Core/Inc
-    Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc
-    Middlewares/ST/STM32_USB_Device_Library/Class/DFU/Inc
-    Drivers/CMSIS/Device/ST/STM32H7xx/Include
-    Drivers/CMSIS/Include
-    Drivers/PT1000
-    Drivers/FDC1004
-    .
-    Drivers/Valve
-    Drivers/KULITE_CTL190
-    Drivers/LMT85
-    Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include
-    Drivers/LOG_AGGREGATOR/2026_C_AV_LOG_AGGREGATOR/include
-    ThirdParty/SignalUtils/include
-    Modules
-    Drivers/Plume/2026_C_AV_PLUME/include)
-
-set(FW_ASM_INCLUDES
-    Drivers/PT1000
-    Drivers/FDC1004
-    ThirdParty/SignalUtils/include
-    Drivers/Plume/2026_C_AV_PLUME/include)
-
-set(FW_DEFINES
-    DEBUG
-    USE_PWR_LDO_SUPPLY
-    USE_HAL_DRIVER
-    STM32H743xx)
-
-list(TRANSFORM FW_C_INCLUDES PREPEND "${FW_ROOT}/")
-list(TRANSFORM FW_CXX_INCLUDES PREPEND "${FW_ROOT}/")
-list(TRANSFORM FW_ASM_INCLUDES PREPEND "${FW_ROOT}/")
+include(${CMAKE_CURRENT_LIST_DIR}/cproject.cmake)
 
 set(FW_NAME 2026_C_AV_PRC_IOC)
 add_executable(${FW_NAME} ${FW_SOURCES})
@@ -129,8 +35,9 @@ target_include_directories(${FW_NAME} PRIVATE
     "$<$<COMPILE_LANGUAGE:ASM>:${FW_ASM_INCLUDES}>")
 
 target_compile_definitions(${FW_NAME} PRIVATE
-    "$<$<COMPILE_LANGUAGE:C,CXX>:${FW_DEFINES}>"
-    "$<$<COMPILE_LANGUAGE:ASM>:DEBUG>")
+    "$<$<COMPILE_LANGUAGE:C>:${FW_C_DEFINES}>"
+    "$<$<COMPILE_LANGUAGE:CXX>:${FW_CXX_DEFINES}>"
+    "$<$<COMPILE_LANGUAGE:ASM>:${FW_ASM_DEFINES}>")
 
 target_compile_options(${FW_NAME} PRIVATE
     -g3
