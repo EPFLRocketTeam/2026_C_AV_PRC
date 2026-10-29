@@ -72,8 +72,18 @@ static void SetMe(bool open) {
 // at all). Polarity (active_high) is ASSUMED, not measured against the
 // real drive circuit -- same caveat as ValveList.hpp's solenoid polarity
 // TODO, confirm before relying on this live.
+//
+// Writes and logs only on a real change: the entry actions switch the
+// igniter off in several consecutive states, and each of those used to be
+// logged as a transition although the pin did not move. g_igniter_on mirrors
+// the last level written; it starts off because MX_GPIO_Init drives PB2 low
+// before the FSM runs, and nothing else writes the pin.
+static bool g_igniter_on = false;
+
 static void SetIgniter(bool on) {
+  if (on == g_igniter_on) return;
   HAL_GPIO_WritePin(Igniter_GPIO_Port, Igniter_Pin, on ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  g_igniter_on = on;
   getEngineLogger().logIgniterTransition({ on });
 }
 
@@ -476,10 +486,20 @@ static void ApplyEngineValveActions(EngineState state, EngineState previous_stat
   if (state == previous_state) return;
 
   switch (state) {
+    // Idle, ClearToIgnite and every abort state switch the igniter off, and
+    // ClearToIgnite also closes MO and ME, so an output set by hand in Idle
+    // (Prc_Engine_ManualSet*, USB shell) never survives into the ignition
+    // sequence or an abort.
     case EngineState::Idle:
       SetMo(false);
       SetMe(false);
+      SetIgniter(false);
       break ;
+    case EngineState::ClearToIgnite:
+      SetMo(false);
+      SetMe(false);
+      SetIgniter(false);
+      break;
     case EngineState::IgnitionPrechill:
       SetMo(true);
       break;
@@ -517,15 +537,22 @@ static void ApplyEngineValveActions(EngineState state, EngineState previous_stat
       break;
     case EngineState::AbortOnGroundOxydant:
       SetMo(false);
+      SetIgniter(false);
       break;
     case EngineState::AbortOnGroundEthanol:
       SetMe(false);
+      SetIgniter(false);
+      break;
+    case EngineState::AbortInFlight:
+      SetIgniter(false);
       break;
     case EngineState::AbortInFlightOxydant:
       SetMo(false);
+      SetIgniter(false);
       break;
     case EngineState::AbortInFlightEthanol:
       SetMe(false);
+      SetIgniter(false);
       break;
     case EngineState::DepressurizeOpen:
       SetMo(true);
@@ -629,4 +656,28 @@ void Prc_Engine_Fsm_Tick() {
 
 EngineState Prc_Engine_Fsm_GetState() {
   return engine_fsm_instance().getCurrentState();
+}
+
+bool Prc_Engine_ManualAllowedIn(EngineState state) {
+  return state == EngineState::Idle;
+}
+
+bool Prc_Engine_ManualSetMo(bool open) {
+  if (!Prc_Engine_ManualAllowedIn(Prc_Engine_Fsm_GetState())) return false;
+  if (Valve_Get(k_valve_mo) == nullptr) return false;
+  SetMo(open);
+  return true;
+}
+
+bool Prc_Engine_ManualSetMe(bool open) {
+  if (!Prc_Engine_ManualAllowedIn(Prc_Engine_Fsm_GetState())) return false;
+  if (Valve_Get(k_valve_me) == nullptr) return false;
+  SetMe(open);
+  return true;
+}
+
+bool Prc_Engine_ManualSetIgniter(bool on) {
+  if (!Prc_Engine_ManualAllowedIn(Prc_Engine_Fsm_GetState())) return false;
+  SetIgniter(on);
+  return true;
 }

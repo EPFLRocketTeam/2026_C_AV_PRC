@@ -89,15 +89,33 @@ static void MX_ADC1_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+extern USBD_HandleTypeDef hUsbDeviceHS;
+
+// Set when the CDC IN endpoint stayed busy past the wait in _write (host
+// unplugged without VBUS sensing, or not reading). Every later USB write is
+// dropped until usbd_cdc_if.c sees the host again and calls Prc_UsbTx_Resume.
+static volatile uint8_t usb_tx_stalled = 0;
+
+void Prc_UsbTx_Resume(void) {
+    usb_tx_stalled = 0;
+}
+
 int _write(int file, char *ptr, int len) {
-    // Wait until USB is ready, but never wedge: if the CDC endpoint stays
-    // busy (host not draining, missed completion), drop the output instead
-    // of spinning forever.
-    
-    if (app_printf_is_usb_enabled()) {
+    // Never wedge the main loop on USB: send only to a configured host, wait
+    // at most 2 ms for a busy endpoint, and after one timeout drop all USB
+    // output until the host is seen again.
+    if (app_printf_is_usb_enabled() && !usb_tx_stalled
+        && hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED) {
       uint32_t start = HAL_GetTick();
       while (CDC_Transmit_HS((uint8_t*)ptr, len) == USBD_BUSY) {
-          if (HAL_GetTick() - start > 100) {
+          if (HAL_GetTick() - start >= 2) {
+              // Flag first, then one last try: a completion landing in
+              // between clears the flag itself, and if the endpoint freed
+              // up just before the flag was set the retry goes through.
+              usb_tx_stalled = 1;
+              if (CDC_Transmit_HS((uint8_t*)ptr, len) != USBD_BUSY) {
+                  usb_tx_stalled = 0;
+              }
               break;
           }
       }
