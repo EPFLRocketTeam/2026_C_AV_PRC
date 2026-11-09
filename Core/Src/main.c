@@ -623,7 +623,7 @@ static void MX_FDCAN1_Init(void)
   hfdcan1.Init.DataTimeSeg1 = 1;
   hfdcan1.Init.DataTimeSeg2 = 1;
   hfdcan1.Init.MessageRAMOffset = 0;
-  hfdcan1.Init.StdFiltersNbr = 2;
+  hfdcan1.Init.StdFiltersNbr = 3;
   hfdcan1.Init.ExtFiltersNbr = 0;
   hfdcan1.Init.RxFifo0ElmtsNbr = 4;
   hfdcan1.Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_8;
@@ -646,8 +646,10 @@ static void MX_FDCAN1_Init(void)
    * -- priority/index free), per Core/Inc/CAN.h -- catches
    * CANID_BROADCAST_ABORT (0x000), CANID_TIME_SYNC (0x500), and any future
    * FC-broadcast message without needing a new filter added here. Index 1
-   * (this board's own node) is configured later, once role detection has
-   * run -- see Prc_Can_ConfigNodeFilter() in USER CODE 2. */
+   * (this board's own node) and index 2 (the other PRC boards' heartbeats)
+   * are configured later, once role detection has run -- see
+   * Prc_Can_ConfigNodeFilter() in USER CODE 2. StdFiltersNbr above must
+   * stay greater than the highest index used (2). */
   FDCAN_FilterTypeDef canFilter;
   canFilter.IdType       = FDCAN_STANDARD_ID;
   canFilter.FilterIndex  = 0;

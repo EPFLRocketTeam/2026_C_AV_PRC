@@ -232,9 +232,54 @@ void OnPrcPreburn (void*, pi::payload::preburn pb) noexcept {
   }
 }
 
-// FC heartbeat: every role records it (node 0 passes filter index 0).
+// The link store, started on first use with this board's index (the role
+// is latched by then: every caller below sits behind a role gate). Stays
+// unstarted, so tracks nothing, while the role is Unknown.
+LinkStore& Links() {
+  LinkStore& links = PrcStore::get_instance().linkStore;
+  links.start(link_board_for_role(CurrentRole()));
+  return links;
+}
+
+// Heartbeats of the 4 boards, timed with HAL_GetTick() like the heartbeat
+// this board sends. The FC beat passes filter index 0 (node Fc), the PRC
+// beats filter index 2 (see Prc_Can_ConfigNodeFilter). This board's own
+// beat never comes back (no loopback), and LinkMatrix ignores it anyway,
+// so all four callbacks are registered whatever the role.
 void OnHeartbeatFc(void*, pi::payload::heartbeat hb) noexcept {
-  PrcStore::get_instance().fcLinkStore.on_heartbeat(hb.counter, HAL_GetTick());
+  Links().on_heartbeat(pi::constants::LINK_BIT_FC, hb, HAL_GetTick());
+}
+void OnHeartbeatPrcEngine(void*, pi::payload::heartbeat hb) noexcept {
+  Links().on_heartbeat(pi::constants::LINK_BIT_ENGINE, hb, HAL_GetTick());
+}
+void OnHeartbeatDprEth(void*, pi::payload::heartbeat hb) noexcept {
+  Links().on_heartbeat(pi::constants::LINK_BIT_ETH, hb, HAL_GetTick());
+}
+void OnHeartbeatDprLox(void*, pi::payload::heartbeat hb) noexcept {
+  Links().on_heartbeat(pi::constants::LINK_BIT_LOX, hb, HAL_GetTick());
+}
+
+// Prints the detected reboots, then the alive/dead edges of the other
+// boards (plus one "dead" for a board never heard from 2 s after the first
+// call). Reports only: no FSM reads it.
+void PrintLinkReport(LinkStore& links, uint32_t now_ms) {
+  static const char* const kNames[pi::link::BOARD_COUNT] = {"FC", "ENGINE", "ETH", "LOX"};
+  const uint8_t reboots = links.take_reboot_report();
+  const uint8_t edges   = links.take_report(now_ms);
+
+  for (uint8_t i = 0; i < pi::link::BOARD_COUNT; i++) {
+    const pi::link::Peer& peer = links.peer(i);
+    if (reboots & (1u << i)) {
+      app_printf("[LINK] %s rebooted (reboots %lu)\r\n", kNames[i],
+                 static_cast<unsigned long>(peer.reboots));
+    }
+    if (edges & (1u << i)) {
+      app_printf("[LINK] %s %s (rx %lu, missed %lu)\r\n", kNames[i],
+                 links.alive(i, now_ms) ? "alive" : "dead",
+                 static_cast<unsigned long>(peer.received),
+                 static_cast<unsigned long>(peer.missed));
+    }
+  }
 }
 
 // HAL_FDCAN_AddMessageToTxFifoQ word-copies from this buffer regardless of
@@ -323,7 +368,10 @@ pi::context& Ctx() {
     driver.on_log_config         = OnLogConfig;
     driver.on_config_send_commit = OnConfigSendCommit;
     driver.on_config_send_data   = OnConfigSendData;
-    driver.on_heartbeat_fc       = OnHeartbeatFc;
+    driver.on_heartbeat_fc         = OnHeartbeatFc;
+    driver.on_heartbeat_prc_engine = OnHeartbeatPrcEngine;
+    driver.on_heartbeat_dpr_eth    = OnHeartbeatDprEth;
+    driver.on_heartbeat_dpr_lox    = OnHeartbeatDprLox;
     return pi::create_context(driver);
   }();
   return ctx;
@@ -374,6 +422,25 @@ void Prc_Can_ConfigNodeFilter(FDCAN_HandleTypeDef *hfdcan) {
   if (HAL_FDCAN_ConfigFilter(hfdcan, &filter) != HAL_OK) {
     app_printf("[PRC CAN] node filter config failed, node=0x%X\r\n", static_cast<uint8_t>(node));
   }
+
+  // Index 2: the other PRC boards' heartbeats (0x511, 0x521, 0x531), so the
+  // PRC boards hear each other. The mask keeps the priority (System) and
+  // the index (1), and lets any node through. It also passes 0x501
+  // (log_config, already accepted by index 0) and ids no message uses.
+  // StdFiltersNbr in main.c must be at least 3: the HAL does not check it
+  // (USE_FULL_ASSERT is off) and a higher index would overwrite the
+  // message RAM that follows the filter list.
+  FDCAN_FilterTypeDef heartbeats;
+  heartbeats.IdType       = FDCAN_STANDARD_ID;
+  heartbeats.FilterIndex  = 2;
+  heartbeats.FilterType   = FDCAN_FILTER_MASK;
+  heartbeats.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
+  heartbeats.FilterID1    = 0x501;
+  heartbeats.FilterID2    = 0x70F; // mask: priority and index must match, node free
+
+  if (HAL_FDCAN_ConfigFilter(hfdcan, &heartbeats) != HAL_OK) {
+    app_printf("[PRC CAN] heartbeat filter config failed\r\n");
+  }
 }
 
 void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
@@ -387,23 +454,21 @@ void Prc_Can_SendTelemetry(FDCAN_HandleTypeDef *hfdcan) {
 
   // One counter per board: a board has exactly one latched role. The engine
   // beats under its own PrcP id, never the DprLox id its OTA5/6 frame uses.
-  static uint32_t heartbeat_counter = 0;
+  // alive_mask is this board's row of the connectivity matrix: bit i set
+  // when it hears board i (LINK_BIT_*), its own bit always set.
+  LinkStore& links = Links();
+  const uint32_t now_ms = HAL_GetTick();
+  static uint16_t heartbeat_counter = 0;
   pi::payload::heartbeat hb{};
-  hb.counter   = heartbeat_counter++;
-  hb.uptime_ms = HAL_GetTick();
+  hb.uptime_ms  = now_ms;
+  hb.counter    = heartbeat_counter++;
+  hb.alive_mask = links.own_row(now_ms);
+  hb.reserved   = 0;
   if (role == BoardRole::EngineBay)   pi::send_heartbeat_prc_engine(&ctx, hb);
   else if (role == BoardRole::DprLox) pi::send_heartbeat_dpr_lox(&ctx, hb);
   else                                pi::send_heartbeat_dpr_eth(&ctx, hb);
 
-  // FC liveness, printed on each edge, and once as dead if the FC was never
-  // heard from, on the first call 2 s or more after boot (in practice the
-  // very first call). Reports only: no FSM reads it.
-  const bool fc_alive = Prc_Can_FcAlive(hb.uptime_ms);
-  FcLinkStore& fc_link = PrcStore::get_instance().fcLinkStore;
-  if (fc_link.take_report(hb.uptime_ms, fc_alive)) {
-    app_printf("[FC LINK] %s (counter %lu)\r\n", fc_alive ? "alive" : "dead",
-               static_cast<unsigned long>(fc_link.get().last_counter));
-  }
+  PrintLinkReport(links, now_ms);
 
   RUN_EVERY(1000) {
     pi::payload::config_crc conf;
@@ -555,7 +620,7 @@ void Prc_Log_Forward(FDCAN_HandleTypeDef *hfdcan, const uint8_t *data, uint32_t 
 }
 
 bool Prc_Can_FcAlive(uint32_t now_ms) {
-  return PrcStore::get_instance().fcLinkStore.alive(now_ms);
+  return PrcStore::get_instance().linkStore.alive(pi::constants::LINK_BIT_FC, now_ms);
 }
 
 void Prc_Can_SendExternalConnector (int has_no_continuity) {

@@ -57,7 +57,7 @@ function(create_test test_name test_file)
     target_link_libraries(${test_name} PRIVATE GTest::gtest_main GTest::gmock OpenSSL::Crypto)
     gtest_discover_tests(${test_name})
 
-    target_include_directories(${test_name} PUBLIC . ThirdParty/SignalUtils/include)
+    target_include_directories(${test_name} PUBLIC . ThirdParty/SignalUtils/include Drivers/FC_CAN/2026_C_AV_FC_PRC_INTRANET/include)
 endfunction()
 
 create_test(test_average_module Modules/Sensors/tests/test_average_policy.cpp)
@@ -65,4 +65,4 @@ create_test(test_outlier_module Modules/Sensors/tests/test_outlier_policy.cpp)
 
 create_test(test_base_logger ThirdParty/DataLogger/Tests/test_base_logger.cpp)
 
-create_test(test_fc_link Application/Tests/test_fc_link.cpp)
+create_test(test_link_store Application/Tests/test_link_store.cpp)
