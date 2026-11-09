@@ -425,8 +425,13 @@ void Prc_Can_ConfigNodeFilter(FDCAN_HandleTypeDef *hfdcan) {
 
   // Index 2: the other PRC boards' heartbeats (0x511, 0x521, 0x531), so the
   // PRC boards hear each other. The mask keeps the priority (System) and
-  // the index (1), and lets any node through. It also passes 0x501
-  // (log_config, already accepted by index 0) and ids no message uses.
+  // the index (1), and lets any node through. It also matches 0x501
+  // (log_config) and ids no message uses, but filters are checked in index
+  // order and the first match wins: 0x501 is already taken by index 0, so
+  // only PRC heartbeats reach this one.
+  // They go to Rx FIFO1 (4 elements, blocking mode, see main.c), drained
+  // completely every main loop iteration, so they can never push a command
+  // out of FIFO0, which is read one frame per iteration.
   // StdFiltersNbr in main.c must be at least 3: the HAL does not check it
   // (USE_FULL_ASSERT is off) and a higher index would overwrite the
   // message RAM that follows the filter list.
@@ -434,7 +439,7 @@ void Prc_Can_ConfigNodeFilter(FDCAN_HandleTypeDef *hfdcan) {
   heartbeats.IdType       = FDCAN_STANDARD_ID;
   heartbeats.FilterIndex  = 2;
   heartbeats.FilterType   = FDCAN_FILTER_MASK;
-  heartbeats.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
+  heartbeats.FilterConfig = FDCAN_FILTER_TO_RXFIFO1;
   heartbeats.FilterID1    = 0x501;
   heartbeats.FilterID2    = 0x70F; // mask: priority and index must match, node free
 
@@ -617,6 +622,40 @@ void Prc_Log_Forward(FDCAN_HandleTypeDef *hfdcan, const uint8_t *data, uint32_t 
   log_aggregator::chunk_and_send(data, length, &ctx, SendLogChunk);
 
   in_progress = false;
+}
+
+void Prc_Can_CheckRxFifos(FDCAN_HandleTypeDef *hfdcan) {
+  // Counted since boot. Each counts main loop iterations in which the flag
+  // was found set (several events between two checks count once).
+  //   FIFO0 full: FIFO0 is in overwrite mode, where the hardware never sets
+  //   "message lost". "Full" (4 frames waiting) is the closest sign: the
+  //   next frame then overwrites the oldest one.
+  //   FIFO1 lost: FIFO1 is in blocking mode, so a heartbeat arriving while
+  //   it is full is dropped and the flag is set.
+  static uint32_t fifo0_full = 0;
+  static uint32_t fifo1_lost = 0;
+  static uint32_t printed_fifo0_full = 0;
+  static uint32_t printed_fifo1_lost = 0;
+
+  if (__HAL_FDCAN_GET_FLAG(hfdcan, FDCAN_FLAG_RX_FIFO0_FULL)) {
+    __HAL_FDCAN_CLEAR_FLAG(hfdcan, FDCAN_FLAG_RX_FIFO0_FULL);
+    fifo0_full++;
+  }
+  if (__HAL_FDCAN_GET_FLAG(hfdcan, FDCAN_FLAG_RX_FIFO1_MESSAGE_LOST)) {
+    __HAL_FDCAN_CLEAR_FLAG(hfdcan, FDCAN_FLAG_RX_FIFO1_MESSAGE_LOST);
+    fifo1_lost++;
+  }
+
+  // Printed only when a counter grew, at most once per second.
+  RUN_EVERY(1000) {
+    if (fifo0_full != printed_fifo0_full || fifo1_lost != printed_fifo1_lost) {
+      app_printf("[PRC CAN] RX FIFO0 full %lu, FIFO1 lost %lu\r\n",
+                 static_cast<unsigned long>(fifo0_full),
+                 static_cast<unsigned long>(fifo1_lost));
+      printed_fifo0_full = fifo0_full;
+      printed_fifo1_lost = fifo1_lost;
+    }
+  }
 }
 
 bool Prc_Can_FcAlive(uint32_t now_ms) {

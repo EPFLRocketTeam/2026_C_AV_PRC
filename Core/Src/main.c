@@ -327,6 +327,23 @@ int main(void)
 	    }
 	  }
 
+	  /*  FIFO1 holds only the other PRC boards' heartbeats (filter index 2,
+	   *  see Prc_Can_ConfigNodeFilter). Same polling and decode as FIFO0, but
+	   *  drained completely every iteration: each frame takes a few us. */
+	  while (HAL_FDCAN_GetRxFifoFillLevel(&hfdcan1, FDCAN_RX_FIFO1) > 0)
+	  {
+	    FDCAN_RxHeaderTypeDef rxHeader;
+	    uint8_t rxData[8] = {0};
+	    if (HAL_FDCAN_GetRxMessage(&hfdcan1, FDCAN_RX_FIFO1, &rxHeader, rxData) != HAL_OK)
+	    {
+	      break;
+	    }
+	    Prc_Can_ProcessRxMessage(rxHeader.Identifier, rxData, rxHeader.DataLength);
+	  }
+
+	  /*  FIFO0 full / FIFO1 lost counters, printed when they grow (1 Hz max). */
+	  Prc_Can_CheckRxFifos(&hfdcan1);
+
 	  if (HAL_GetTick() - lastTelemetryTick >= 50)
 	  {
 	    lastTelemetryTick = HAL_GetTick();
@@ -627,7 +644,7 @@ static void MX_FDCAN1_Init(void)
   hfdcan1.Init.ExtFiltersNbr = 0;
   hfdcan1.Init.RxFifo0ElmtsNbr = 4;
   hfdcan1.Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_8;
-  hfdcan1.Init.RxFifo1ElmtsNbr = 0;
+  hfdcan1.Init.RxFifo1ElmtsNbr = 4;
   hfdcan1.Init.RxFifo1ElmtSize = FDCAN_DATA_BYTES_8;
   hfdcan1.Init.RxBuffersNbr = 0;
   hfdcan1.Init.RxBufferSize = FDCAN_DATA_BYTES_8;
@@ -649,7 +666,17 @@ static void MX_FDCAN1_Init(void)
    * (this board's own node) and index 2 (the other PRC boards' heartbeats)
    * are configured later, once role detection has run -- see
    * Prc_Can_ConfigNodeFilter() in USER CODE 2. StdFiltersNbr above must
-   * stay greater than the highest index used (2). */
+   * stay greater than the highest index used (2).
+   *
+   * Rx FIFOs: indexes 0 and 1 (FC traffic and this board's own node:
+   * commands, config, FC heartbeat) go to FIFO0, 4 elements, overwrite mode
+   * (set below). Index 2 (the other PRC boards' heartbeats) goes to FIFO1,
+   * 4 elements, left in the default blocking mode, so heartbeats can never
+   * push a command out of FIFO0. Blocking mode also makes the FIFO1
+   * "message lost" flag work (overwrite mode never sets it); FIFO0 losses
+   * are watched through its "full" flag instead, see
+   * Prc_Can_CheckRxFifos(). Message RAM used: 3 filters + 2 x 4 Rx
+   * elements + 32 Tx elements = 3 + 32 + 128 = 163 of the 2560 words. */
   FDCAN_FilterTypeDef canFilter;
   canFilter.IdType       = FDCAN_STANDARD_ID;
   canFilter.FilterIndex  = 0;
