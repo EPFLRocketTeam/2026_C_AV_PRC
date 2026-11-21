@@ -8,6 +8,7 @@
 #ifndef APP_PRC_CAN_H
 #define APP_PRC_CAN_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "stm32h7xx_hal.h"
@@ -34,9 +35,10 @@ void Prc_Can_SendPreburnFuel ();
 // Configures FDCAN filter index 1 (see main.c's MX_FDCAN1_Init(), which
 // leaves this index deliberately unset; filter index 0 there is the
 // static FC-broadcast filter) to accept this board's own node ID (derived
-// from BoardIdentityStore's latched BoardRole, DprLox/DprEth). Call once,
+// from BoardIdentityStore's latched BoardRole), and filter index 2 to
+// accept the other PRC boards' heartbeats (0x5n1) into Rx FIFO1. Call once,
 // after Prc_Fsm_Init() has run (role must already be latched). No-op for
-// EngineBay/Unknown: this decode layer only handles the DPR roles.
+// Unknown.
 void Prc_Can_ConfigNodeFilter(FDCAN_HandleTypeDef *hfdcan);
 
 // Sends this board's periodic DPR telemetry over CAN: dpr_state (FSM state
@@ -64,6 +66,19 @@ void Prc_Log_Forward(FDCAN_HandleTypeDef *hfdcan, const uint8_t *data, uint32_t 
 uint8_t Prc_Can_TakeColdflowTrigger(void);
 
 void Prc_Can_SendExternalConnector (int has_no_continuity);
+
+// Call every main loop iteration. Counts the Rx FIFO0 "full" events (FIFO0
+// is in overwrite mode, where "message lost" is never set) and the Rx FIFO1
+// "message lost" events (blocking mode), clearing each flag after reading
+// it, and prints "[PRC CAN] RX FIFO0 full <n>, FIFO1 lost <n>" when either
+// grew, at most once per second.
+void Prc_Can_CheckRxFifos(FDCAN_HandleTypeDef *hfdcan);
+
+// True when a heartbeat_fc frame arrived less than 500 ms before now_ms
+// (HAL_GetTick() time). Reports only; no FSM acts on it. Prc_Can_SendTelemetry
+// prints "[LINK] <board> alive|dead" on each edge of the 3 other boards, and
+// "[LINK] <board> rebooted" when a reboot is detected.
+bool Prc_Can_FcAlive(uint32_t now_ms);
 
 #ifdef __cplusplus
 }

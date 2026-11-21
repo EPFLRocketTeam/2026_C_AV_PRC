@@ -8,6 +8,8 @@
 #include "Application/Data/fsm.hpp"
 #include "./istore.hpp"
 #include "./propulsion/data.hpp"
+#include "prc_intranet/const.hpp"
+#include "prc_intranet/link_matrix.hpp"
 
 
 namespace prc {
@@ -152,6 +154,67 @@ public:
   void set_no_cable_continuity (bool value);
 };
 
+// ---------------------------------------------------------------------------
+// CAN connectivity: liveness of the 3 other boards (FC and the 2 other PRC),
+// fed by the heartbeat callbacks (prc_can.cpp). A thin wrapper around
+// prc_intranet::link::LinkMatrix (the intranet's link_matrix.hpp), which
+// does the tracking: alive state, this board's row, lost beats, reboots.
+// Exposed only: no FSM reacts to it. Kept out of DataDump so the logged
+// layout does not move. HAL free, so it is host tested.
+// ---------------------------------------------------------------------------
+
+// No board index: the role is Unknown, nothing is tracked or sent.
+constexpr uint8_t LINK_NO_BOARD = 0xFF;
+
+// This board's index in the link matrix (constants::LINK_BIT_*).
+constexpr uint8_t link_board_for_role(BoardRole role) {
+  switch (role) {
+    case BoardRole::EngineBay: return prc_intranet::constants::LINK_BIT_ENGINE;
+    case BoardRole::DprEth:    return prc_intranet::constants::LINK_BIT_ETH;
+    case BoardRole::DprLox:    return prc_intranet::constants::LINK_BIT_LOX;
+    default:                   return LINK_NO_BOARD;
+  }
+}
+
+class LinkStore {
+public:
+  // Starts tracking with this board's index. Call once the role is
+  // latched; does nothing for LINK_NO_BOARD or when already started.
+  void start(uint8_t self) {
+    if (started_ || self >= prc_intranet::link::BOARD_COUNT) return;
+    matrix_  = prc_intranet::link::LinkMatrix(self);
+    started_ = true;
+  }
+  bool started() const { return started_; }
+
+  // Everything below is a no-op (or 0 / false) until start().
+  void on_heartbeat(uint8_t board, const prc_intranet::payload::heartbeat& hb, uint32_t now_ms) {
+    if (started_) matrix_.onHeartbeat(board, hb, now_ms);
+  }
+  bool alive(uint8_t board, uint32_t now_ms) const {
+    return started_ && matrix_.alive(board, now_ms);
+  }
+  // This board's row, sent in its heartbeat's alive_mask.
+  uint8_t own_row(uint32_t now_ms) const {
+    return started_ ? matrix_.ownRow(now_ms) : 0;
+  }
+  // Alive/dead edges of the other boards (bit i = board i), with a boot
+  // grace counted from the first call. See LinkMatrix::takeReport().
+  uint8_t take_report(uint32_t now_ms) {
+    return started_ ? matrix_.takeReport(now_ms) : 0;
+  }
+  // Boards whose reboot was detected since the last call.
+  uint8_t take_reboot_report() {
+    return started_ ? matrix_.takeRebootReport() : 0;
+  }
+  const prc_intranet::link::Peer& peer(uint8_t board) const { return matrix_.peer(board); }
+
+private:
+  // Placeholder index until start() sets the real one; unused before.
+  prc_intranet::link::LinkMatrix matrix_{prc_intranet::constants::LINK_BIT_FC};
+  bool started_ = false;
+};
+
 struct DataDump {
   State          prc_state;
   CSV_IGNORE
@@ -185,6 +248,7 @@ public:
   ValvesStore        valvesStore;
   IntranetCmdStore     intranetCmdStore;
   EventStore         eventStore;
+  LinkStore          linkStore;
 
   PropSensorsStoreEngine propSensorsStoreEngine;
   PropSensorsStoreEth    propSensorsStoreEth;
